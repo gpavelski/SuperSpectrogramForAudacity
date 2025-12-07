@@ -29,6 +29,7 @@ private:
    void OnWheel(wxMouseEvent& event);
    void OnEraseBackground(wxEraseEvent& event) { /* Prevent flicker */ }
    void DrawNoteLabel(wxDC& dc, const wxString& label, double widgetY, const wxSize& widgetSize);
+   void DrawNoteLines(wxDC& dc);
    void ClampOffsets();
    void Clear();
 

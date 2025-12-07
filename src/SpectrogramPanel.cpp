@@ -122,7 +122,8 @@ void SpectrogramPanel::OnPaint(wxPaintEvent& event)
 {
    wxAutoBufferedPaintDC dc(this);
 
-   wxColour customBackground(15, 15, 84); 
+   // Clear background
+   wxColour customBackground(15, 15, 84);
    dc.SetBackground(wxBrush(customBackground));
    dc.Clear();
 
@@ -133,90 +134,122 @@ void SpectrogramPanel::OnPaint(wxPaintEvent& event)
       return;
    }
 
-   // 1. Draw the spectrogram with zoom/offset
-   dc.SetUserScale(m_zoom, m_zoom);
-   dc.DrawBitmap(m_bitmap, m_offsetX / m_zoom, m_offsetY / m_zoom, false);
+   // Use wxGraphicsContext for GPU-accelerated transformations
+   wxGraphicsContext* gc = wxGraphicsContext::Create(dc);
+   if (gc) {
+      // Apply transformation (similar to Qt's QTransform)
+      gc->Scale(m_zoom, m_zoom);
+      gc->Translate(m_offsetX / m_zoom, m_offsetY / m_zoom);
 
-   // 2. Draw note lines if enabled
+      // Draw the bitmap with transformation applied by GPU
+      gc->DrawBitmap(m_bitmap, 0, 0,
+         m_bitmap.GetWidth(), m_bitmap.GetHeight());
+
+      delete gc;
+   }
+   else {
+      // Fallback to normal DC if graphics context not available
+      dc.SetUserScale(m_zoom, m_zoom);
+      dc.DrawBitmap(m_bitmap, m_offsetX / m_zoom, m_offsetY / m_zoom, false);
+   }
+
+   // Draw note lines (in widget coordinates, not transformed)
    if (m_showNoteLines && !m_matrix.empty()) {
-      double minFreq = s_noteFrequencies[0]; // Skip "sil" (0.0)
-      double maxFreq = 2205.0;  // Half of 4410 Hz after decimation
-      int imageHeight = static_cast<int>(m_matrix.size());
+      DrawNoteLines(dc);  // Extract note drawing to separate method
+   }
+}
 
-      // Reset to widget coordinates for drawing
-      dc.SetUserScale(1.0, 1.0);
+void SpectrogramPanel::DrawNoteLines(wxDC& dc)
+{
+   if (!m_showNoteLines || m_matrix.empty()) return;
 
-      // Set up drawing attributes
-      wxPen linePen(*wxRED, 1, wxPENSTYLE_SOLID);
-      dc.SetPen(linePen);
-      dc.SetTextForeground(*wxWHITE);
-      wxFont font(8, wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL);
-      dc.SetFont(font);
+   double minFreq = s_noteFrequencies[0]; // Skip "sil" (0.0)
+   double maxFreq = 2205.0;
+   int imageHeight = static_cast<int>(m_matrix.size());
 
-      // Get current viewport information
-      wxSize widgetSize = GetSize();
+   wxSize widgetSize = GetSize();
 
-      // For label positioning (prevent overlap)
-      double lastLabelY = -1000.0;
+   // Set up drawing
+   dc.SetPen(wxPen(*wxWHITE, 1, wxPENSTYLE_SOLID)); // Thinner lines
+   dc.SetTextForeground(*wxWHITE);
+   wxFont font(8, wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL);
+   dc.SetFont(font);
 
-      for (size_t i = 0; i < s_noteFrequencies.size(); ++i) {
-         double freq = s_noteFrequencies[i];
-         if (freq < minFreq || freq > maxFreq) continue;
+   // Separate tracking for labels vs lines
+   std::vector<double> visibleLinePositions;
+   std::vector<wxString> visibleLineLabels;
 
-         // Calculate position in IMAGE coordinates (0 at top, imageHeight-1 at bottom)
-         double norm = (freq - minFreq) / (maxFreq - minFreq);
-         double imageY = norm * (imageHeight - 1);
+   // First pass: collect all visible lines
+   for (size_t i = 0; i < s_noteFrequencies.size(); ++i) {
+      double freq = s_noteFrequencies[i];
+      if (freq < minFreq || freq > maxFreq) continue;
 
-         // FIX #1: Check if we need to invert Y axis
-         // Depending on your coordinate system, you might need:
-         // imageY = (imageHeight - 1) - imageY; // If 0=bottom instead of top
+      // Calculate position in image coordinates
+      double norm = (freq - minFreq) / (maxFreq - minFreq);
+      double imageY = norm * (imageHeight - 1);
 
-         // Convert to WIDGET coordinates (apply zoom and pan)
-         double widgetY = m_offsetY + (imageY * m_zoom);
+      // Convert to widget coordinates
+      double widgetY = m_offsetY + (imageY * m_zoom);
 
-         // Check if line is visible in current viewport
-         if (widgetY >= 0 && widgetY <= widgetSize.GetHeight()) {
-            // Draw the line (red for debugging, change to desired color)
-            dc.SetPen(wxPen(*wxWHITE, 2, wxPENSTYLE_SOLID));
-            dc.DrawLine(0, static_cast<int>(widgetY),
-               widgetSize.GetWidth(), static_cast<int>(widgetY));
+      // Check if line is visible
+      if (widgetY >= 0 && widgetY <= widgetSize.GetHeight()) {
+         visibleLinePositions.push_back(widgetY);
+         visibleLineLabels.push_back(s_noteLabels[i]);
+      }
+   }
 
-            // Draw label if not overlapping with previous one
-            if (widgetY > lastLabelY + 15) {
-               wxString label = s_noteLabels[i];
+   // Draw all lines first
+   for (double widgetY : visibleLinePositions) {
+      dc.DrawLine(0, static_cast<int>(widgetY),
+         widgetSize.GetWidth(), static_cast<int>(widgetY));
+   }
 
-               // Get text dimensions
-               wxCoord textWidth, textHeight;
-               dc.GetTextExtent(label, &textWidth, &textHeight);
+   // Now draw labels with intelligent spacing
+   double lastLabelY = -1000.0;
+   for (size_t i = 0; i < visibleLinePositions.size(); ++i) {
+      double widgetY = visibleLinePositions[i];
+      wxString label = visibleLineLabels[i];
 
-               // FIX: Position label ABOVE the line, not below
-               // We want the label to appear just above the line, not intersecting it
-               double labelX = 5.0;
-               double labelY = widgetY - 8.0;  // Position ABOVE the line
+      // Get text dimensions
+      wxCoord textWidth, textHeight;
+      dc.GetTextExtent(label, &textWidth, &textHeight);
 
-               // Ensure label doesn't go off the top of the widget
-               if (labelY < 2.0) {
-                  labelY = widgetY + 8.0;  // If too close to top, put below instead
-               }
+      // Check for overlap - more lenient spacing
+      const double MIN_LABEL_SPACING = 8.0; // Reduced from 15
 
-               // Optional: Draw background for readability
-               dc.SetPen(*wxTRANSPARENT_PEN);
-               dc.SetBrush(wxBrush(wxColour(0, 0, 0, 180)));
-               dc.DrawRectangle(static_cast<int>(labelX - 2),
-                  static_cast<int>(labelY - 1),
-                  textWidth + 4,
-                  textHeight + 2);
+      if (widgetY > lastLabelY + MIN_LABEL_SPACING) {
+         // Position label ABOVE the line
+         double labelX = 5.0;
+         double labelY = widgetY - textHeight - 2; // Above line
 
-               // Draw the label
-               dc.DrawText(label, static_cast<int>(labelX), static_cast<int>(labelY));
+         // Ensure label doesn't go off screen
+         if (labelY < 2.0) {
+            labelY = widgetY + 4.0; // Below line if too close to top
+         }
 
-               lastLabelY = widgetY;
+         // Check if this would overlap with next line's label
+         if (i + 1 < visibleLinePositions.size()) {
+            double nextLineY = visibleLinePositions[i + 1];
+            if (labelY + textHeight + 2 > nextLineY) {
+               // Skip this label to avoid overlap
+               continue;
             }
          }
-      }
 
-      // Reset pen for other drawing
-      dc.SetPen(*wxBLACK_PEN);
+         // Draw background for readability
+         dc.SetPen(*wxTRANSPARENT_PEN);
+         dc.SetBrush(wxBrush(wxColour(0, 0, 0, 180)));
+         dc.DrawRectangle(static_cast<int>(labelX - 2),
+            static_cast<int>(labelY - 1),
+            textWidth + 4,
+            textHeight + 2);
+
+         // Draw the label
+         dc.DrawText(label, static_cast<int>(labelX), static_cast<int>(labelY));
+
+         // Update last label Y position (use bottom of label, not line)
+         lastLabelY = labelY + textHeight;
+      }
    }
 }
 
@@ -261,6 +294,49 @@ void SpectrogramPanel::OnSize(wxSizeEvent& event)
    event.Skip();
 }
 
+void SpectrogramPanel::OnWheel(wxMouseEvent& event)
+{
+   if (!m_bitmap.IsOk()) {
+      event.Skip();
+      return;
+   }
+
+   wxPoint mousePos = event.GetPosition();
+
+   // Calculate zoom factor
+   double factor = (event.GetWheelRotation() > 0) ? 1.15 : (1.0 / 1.15);
+
+   // Store old zoom
+   double oldZoom = m_zoom;
+   m_zoom *= factor;
+
+   // Clamp zoom (similar to Qt)
+   wxSize widgetSize = GetSize();
+   wxSize imageSize = m_bitmap.GetSize();
+
+   double minZoom = std::min(
+      static_cast<double>(widgetSize.GetWidth()) / imageSize.GetWidth(),
+      static_cast<double>(widgetSize.GetHeight()) / imageSize.GetHeight());
+
+   const double maxZoom = 10.0;
+   m_zoom = std::max(minZoom, std::min(maxZoom, m_zoom));
+
+   // Adjust offset to zoom around mouse position (Qt-style)
+   // Convert mouse position to image coordinates
+   double imageX = (mousePos.x - m_offsetX) / oldZoom;
+   double imageY = (mousePos.y - m_offsetY) / oldZoom;
+
+   // Calculate new offset
+   m_offsetX = mousePos.x - imageX * m_zoom;
+   m_offsetY = mousePos.y - imageY * m_zoom;
+
+   // Clamp offsets
+   ClampOffsets();
+
+   Refresh();
+   event.Skip();
+}
+
 void SpectrogramPanel::OnMouse(wxMouseEvent& event)
 {
    if (!m_bitmap.IsOk()) {
@@ -280,69 +356,13 @@ void SpectrogramPanel::OnMouse(wxMouseEvent& event)
       wxPoint delta = pos - m_lastMouse;
       m_lastMouse = pos;
 
-      // Update offsets
+      // Simple panning (Qt does this in image coordinates, we do in widget)
       m_offsetX += delta.x;
       m_offsetY += delta.y;
 
-      // CLAMP to keep within bounds
       ClampOffsets();
-
       Refresh();
    }
-}
-
-void SpectrogramPanel::OnWheel(wxMouseEvent& event)
-{
-   if (!m_bitmap.IsOk()) {
-      event.Skip();
-      return;
-   }
-
-   wxPoint mousePos = event.GetPosition();
-
-   // Calculate zoom factor
-   double factor = (event.GetWheelRotation() > 0) ? 1.15 : (1.0 / 1.15);
-
-   // Apply the zoom formula from the sample code
-   double newZoom = m_zoom * factor;
-
-   // Clamp zoom range
-   wxSize widgetSize = GetSize();
-   wxSize imageSize = m_bitmap.GetSize();
-
-   double minZoom = std::min(
-      static_cast<double>(widgetSize.GetWidth()) / imageSize.GetWidth(),
-      static_cast<double>(widgetSize.GetHeight()) / imageSize.GetHeight());
-
-   const double maxZoom = 10.0;
-
-   if (newZoom < minZoom) {
-      factor = minZoom / m_zoom;
-      newZoom = minZoom;
-   }
-   else if (newZoom > maxZoom) {
-      factor = maxZoom / m_zoom;
-      newZoom = maxZoom;
-   }
-
-   // Convert mouse position to image coordinates (from sample code)
-   double imageX = (static_cast<double>(mousePos.x) - m_offsetX) / m_zoom;
-   double imageY = (static_cast<double>(mousePos.y) - m_offsetY) / m_zoom;
-
-   // Calculate new offset (from sample code)
-   double newOffsetX = mousePos.x - imageX * newZoom;
-   double newOffsetY = mousePos.y - imageY * newZoom;
-
-   // Update zoom and offsets
-   m_zoom = newZoom;
-   m_offsetX = newOffsetX;
-   m_offsetY = newOffsetY;
-
-   // CLAMP the offsets to keep image within bounds
-   ClampOffsets();
-
-   Refresh();
-   event.Skip();
 }
 
 void SpectrogramPanel::ClampOffsets()
@@ -352,20 +372,22 @@ void SpectrogramPanel::ClampOffsets()
    wxSize widgetSize = GetSize();
    double scaledWidth = GetScaledWidth();
    double scaledHeight = GetScaledHeight();
-   
-   // Horizontal clamping
+
+   // Qt-style clamping: if scaled image is smaller than widget, center it
    if (scaledWidth <= widgetSize.GetWidth()) {
       m_offsetX = (widgetSize.GetWidth() - scaledWidth) / 2.0;
-   } else {
+   }
+   else {
+      // Image larger than widget - don't show empty space
       double maxOffsetX = 0;
       double minOffsetX = widgetSize.GetWidth() - scaledWidth;
       m_offsetX = std::max(minOffsetX, std::min(maxOffsetX, m_offsetX));
    }
-   
-   // Vertical clamping
+
    if (scaledHeight <= widgetSize.GetHeight()) {
       m_offsetY = (widgetSize.GetHeight() - scaledHeight) / 2.0;
-   } else {
+   }
+   else {
       double maxOffsetY = 0;
       double minOffsetY = widgetSize.GetHeight() - scaledHeight;
       m_offsetY = std::max(minOffsetY, std::min(maxOffsetY, m_offsetY));
@@ -388,14 +410,17 @@ void SpectrogramPanel::FitImageToWidget()
 
    if (imageSize.GetWidth() == 0 || imageSize.GetHeight() == 0) return;
 
-   // Calculate zoom to fit
+   // Calculate zoom to fit (Qt does the same)
    double zoomX = static_cast<double>(widgetSize.GetWidth()) / imageSize.GetWidth();
    double zoomY = static_cast<double>(widgetSize.GetHeight()) / imageSize.GetHeight();
    m_zoom = std::min(zoomX, zoomY);
 
-   // Center the image (same as clamping logic for small images)
-   m_offsetX = (widgetSize.GetWidth() - imageSize.GetWidth() * m_zoom) / 2.0;
-   m_offsetY = (widgetSize.GetHeight() - imageSize.GetHeight() * m_zoom) / 2.0;
+   // Center the image (Qt centers when image is smaller than widget)
+   double scaledWidth = GetScaledWidth();
+   double scaledHeight = GetScaledHeight();
+
+   m_offsetX = (widgetSize.GetWidth() - scaledWidth) / 2.0;
+   m_offsetY = (widgetSize.GetHeight() - scaledHeight) / 2.0;
 
    Refresh();
 }
