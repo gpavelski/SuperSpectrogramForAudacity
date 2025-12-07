@@ -38,9 +38,10 @@ SuperSpectrumAnalyst::~SuperSpectrumAnalyst()
 {
 }
 
-bool SuperSpectrumAnalyst::Calculate(size_t windowSize, double rate,
-   const float* data, size_t dataLen,
-   float* pYMin, float* pYMax)
+bool SuperSpectrumAnalyst::Calculate(
+   const float* data,
+   size_t dataLen
+)
 {
    const int l = 7;
 

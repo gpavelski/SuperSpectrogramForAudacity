@@ -33,9 +33,7 @@ protected:
    SuperSpectrumAnalyst::Algorithm mAlg;
    int mFunc;
    int mAxis;
-   int dBRange;
    double mRate;
    size_t mDataLen;
    ArrayOf<float> mData;
-   size_t mWindowSize;
 };

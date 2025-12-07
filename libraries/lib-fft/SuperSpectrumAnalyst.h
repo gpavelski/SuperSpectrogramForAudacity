@@ -35,9 +35,9 @@ public:
 
    // Return true iff successful
    bool Calculate(
-      size_t windowSize, double rate,
-      const float *data, size_t dataLen,
-      float *pYMin = NULL, float *pYMax = NULL);
+      const float *data,
+      size_t dataLen
+   );
 
    const float *GetProcessed() const;
    int GetProcessedSize() const;

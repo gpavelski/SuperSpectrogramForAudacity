@@ -22,16 +22,6 @@ PlotSuperSpectrumBase::PlotSuperSpectrumBase(AudacityProject& project)
 {
    mRate = 0;
    mDataLen = 0;
-
-   gPrefs->Read(wxT("/FrequencyPlotDialog/DrawGrid"), &mDrawGrid, true);
-   gPrefs->Read(wxT("/FrequencyPlotDialog/SizeChoice"), &mSize, 3);
-
-   int alg;
-   gPrefs->Read(wxT("/FrequencyPlotDialog/AlgChoice"), &alg, 0);
-   mAlg = static_cast<SuperSpectrumAnalyst::Algorithm>(alg);
-
-   gPrefs->Read(wxT("/FrequencyPlotDialog/FuncChoice"), &mFunc, 3);
-   gPrefs->Read(wxT("/FrequencyPlotDialog/AxisChoice"), &mAxis, 1);
 }
 
 bool PlotSuperSpectrumBase::GetAudio()
@@ -109,6 +99,12 @@ bool PlotSuperSpectrumBase::GetAudio()
 
    if (selcount == 0)
       return false;
+
+   if (selcount > 0) {
+      float divisor = static_cast<float>(selcount+1); // Or total channels processed
+      for (size_t i = 0; i < mDataLen; i++)
+         mData[i] /= divisor;
+   }
 
    if (warning)
    {

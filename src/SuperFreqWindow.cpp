@@ -141,14 +141,11 @@ void SuperFrequencyPlotDialog::Recalc()
 
    // Calculate the spectrogram using SuperSpectrumAnalyst
    std::vector<std::vector<double>> matrix;
-   SuperSpectrumAnalyst::Algorithm alg = SuperSpectrumAnalyst::Spectrum; // default
-   int windowFunc = 0; // default window function
 
-   float mYMax = 15.0;
-
-   mAnalyst->Calculate(mWindowSize, mRate,
-      mData.get(), mDataLen,
-      0, &mYMax);  
+   mAnalyst->Calculate(
+      mData.get(),
+      mDataLen
+   );
 
    // Retrieve computed matrix
    matrix = mAnalyst->GetMatrix();  // assume you have a getter returning 2D vector
