@@ -139,73 +139,84 @@ void SpectrogramPanel::OnPaint(wxPaintEvent& event)
 
    // 2. Draw note lines if enabled
    if (m_showNoteLines && !m_matrix.empty()) {
-      double minFreq = s_noteFrequencies[1]; // Skip "sil" (0.0)
-      double maxFreq = 7902.13;
+      double minFreq = s_noteFrequencies[0]; // Skip "sil" (0.0)
+      double maxFreq = 2205.0;  // Half of 4410 Hz after decimation
       int imageHeight = static_cast<int>(m_matrix.size());
-      
-      // CRITICAL: Reset to widget coordinates for drawing lines
+
+      // Reset to widget coordinates for drawing
       dc.SetUserScale(1.0, 1.0);
-      
+
       // Set up drawing attributes
-      dc.SetPen(wxPen(*wxRED, 1, wxPENSTYLE_SOLID)); // RED for visibility debugging
+      wxPen linePen(*wxRED, 1, wxPENSTYLE_SOLID);
+      dc.SetPen(linePen);
       dc.SetTextForeground(*wxWHITE);
       wxFont font(8, wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL);
       dc.SetFont(font);
-      
-      // For label positioning
-      double lastLabelY = -1000; // Track last label position to avoid overlap
-      
+
+      // Get current viewport information
+      wxSize widgetSize = GetSize();
+
+      // For label positioning (prevent overlap)
+      double lastLabelY = -1000.0;
+
       for (size_t i = 0; i < s_noteFrequencies.size(); ++i) {
          double freq = s_noteFrequencies[i];
          if (freq < minFreq || freq > maxFreq) continue;
-         
-         // Calculate position in IMAGE coordinates
+
+         // Calculate position in IMAGE coordinates (0 at top, imageHeight-1 at bottom)
          double norm = (freq - minFreq) / (maxFreq - minFreq);
          double imageY = norm * (imageHeight - 1);
-         
-         // Convert to WIDGET coordinates
+
+         // FIX #1: Check if we need to invert Y axis
+         // Depending on your coordinate system, you might need:
+         // imageY = (imageHeight - 1) - imageY; // If 0=bottom instead of top
+
+         // Convert to WIDGET coordinates (apply zoom and pan)
          double widgetY = m_offsetY + (imageY * m_zoom);
-         
-         // Check if visible in current viewport
-         wxSize widgetSize = GetSize();
+
+         // Check if line is visible in current viewport
          if (widgetY >= 0 && widgetY <= widgetSize.GetHeight()) {
-            // DEBUG: Draw a thicker line to ensure visibility
+            // Draw the line (red for debugging, change to desired color)
             dc.SetPen(wxPen(*wxWHITE, 2, wxPENSTYLE_SOLID));
-            
-            // Draw the line across entire visible width
-            dc.DrawLine(0, widgetY, widgetSize.GetWidth(), widgetY);
-            
-            // Draw label on left side (fixed position, doesn't scroll)
-            // Only draw if enough space from previous label
+            dc.DrawLine(0, static_cast<int>(widgetY),
+               widgetSize.GetWidth(), static_cast<int>(widgetY));
+
+            // Draw label if not overlapping with previous one
             if (widgetY > lastLabelY + 15) {
                wxString label = s_noteLabels[i];
-               
+
                // Get text dimensions
                wxCoord textWidth, textHeight;
                dc.GetTextExtent(label, &textWidth, &textHeight);
-               
-               // Position: Fixed 5px from left edge, above the line
-               double labelX = 5;
-               double labelY = widgetY - textHeight - 2;
-               
+
+               // FIX: Position label ABOVE the line, not below
+               // We want the label to appear just above the line, not intersecting it
+               double labelX = 5.0;
+               double labelY = widgetY - 8.0;  // Position ABOVE the line
+
+               // Ensure label doesn't go off the top of the widget
+               if (labelY < 2.0) {
+                  labelY = widgetY + 8.0;  // If too close to top, put below instead
+               }
+
                // Optional: Draw background for readability
                dc.SetPen(*wxTRANSPARENT_PEN);
                dc.SetBrush(wxBrush(wxColour(0, 0, 0, 180)));
-               dc.DrawRectangle(labelX - 2, labelY - 1, textWidth + 4, textHeight + 2);
-               
+               dc.DrawRectangle(static_cast<int>(labelX - 2),
+                  static_cast<int>(labelY - 1),
+                  textWidth + 4,
+                  textHeight + 2);
+
                // Draw the label
-               dc.DrawText(label, labelX, labelY);
-               
+               dc.DrawText(label, static_cast<int>(labelX), static_cast<int>(labelY));
+
                lastLabelY = widgetY;
             }
          }
       }
-      
-      // DEBUG: Draw viewport boundaries
-      wxSize widgetSize = GetSize();
-      dc.SetPen(wxPen(*wxCYAN, 1, wxPENSTYLE_DOT));
-      dc.DrawLine(0, 0, widgetSize.GetWidth(), 0); // Top
-      dc.DrawLine(0, widgetSize.GetHeight(), widgetSize.GetWidth(), widgetSize.GetHeight()); // Bottom
+
+      // Reset pen for other drawing
+      dc.SetPen(*wxBLACK_PEN);
    }
 }
 
