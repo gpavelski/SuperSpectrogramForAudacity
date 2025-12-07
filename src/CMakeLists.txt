@@ -186,9 +186,13 @@ set( SOURCES
       ShuttleGetDefinition.h
       SoundActivatedRecord.cpp
       SoundActivatedRecord.h
+      SuperFreqWindow.cpp
+      SuperFreqWindow.h
       SpectralDataDialog.cpp
       SpectralDataManager.h
       SpectralDataManager.cpp
+	  SpectrogramPanel.cpp
+      SpectrogramPanel.h
       SseMathFuncs.cpp
       SseMathFuncs.h
       TagsEditor.cpp
