@@ -162,8 +162,9 @@ std::vector<double> STFTProcessor::resize_signal(
 
 std::vector<double> STFTProcessor::processFullSTFT(
        const float * data,
-       size_t dataLen) {
-    Decimator decimator(10);
+       size_t dataLen,
+       size_t decimationLevel) {
+    Decimator decimator(decimationLevel);
     auto decimatedSignal = decimator.process(data, dataLen);
     
     int signal_length = decimatedSignal.size();

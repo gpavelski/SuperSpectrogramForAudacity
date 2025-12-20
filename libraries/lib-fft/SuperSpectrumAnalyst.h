@@ -23,7 +23,10 @@ public:
    // Return true if successful
    bool Calculate(
       const float *data,
-      size_t dataLen
+      size_t dataLen,
+      size_t detailLevel,
+      size_t decimationLevel,
+      size_t lowerThreshold
    );
 
    // Returns the last computed 2D spectrogram matrix

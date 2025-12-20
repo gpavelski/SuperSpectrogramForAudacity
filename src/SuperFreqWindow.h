@@ -51,6 +51,10 @@ private:
    static const int fontSize = 10;
 #endif
 
+   size_t mDetailLevel = 7;
+   size_t mDecimationLevel = 10;
+   size_t mLowerThreshold = -70;
+
    // Font for optional overlays (timestamps, peak labels, etc.)
    wxFont mFreqFont;
 

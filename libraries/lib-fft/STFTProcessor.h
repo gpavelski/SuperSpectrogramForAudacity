@@ -31,7 +31,8 @@ public:
 
     std::vector<double> processFullSTFT(
         const float* data,
-        size_t dataLen);
+        size_t dataLen,
+        size_t decimationLevel);
 
     int getSigma() const {
         return sigma;
@@ -43,6 +44,10 @@ public:
 
     int getLowerThreshold() const {
         return lowerThreshold;
+    }
+
+    void setLowerThreshold(size_t threshold_level) {
+       lowerThreshold = threshold_level;
     }
 
     int getWindowSpectrogramSize() const {
@@ -58,7 +63,7 @@ private:
     const int thirtySecondWindow;
     const int windowSpectrogramSize;
     const std::vector<double> gwin;
-    const int lowerThreshold = -70;
+    int lowerThreshold = -70;
     const int upperThreshold = 0;
 
     std::vector<int> computeSignalCursors(

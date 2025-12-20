@@ -13,7 +13,10 @@ class SpectrogramPanel : public wxPanel
 public:
    SpectrogramPanel(wxWindow* parent);
 
-   void SetMatrix(const std::vector<std::vector<double>>& matrix);
+   void SetMatrix(const std::vector<std::vector<double>>& matrix,
+      double audioRate,
+      size_t decimationLevel
+   );
    void ResetView();
    void UpdatePrefs();
 
@@ -63,6 +66,11 @@ private:
 
    // Mouse handling
    wxPoint m_lastMouse;
+
+   size_t m_audioRate;
+   size_t m_decimationLevel;
+
+   double ComputeMaxFreq() const;
 
    // Note display
    bool m_showNoteLines;

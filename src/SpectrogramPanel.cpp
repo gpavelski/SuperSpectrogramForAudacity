@@ -78,8 +78,13 @@ void SpectrogramPanel::SetNoteFrequencyRange(double minFreq, double maxFreq)
    Refresh();
 }
 
-void SpectrogramPanel::SetMatrix(const std::vector<std::vector<double>>& matrix)
+void SpectrogramPanel::SetMatrix(const std::vector<std::vector<double>>& matrix,
+       double audioRate,
+       size_t decimationLevel
+)
 {
+   m_audioRate = audioRate;
+   m_decimationLevel = decimationLevel;
    if (matrix.empty()) {
       // Clear everything when receiving empty matrix
       Clear();
@@ -125,16 +130,16 @@ void SpectrogramPanel::OnPaint(wxPaintEvent& event)
    dc.Clear();
 
    if (!m_bitmap.IsOk()) {
+      wxSize clientSize = GetClientSize();
       dc.DrawText("No spectrogram data available",
-         GetSize().GetWidth() / 2 - 100,
-         GetSize().GetHeight() / 2);
-      return;
+         clientSize.GetWidth() / 2 - 100,
+         clientSize.GetHeight() / 2);
    }
 
    // Use wxGraphicsContext for GPU-accelerated transformations
    wxGraphicsContext* gc = wxGraphicsContext::Create(dc);
    if (gc) {
-      // Apply transformation (similar to Qt's QTransform)
+      // Apply transformation
       gc->Scale(m_zoom, m_zoom);
       gc->Translate(m_offsetX / m_zoom, m_offsetY / m_zoom);
 
@@ -156,15 +161,20 @@ void SpectrogramPanel::OnPaint(wxPaintEvent& event)
    }
 }
 
+double SpectrogramPanel::ComputeMaxFreq() const
+{
+   return m_audioRate / (2.0 * m_decimationLevel);  // Nyquist frequency after decimation
+}
+
 void SpectrogramPanel::DrawNoteLines(wxDC& dc)
 {
    if (!m_showNoteLines || m_matrix.empty()) return;
 
    double minFreq = s_noteFrequencies[0];
-   double maxFreq = 2205.0;
+   double maxFreq = ComputeMaxFreq();
    int imageHeight = static_cast<int>(m_matrix.size());
 
-   wxSize widgetSize = GetSize();
+   wxSize widgetSize = GetClientSize();
 
    // Set up drawing
    dc.SetPen(wxPen(*wxWHITE, 1, wxPENSTYLE_SOLID)); // Thinner lines
@@ -354,32 +364,36 @@ void SpectrogramPanel::OnMouse(wxMouseEvent& event)
 
 void SpectrogramPanel::ClampOffsets()
 {
-   if (!m_bitmap.IsOk()) return;
+   if (!m_bitmap.IsOk())
+      return;
 
-   wxSize widgetSize = GetSize();
-   double scaledWidth = GetScaledWidth();
-   double scaledHeight = GetScaledHeight();
+   const wxSize widgetSize = GetClientSize();
+   const double scaledWidth = GetScaledWidth();
+   const double scaledHeight = GetScaledHeight();
 
-   // Qt-style clamping: if scaled image is smaller than widget, center it
+   // ---- X axis ----
    if (scaledWidth <= widgetSize.GetWidth()) {
-      m_offsetX = (widgetSize.GetWidth() - scaledWidth) / 2.0;
+      // Do NOT center — align left
+      m_offsetX = 0.0;
    }
    else {
-      // Image larger than widget - don't show empty space
-      double maxOffsetX = 0;
-      double minOffsetX = widgetSize.GetWidth() - scaledWidth;
-      m_offsetX = std::max(minOffsetX, std::min(maxOffsetX, m_offsetX));
+      const double minOffsetX = widgetSize.GetWidth() - scaledWidth;
+      const double maxOffsetX = 0.0;
+      m_offsetX = std::clamp(m_offsetX, minOffsetX, maxOffsetX);
    }
 
+   // ---- Y axis ----
    if (scaledHeight <= widgetSize.GetHeight()) {
-      m_offsetY = (widgetSize.GetHeight() - scaledHeight) / 2.0;
+      // Do NOT center — align top
+      m_offsetY = 0.0;
    }
    else {
-      double maxOffsetY = 0;
-      double minOffsetY = widgetSize.GetHeight() - scaledHeight;
-      m_offsetY = std::max(minOffsetY, std::min(maxOffsetY, m_offsetY));
+      const double minOffsetY = widgetSize.GetHeight() - scaledHeight;
+      const double maxOffsetY = 0.0;
+      m_offsetY = std::clamp(m_offsetY, minOffsetY, maxOffsetY);
    }
 }
+
 
 void SpectrogramPanel::FitImageToWidget()
 {

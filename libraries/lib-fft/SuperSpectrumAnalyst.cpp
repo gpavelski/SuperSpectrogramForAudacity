@@ -4,8 +4,7 @@
 
   SuperSpectrumAnalyst.cpp
 
-  Dominic Mazzoni
-  Paul Licameli split from FreqWindow.cpp
+  Tony Bee
 
 *******************************************************************//**
 
@@ -35,13 +34,15 @@ SuperSpectrumAnalyst::~SuperSpectrumAnalyst()
 
 bool SuperSpectrumAnalyst::Calculate(
    const float* data,
-   size_t dataLen
+   size_t dataLen,
+   size_t detailLevel,
+   size_t decimationLevel,
+   size_t lowerThreshold
 )
 {
-   const int l = 7;
-
-   STFTProcessor stftProcessor(l);
-   auto spectrogram = stftProcessor.processFullSTFT(data, dataLen);
+   STFTProcessor stftProcessor(detailLevel);
+   stftProcessor.setLowerThreshold(lowerThreshold);
+   auto spectrogram = stftProcessor.processFullSTFT(data, dataLen, decimationLevel);
 
    // Convert flat vector to 2D matrix
    int sigma = stftProcessor.getSigma();

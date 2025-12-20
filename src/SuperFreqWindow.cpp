@@ -96,9 +96,7 @@ void SuperFrequencyPlotDialog::ApplyDataDrivenMinSize()
 {
    constexpr int MAX_VISIBLE_COLUMNS = 800;  // Increased for better initial view
    constexpr int PIXELS_PER_COLUMN = 1;
-   constexpr int EXTRA_WIDTH = 100;          // More room for labels/scrollbars
-   constexpr int MIN_HEIGHT = 400;           // Reduced from 800
-   constexpr int MAX_HEIGHT = 800;           // Maximum initial height
+   constexpr int INITIAL_HEIGHT = 800;
 
    int columns = mSpectrogramPanel
       ? mSpectrogramPanel->GetColumnCount()
@@ -108,14 +106,10 @@ void SuperFrequencyPlotDialog::ApplyDataDrivenMinSize()
       return;
 
    int visibleColumns = std::min(columns, MAX_VISIBLE_COLUMNS);
-   int minWidth = visibleColumns * PIXELS_PER_COLUMN + EXTRA_WIDTH;
-
-   // Use a reasonable height that shows enough frequency detail
-   int minHeight = std::min(MIN_HEIGHT, MAX_HEIGHT);
-
-   SetMinSize(wxSize(minWidth, minHeight));
+   int minWidth = visibleColumns * PIXELS_PER_COLUMN;
+   int initialHeight = INITIAL_HEIGHT;
+   SetMinSize(wxSize(minWidth, initialHeight));
 }
-
 
 //-----------------------------------------------------------------
 // Plot a 2D STFT matrix
@@ -127,7 +121,7 @@ void SuperFrequencyPlotDialog::PlotSTFTMatrix(
       return;
 
    mMatrix = matrix;
-   mSpectrogramPanel->SetMatrix(mMatrix);
+   mSpectrogramPanel->SetMatrix(mMatrix, mRate, mDecimationLevel);
    mSpectrogramPanel->ResetView();
 }
 
@@ -139,7 +133,11 @@ void SuperFrequencyPlotDialog::Recalc()
    if (!mData)
       return;
 
-   mAnalyst->Calculate(mData.get(), mDataLen);
+   mAnalyst->Calculate(mData.get(),
+      mDataLen,
+      mDetailLevel,
+      mDecimationLevel,
+      mLowerThreshold);
    PlotSTFTMatrix(mAnalyst->GetMatrix());
 }
 
