@@ -2,7 +2,7 @@
 
   Audacity: A Digital Audio Editor
 
-  SuperFreqWindow.cpp
+  SuperSpectrogramWindow.cpp
 
   Tony Bee
 
@@ -17,7 +17,7 @@ the mouse around.
 
 *//****************************************************************//**
 
-\class SuperFreqPlot
+\class SuperSpectrogramPlot
 \brief Works with SuperSpectrogramPlotDialog to display a more detailed
 spectrum plot of the waveform.
 This class actually does the graph display.
@@ -33,7 +33,7 @@ the mouse around.
 #include "SpectrogramPanel.h"
 #include "STFTProcessor.h"     
 
-#define FrequencyAnalysisTitle XO("Super Spectrogram")
+#define SuperSpectrogramTitle XO("Super Spectrogram")
 
 //-----------------------------------------------------------------
 // Event table for the dialog
@@ -179,7 +179,7 @@ namespace {
          &GetProjectFrame(project),
          wxID_ANY,
          project,
-         FrequencyAnalysisTitle,
+         SuperSpectrogramTitle,
          wxPoint{ 150, 150 }
       );
 

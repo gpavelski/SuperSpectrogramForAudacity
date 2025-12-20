@@ -101,7 +101,7 @@ bool PlotSuperSpectrogramBase::GetAudio()
       return false;
 
    if (selcount > 0) {
-      float divisor = static_cast<float>(selcount+1); // Or total channels processed
+      float divisor = static_cast<float>(selcount+1);
       for (size_t i = 0; i < mDataLen; i++)
          mData[i] /= divisor;
    }

@@ -1,5 +1,5 @@
-#ifndef __AUDACITY_SUPER_FREQ_WINDOW__
-#define __AUDACITY_SUPER_FREQ_WINDOW__
+#ifndef __AUDACITY_SUPER_SPECTROGRAM_WINDOW__
+#define __AUDACITY_SUPER_SPECTROGRAM_WINDOW__
 
 #include "PlotSuperSpectrogramBase.h"
 #include <vector>
@@ -67,4 +67,4 @@ private:
    DECLARE_EVENT_TABLE()
 };
 
-#endif // __AUDACITY_SUPER_FREQ_WINDOW__
+#endif // __AUDACITY_SUPER_SPECTROGRAM_WINDOW__
