@@ -39,6 +39,7 @@ EVT_SIZE(SpectrogramPanel::OnSize)
 EVT_LEFT_DOWN(SpectrogramPanel::OnMouse)
 EVT_LEFT_UP(SpectrogramPanel::OnMouse)
 EVT_MOTION(SpectrogramPanel::OnMouse)
+EVT_RIGHT_DOWN(SpectrogramPanel::OnRightClick)
 EVT_MOUSEWHEEL(SpectrogramPanel::OnWheel)
 EVT_ERASE_BACKGROUND(SpectrogramPanel::OnEraseBackground)
 wxEND_EVENT_TABLE()
@@ -491,6 +492,12 @@ void SpectrogramPanel::RebuildBitmap()
    }
 
    m_bitmap = wxBitmap(img);
+}
+
+void SpectrogramPanel::OnRightClick(wxMouseEvent& event)
+{
+   ResetView();
+   event.Skip(); 
 }
 
 void SpectrogramPanel::ResetView()

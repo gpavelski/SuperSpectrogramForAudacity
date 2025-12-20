@@ -34,6 +34,7 @@ private:
    void OnPaint(wxPaintEvent& event);
    void OnSize(wxSizeEvent& event);
    void OnMouse(wxMouseEvent& event);
+   void OnRightClick(wxMouseEvent& event);
    void OnWheel(wxMouseEvent& event);
    void OnEraseBackground(wxEraseEvent& event) { /* Prevent flicker */ }
    void DrawNoteLabel(wxDC& dc, const wxString& label, double widgetY, const wxSize& widgetSize);
