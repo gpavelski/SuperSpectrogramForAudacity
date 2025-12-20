@@ -27,17 +27,13 @@ the mouse around.
 
 *//*******************************************************************/
 
-/*
-  Salvo Ventura - November 2006
-  Extended range check for additional FFT windows
-*/
 
 #include "SuperFreqWindow.h"
 #include <wx/wx.h>
 #include "SpectrogramPanel.h"  // your panel class
 #include "STFTProcessor.h"     // your STFT / SuperSpectrum logic
 
-#define FrequencyAnalysisTitle XO("Frequency Analysis")
+#define FrequencyAnalysisTitle XO("Super Spectrogram")
 
 //-----------------------------------------------------------------
 // Event table for the dialog
@@ -68,11 +64,6 @@ SuperFrequencyPlotDialog::SuperFrequencyPlotDialog(
    mSpectrogramPanel = std::make_unique<SpectrogramPanel>(this);
    mSpectrogramPanel->EnableNoteLines(true);
    mainSizer->Add(mSpectrogramPanel.get(), 1, wxEXPAND | wxALL, 5);
-
-   // Add a status label for debugging
-   wxStaticText* statusLabel = new wxStaticText(this, wxID_ANY,
-      "Ready to display spectrogram...");
-   mainSizer->Add(statusLabel, 0, wxALIGN_CENTER | wxALL, 5);
 
    SetSizer(mainSizer);
 

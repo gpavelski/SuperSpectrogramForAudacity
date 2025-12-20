@@ -163,7 +163,7 @@ void SpectrogramPanel::DrawNoteLines(wxDC& dc)
 {
    if (!m_showNoteLines || m_matrix.empty()) return;
 
-   double minFreq = s_noteFrequencies[0]; // Skip "sil" (0.0)
+   double minFreq = s_noteFrequencies[0];
    double maxFreq = 2205.0;
    int imageHeight = static_cast<int>(m_matrix.size());
 
@@ -356,7 +356,6 @@ void SpectrogramPanel::OnMouse(wxMouseEvent& event)
       wxPoint delta = pos - m_lastMouse;
       m_lastMouse = pos;
 
-      // Simple panning (Qt does this in image coordinates, we do in widget)
       m_offsetX += delta.x;
       m_offsetY += delta.y;
 

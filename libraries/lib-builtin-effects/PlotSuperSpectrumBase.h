@@ -28,10 +28,6 @@ protected:
    AudacityProject* mProject;
    std::unique_ptr<SuperSpectrumAnalyst> mAnalyst;
 
-   bool mDrawGrid;
-   int mSize;
-   SuperSpectrumAnalyst::Algorithm mAlg;
-   int mFunc;
    int mAxis;
    double mRate;
    size_t mDataLen;
