@@ -52,28 +52,18 @@ SuperFrequencyPlotDialog::SuperFrequencyPlotDialog(
    const TranslatableString& title,
    const wxPoint& pos)
    : PlotSuperSpectrumBase{ project }
-   , wxDialogWrapper(parent, id, title, pos, wxSize(1000, 400),
+   , wxDialogWrapper(parent, id, title, pos, wxSize(1000, 600),  // Larger initial size
       wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER | wxMAXIMIZE_BOX)
 {
    SetName();
 
-   // Create sizer FIRST
-   wxBoxSizer* mainSizer = new wxBoxSizer(wxVERTICAL);
+   auto* mainSizer = new wxBoxSizer(wxVERTICAL);
 
-   // Create and add the panel
    mSpectrogramPanel = std::make_unique<SpectrogramPanel>(this);
    mSpectrogramPanel->EnableNoteLines(true);
+
    mainSizer->Add(mSpectrogramPanel.get(), 1, wxEXPAND | wxALL, 5);
-
    SetSizer(mainSizer);
-
-   // IMPORTANT: Call Fit() and Layout()
-   Layout();
-   Fit();
-   Centre();
-
-   // Force initial size
-   SetSize(1000, 400);
 }
 
 SuperFrequencyPlotDialog::~SuperFrequencyPlotDialog() = default;
@@ -83,40 +73,60 @@ SuperFrequencyPlotDialog::~SuperFrequencyPlotDialog() = default;
 //-----------------------------------------------------------------
 bool SuperFrequencyPlotDialog::Show(bool show)
 {
-   if (show) {
-      // Force a minimum size
-      SetMinSize(wxSize(800, 600));
+   if (show && !IsShown()) {
+      if (!GetAudio())
+         return false;
 
-      if (!IsShown()) {
-         if (!GetAudio()) {
-            return false;  // Show error but don't crash
-         }
+      // 1) Compute spectrogram (this fills the matrix)
+      Recalc();
 
-         // Layout and center
-         Layout();
-         Fit();
-         Centre();
+      // 2) Apply data-driven size constraints
+      ApplyDataDrivenMinSize();
 
-         // Force an initial paint
-         Recalc();
-      }
+      // 3) Finalize layout
+      Layout();
+      Fit();
+      Centre();
    }
 
    return wxDialogWrapper::Show(show);
 }
 
+void SuperFrequencyPlotDialog::ApplyDataDrivenMinSize()
+{
+   constexpr int MAX_VISIBLE_COLUMNS = 800;  // Increased for better initial view
+   constexpr int PIXELS_PER_COLUMN = 1;
+   constexpr int EXTRA_WIDTH = 100;          // More room for labels/scrollbars
+   constexpr int MIN_HEIGHT = 400;           // Reduced from 800
+   constexpr int MAX_HEIGHT = 800;           // Maximum initial height
+
+   int columns = mSpectrogramPanel
+      ? mSpectrogramPanel->GetColumnCount()
+      : 0;
+
+   if (columns == 0)
+      return;
+
+   int visibleColumns = std::min(columns, MAX_VISIBLE_COLUMNS);
+   int minWidth = visibleColumns * PIXELS_PER_COLUMN + EXTRA_WIDTH;
+
+   // Use a reasonable height that shows enough frequency detail
+   int minHeight = std::min(MIN_HEIGHT, MAX_HEIGHT);
+
+   SetMinSize(wxSize(minWidth, minHeight));
+}
+
+
 //-----------------------------------------------------------------
 // Plot a 2D STFT matrix
 //-----------------------------------------------------------------
-void SuperFrequencyPlotDialog::PlotSTFTMatrix(const std::vector<std::vector<double>>& matrix)
+void SuperFrequencyPlotDialog::PlotSTFTMatrix(
+   const std::vector<std::vector<double>>& matrix)
 {
    if (!mSpectrogramPanel)
       return;
 
-   // Cache the matrix
    mMatrix = matrix;
-
-   // Update the panel
    mSpectrogramPanel->SetMatrix(mMatrix);
    mSpectrogramPanel->ResetView();
 }
@@ -126,23 +136,11 @@ void SuperFrequencyPlotDialog::PlotSTFTMatrix(const std::vector<std::vector<doub
 //-----------------------------------------------------------------
 void SuperFrequencyPlotDialog::Recalc()
 {
-   // Ensure there is data
    if (!mData)
       return;
 
-   // Calculate the spectrogram using SuperSpectrumAnalyst
-   std::vector<std::vector<double>> matrix;
-
-   mAnalyst->Calculate(
-      mData.get(),
-      mDataLen
-   );
-
-   // Retrieve computed matrix
-   matrix = mAnalyst->GetMatrix();  // assume you have a getter returning 2D vector
-
-   // Plot it
-   PlotSTFTMatrix(matrix);
+   mAnalyst->Calculate(mData.get(), mDataLen);
+   PlotSTFTMatrix(mAnalyst->GetMatrix());
 }
 
 //-----------------------------------------------------------------
@@ -171,9 +169,6 @@ void SuperFrequencyPlotDialog::UpdatePrefs()
 #include "CommonCommandFlags.h"
 
 namespace {
-   // Remove the singleton factory registration
-   // AttachedWindows::RegisteredFactory sFrequencyWindowKey{...}
-
    // Define our extra menu item
    void OnPlotSuperSpectrum(const CommandContext& context)
    {

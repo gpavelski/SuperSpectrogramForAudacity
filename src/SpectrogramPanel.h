@@ -17,6 +17,12 @@ public:
    void ResetView();
    void UpdatePrefs();
 
+   size_t GetColumnCount() const
+   {
+      if (m_matrix.empty()) return 0;
+      return m_matrix[0].size();
+   }
+
    // Note display functionality
    void EnableNoteLines(bool enable = true) { m_showNoteLines = enable; Refresh(); }
    void SetNoteFrequencyRange(double minFreq, double maxFreq);

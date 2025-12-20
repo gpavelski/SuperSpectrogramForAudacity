@@ -88,9 +88,6 @@ void SpectrogramPanel::SetMatrix(const std::vector<std::vector<double>>& matrix)
       m_matrix = matrix;
       m_dirty = true;
 
-      // Auto-fit on new data
-      wxSizeEvent dummy;
-      OnSize(dummy);
       Refresh();
    }
 }
@@ -284,13 +281,8 @@ void SpectrogramPanel::DrawNoteLabel(wxDC& dc, const wxString& label, double wid
 void SpectrogramPanel::OnSize(wxSizeEvent& event)
 {
    if (!m_matrix.empty() && m_bitmap.IsOk()) {
-      // Simple auto-fit: if zoom is close to 1.0 and offsets are small
-      if (fabs(m_zoom - 1.0) < 0.01 &&
-         fabs(m_offsetX) < 10.0 && fabs(m_offsetY) < 10.0) {
          FitImageToWidget();
-      }
    }
-   Refresh();
    event.Skip();
 }
 
@@ -301,41 +293,37 @@ void SpectrogramPanel::OnWheel(wxMouseEvent& event)
       return;
    }
 
-   wxPoint mousePos = event.GetPosition();
+   const wxPoint mousePos = event.GetPosition();
 
-   // Calculate zoom factor
-   double factor = (event.GetWheelRotation() > 0) ? 1.15 : (1.0 / 1.15);
+   const double factor =
+      (event.GetWheelRotation() > 0) ? 1.15 : (1.0 / 1.15);
 
-   // Store old zoom
-   double oldZoom = m_zoom;
+   const double oldZoom = m_zoom;
    m_zoom *= factor;
 
-   // Clamp zoom (similar to Qt)
-   wxSize widgetSize = GetSize();
-   wxSize imageSize = m_bitmap.GetSize();
+   const wxSize widgetSize = GetClientSize();
+   const wxSize imageSize = m_bitmap.GetSize();
 
-   double minZoom = std::min(
-      static_cast<double>(widgetSize.GetWidth()) / imageSize.GetWidth(),
-      static_cast<double>(widgetSize.GetHeight()) / imageSize.GetHeight());
+   // ---- CORRECT MIN ZOOM (Y-anchored) ----
+   const double minZoom =
+      static_cast<double>(widgetSize.GetHeight()) /
+      imageSize.GetHeight();
 
    const double maxZoom = 10.0;
-   m_zoom = std::max(minZoom, std::min(maxZoom, m_zoom));
 
-   // Adjust offset to zoom around mouse position (Qt-style)
-   // Convert mouse position to image coordinates
-   double imageX = (mousePos.x - m_offsetX) / oldZoom;
-   double imageY = (mousePos.y - m_offsetY) / oldZoom;
+   m_zoom = std::clamp(m_zoom, minZoom, maxZoom);
 
-   // Calculate new offset
+   // ---- Zoom around mouse position ----
+   const double imageX = (mousePos.x - m_offsetX) / oldZoom;
+   const double imageY = (mousePos.y - m_offsetY) / oldZoom;
+
    m_offsetX = mousePos.x - imageX * m_zoom;
    m_offsetY = mousePos.y - imageY * m_zoom;
 
-   // Clamp offsets
    ClampOffsets();
-
    Refresh();
-   event.Skip();
 }
+
 
 void SpectrogramPanel::OnMouse(wxMouseEvent& event)
 {
@@ -395,34 +383,36 @@ void SpectrogramPanel::ClampOffsets()
 
 void SpectrogramPanel::FitImageToWidget()
 {
-   if (m_matrix.empty() || m_matrix[0].empty()) return;
+   if (m_matrix.empty() || m_matrix[0].empty())
+      return;
 
    if (m_dirty) {
       RebuildBitmap();
       m_dirty = false;
    }
 
-   if (!m_bitmap.IsOk()) return;
+   if (!m_bitmap.IsOk())
+      return;
 
-   wxSize widgetSize = GetSize();
-   wxSize imageSize = m_bitmap.GetSize();
+   const wxSize widgetSize = GetClientSize();
+   const wxSize imageSize = m_bitmap.GetSize();
 
-   if (imageSize.GetWidth() == 0 || imageSize.GetHeight() == 0) return;
+   if (widgetSize.GetHeight() <= 0 || imageSize.GetHeight() <= 0)
+      return;
 
-   // Calculate zoom to fit (Qt does the same)
-   double zoomX = static_cast<double>(widgetSize.GetWidth()) / imageSize.GetWidth();
-   double zoomY = static_cast<double>(widgetSize.GetHeight()) / imageSize.GetHeight();
-   m_zoom = std::min(zoomX, zoomY);
+   // Y-anchored zoom: always show all frequency bins
+   m_zoom =
+      static_cast<double>(widgetSize.GetHeight()) /
+      imageSize.GetHeight();
 
-   // Center the image (Qt centers when image is smaller than widget)
-   double scaledWidth = GetScaledWidth();
-   double scaledHeight = GetScaledHeight();
+   // Left-align time axis
+   m_offsetX = 0.0;
+   m_offsetY = 0.0;
 
-   m_offsetX = (widgetSize.GetWidth() - scaledWidth) / 2.0;
-   m_offsetY = (widgetSize.GetHeight() - scaledHeight) / 2.0;
-
+   ClampOffsets();
    Refresh();
 }
+
 
 void SpectrogramPanel::RebuildBitmap()
 {
@@ -432,7 +422,7 @@ void SpectrogramPanel::RebuildBitmap()
       wxMemoryDC memDC(m_bitmap);
       memDC.SetBackground(*wxWHITE_BRUSH);
       memDC.Clear();
-      memDC.SetTextForeground(*wxBLACK);
+      memDC.SetTextForeground(*wxWHITE);
       memDC.DrawText("No Data", 30, 45);
       return;
    }
