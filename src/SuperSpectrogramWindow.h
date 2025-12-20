@@ -44,6 +44,11 @@ private:
    // PrefsListener interface
    void UpdatePrefs() override;
 
+   void CreateControls(wxBoxSizer* mainSizer);
+   void OnThresholdChanged(wxCommandEvent& event);
+
+   wxChoice* mThresholdChoice = nullptr;
+
 private:
 #ifdef __WXMSW__
    static const int fontSize = 8;

@@ -40,6 +40,7 @@ the mouse around.
 //-----------------------------------------------------------------
 BEGIN_EVENT_TABLE(SuperSpectrogramPlotDialog, wxDialogWrapper)
 EVT_CLOSE(SuperSpectrogramPlotDialog::OnCloseWindow)
+EVT_CHOICE(wxID_ANY, SuperSpectrogramPlotDialog::OnThresholdChanged)
 END_EVENT_TABLE()
 
 //-----------------------------------------------------------------
@@ -52,17 +53,19 @@ SuperSpectrogramPlotDialog::SuperSpectrogramPlotDialog(
    const TranslatableString& title,
    const wxPoint& pos)
    : PlotSuperSpectrogramBase{ project }
-   , wxDialogWrapper(parent, id, title, pos, wxSize(1000, 600),  // Larger initial size
+   , wxDialogWrapper(parent, id, title, pos, wxSize(1000, 600),
       wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER | wxMAXIMIZE_BOX)
 {
    SetName();
 
    auto* mainSizer = new wxBoxSizer(wxVERTICAL);
 
+   CreateControls(mainSizer);
+
    mSpectrogramPanel = std::make_unique<SpectrogramPanel>(this);
    mSpectrogramPanel->EnableNoteLines(true);
-
    mainSizer->Add(mSpectrogramPanel.get(), 1, wxEXPAND | wxALL, 5);
+
    SetSizer(mainSizer);
 }
 
@@ -142,13 +145,50 @@ void SuperSpectrogramPlotDialog::Recalc()
    PlotSTFTMatrix(mAnalyst->GetMatrix());
 }
 
-//-----------------------------------------------------------------
-// Event handlers
-//-----------------------------------------------------------------
-void SuperSpectrogramPlotDialog::OnCloseWindow(wxCloseEvent& WXUNUSED(event))
+void SuperSpectrogramPlotDialog::CreateControls(wxBoxSizer* mainSizer)
 {
-   Show(false);
+   auto* controlSizer = new wxBoxSizer(wxHORIZONTAL);
+
+   controlSizer->Add(
+      new wxStaticText(this, wxID_ANY, _("Noise floor (dB):")),
+      0, wxALIGN_CENTER_VERTICAL | wxRIGHT, 8);
+
+   static const wxString choices[] = {
+      "-120", "-100", "-85", "-70", "-55"
+   };
+
+   mThresholdChoice = new wxChoice(
+      this, wxID_ANY,
+      wxDefaultPosition, wxDefaultSize,
+      WXSIZEOF(choices), choices);
+
+   // Default selection matches mLowerThreshold initial value
+   mThresholdChoice->SetStringSelection(
+      wxString::Format("%d", static_cast<int>(mLowerThreshold)));
+
+   controlSizer->Add(mThresholdChoice, 0);
+
+   mainSizer->Add(controlSizer, 0, wxLEFT | wxTOP | wxRIGHT, 8);
 }
+
+void SuperSpectrogramPlotDialog::OnThresholdChanged(wxCommandEvent& event)
+{
+   if (!mThresholdChoice)
+      return;
+
+   long value = 0;
+   if (!mThresholdChoice->GetStringSelection().ToLong(&value))
+      return;
+
+   if (mLowerThreshold == value)
+      return; // no-op
+
+   mLowerThreshold = static_cast<int>(value);
+
+   // Recompute spectrogram with new threshold
+   Recalc();
+}
+
 
 //-----------------------------------------------------------------
 // PrefsListener interface
@@ -160,7 +200,6 @@ void SuperSpectrogramPlotDialog::UpdatePrefs()
       mSpectrogramPanel->UpdatePrefs();
 }
 
-
 // Remaining code hooks this add-on into the application
 #include "CommandContext.h"
 #include "CommandManager.h"
@@ -168,14 +207,24 @@ void SuperSpectrogramPlotDialog::UpdatePrefs()
 #include "CommonCommandFlags.h"
 
 namespace {
-   // Define our extra menu item
+   SuperSpectrogramPlotDialog* gSpectrogramDialog = nullptr;
+   void ClearSpectrogramDialog()
+   {
+      gSpectrogramDialog = nullptr;
+   }
+
    void OnPlotSuperSpectrogram(const CommandContext& context)
    {
       auto& project = context.project;
       CommandManager::Get(project).RegisterLastAnalyzer(context);
 
-      // Create a NEW dialog instance each time
-      auto* dialog = new SuperSpectrogramPlotDialog(
+      if (gSpectrogramDialog) {
+         gSpectrogramDialog->Raise();
+         gSpectrogramDialog->SetFocus();
+         return;
+      }
+
+      gSpectrogramDialog = new SuperSpectrogramPlotDialog(
          &GetProjectFrame(project),
          wxID_ANY,
          project,
@@ -183,11 +232,9 @@ namespace {
          wxPoint{ 150, 150 }
       );
 
-      // Show it modally or non-modally
-      dialog->Show(true);
-      dialog->Raise();
-      dialog->SetFocus();
+      gSpectrogramDialog->Show(true);
    }
+
 
    // Register that menu item
    using namespace MenuRegistry;
@@ -197,4 +244,13 @@ namespace {
            AudioIONotBusyFlag() | WaveTracksSelectedFlag() | TimeSelectedFlag()),
        wxT("Analyze/Analyzers/Windows")
    };
+}
+
+//-----------------------------------------------------------------
+// Event handlers
+//-----------------------------------------------------------------
+void SuperSpectrogramPlotDialog::OnCloseWindow(wxCloseEvent& WXUNUSED(event))
+{
+   gSpectrogramDialog = nullptr;
+   Destroy();
 }
