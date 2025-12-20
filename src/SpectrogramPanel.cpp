@@ -79,12 +79,10 @@ void SpectrogramPanel::SetNoteFrequencyRange(double minFreq, double maxFreq)
 }
 
 void SpectrogramPanel::SetMatrix(const std::vector<std::vector<double>>& matrix,
-       double audioRate,
-       size_t decimationLevel
+       double maxFreq
 )
 {
-   m_audioRate = audioRate;
-   m_decimationLevel = decimationLevel;
+   m_maxFreq = maxFreq;
    if (matrix.empty()) {
       // Clear everything when receiving empty matrix
       Clear();
@@ -161,17 +159,12 @@ void SpectrogramPanel::OnPaint(wxPaintEvent& event)
    }
 }
 
-double SpectrogramPanel::ComputeMaxFreq() const
-{
-   return m_audioRate / (2.0 * m_decimationLevel);  // Nyquist frequency after decimation
-}
-
 void SpectrogramPanel::DrawNoteLines(wxDC& dc)
 {
    if (!m_showNoteLines || m_matrix.empty()) return;
 
    double minFreq = s_noteFrequencies[0];
-   double maxFreq = ComputeMaxFreq();
+   double maxFreq = m_maxFreq;
    int imageHeight = static_cast<int>(m_matrix.size());
 
    wxSize widgetSize = GetClientSize();

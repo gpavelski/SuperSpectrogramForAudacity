@@ -2,13 +2,13 @@
 
   Audacity: A Digital Audio Editor
 
-  SuperSpectrumAnalyst.cpp
+  SuperSpectrogramAnalyst.cpp
 
   Tony Bee
 
 *******************************************************************//**
 
-\class SuperSpectrumAnalyst
+\class SuperSpectrogramAnalyst
 \brief Used for finding the peaks, for snapping to peaks.
 
 This class is used to do the 'find peaks' snapping both in FreqPlot
@@ -18,21 +18,21 @@ and in the spectrogram spectral selection.
 
 
 #include "STFTProcessor.h"
-#include "SuperSpectrumAnalyst.h"
+#include "SuperSpectrogramAnalyst.h"
 #include "FFT.h"
 #include "MemoryX.h"
 
-SuperSpectrumAnalyst::SuperSpectrumAnalyst()
+SuperSpectrogramAnalyst::SuperSpectrogramAnalyst()
 : mRate(0.0)
 , mWindowSize(0)
 {
 }
 
-SuperSpectrumAnalyst::~SuperSpectrumAnalyst()
+SuperSpectrogramAnalyst::~SuperSpectrogramAnalyst()
 {
 }
 
-bool SuperSpectrumAnalyst::Calculate(
+bool SuperSpectrogramAnalyst::Calculate(
    const float* data,
    size_t dataLen,
    size_t detailLevel,

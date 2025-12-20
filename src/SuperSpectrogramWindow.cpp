@@ -8,7 +8,7 @@
 
 *******************************************************************//**
 
-\class SuperFrequencyPlotDialog
+\class SuperSpectrogramPlotDialog
 \brief Displays a more detail spectrum plot of the waveform.
 Has options for selecting parameters of the plot.
 
@@ -18,7 +18,7 @@ the mouse around.
 *//****************************************************************//**
 
 \class SuperFreqPlot
-\brief Works with SuperFrequencyPlotDialog to display a more detailed
+\brief Works with SuperSpectrogramPlotDialog to display a more detailed
 spectrum plot of the waveform.
 This class actually does the graph display.
 
@@ -28,30 +28,30 @@ the mouse around.
 *//*******************************************************************/
 
 
-#include "SuperFreqWindow.h"
+#include "SuperSpectrogramWindow.h"
 #include <wx/wx.h>
-#include "SpectrogramPanel.h"  // your panel class
-#include "STFTProcessor.h"     // your STFT / SuperSpectrum logic
+#include "SpectrogramPanel.h"
+#include "STFTProcessor.h"     
 
 #define FrequencyAnalysisTitle XO("Super Spectrogram")
 
 //-----------------------------------------------------------------
 // Event table for the dialog
 //-----------------------------------------------------------------
-BEGIN_EVENT_TABLE(SuperFrequencyPlotDialog, wxDialogWrapper)
-EVT_CLOSE(SuperFrequencyPlotDialog::OnCloseWindow)
+BEGIN_EVENT_TABLE(SuperSpectrogramPlotDialog, wxDialogWrapper)
+EVT_CLOSE(SuperSpectrogramPlotDialog::OnCloseWindow)
 END_EVENT_TABLE()
 
 //-----------------------------------------------------------------
 // Constructor / Destructor
 //-----------------------------------------------------------------
-SuperFrequencyPlotDialog::SuperFrequencyPlotDialog(
+SuperSpectrogramPlotDialog::SuperSpectrogramPlotDialog(
    wxWindow* parent,
    wxWindowID id,
    AudacityProject& project,
    const TranslatableString& title,
    const wxPoint& pos)
-   : PlotSuperSpectrumBase{ project }
+   : PlotSuperSpectrogramBase{ project }
    , wxDialogWrapper(parent, id, title, pos, wxSize(1000, 600),  // Larger initial size
       wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER | wxMAXIMIZE_BOX)
 {
@@ -66,12 +66,12 @@ SuperFrequencyPlotDialog::SuperFrequencyPlotDialog(
    SetSizer(mainSizer);
 }
 
-SuperFrequencyPlotDialog::~SuperFrequencyPlotDialog() = default;
+SuperSpectrogramPlotDialog::~SuperSpectrogramPlotDialog() = default;
 
 //-----------------------------------------------------------------
 // Show / Hide dialog
 //-----------------------------------------------------------------
-bool SuperFrequencyPlotDialog::Show(bool show)
+bool SuperSpectrogramPlotDialog::Show(bool show)
 {
    if (show && !IsShown()) {
       if (!GetAudio())
@@ -92,7 +92,7 @@ bool SuperFrequencyPlotDialog::Show(bool show)
    return wxDialogWrapper::Show(show);
 }
 
-void SuperFrequencyPlotDialog::ApplyDataDrivenMinSize()
+void SuperSpectrogramPlotDialog::ApplyDataDrivenMinSize()
 {
    constexpr int MAX_VISIBLE_COLUMNS = 800;  // Increased for better initial view
    constexpr int PIXELS_PER_COLUMN = 1;
@@ -114,21 +114,22 @@ void SuperFrequencyPlotDialog::ApplyDataDrivenMinSize()
 //-----------------------------------------------------------------
 // Plot a 2D STFT matrix
 //-----------------------------------------------------------------
-void SuperFrequencyPlotDialog::PlotSTFTMatrix(
+void SuperSpectrogramPlotDialog::PlotSTFTMatrix(
    const std::vector<std::vector<double>>& matrix)
 {
    if (!mSpectrogramPanel)
       return;
 
    mMatrix = matrix;
-   mSpectrogramPanel->SetMatrix(mMatrix, mRate, mDecimationLevel);
+   double maxFreq = mRate / (2.0 * mDecimationLevel);  // Nyquist frequency after decimation
+   mSpectrogramPanel->SetMatrix(mMatrix, maxFreq);
    mSpectrogramPanel->ResetView();
 }
 
 //-----------------------------------------------------------------
 // Recalculate the spectrogram from current selection
 //-----------------------------------------------------------------
-void SuperFrequencyPlotDialog::Recalc()
+void SuperSpectrogramPlotDialog::Recalc()
 {
    if (!mData)
       return;
@@ -144,7 +145,7 @@ void SuperFrequencyPlotDialog::Recalc()
 //-----------------------------------------------------------------
 // Event handlers
 //-----------------------------------------------------------------
-void SuperFrequencyPlotDialog::OnCloseWindow(wxCloseEvent& WXUNUSED(event))
+void SuperSpectrogramPlotDialog::OnCloseWindow(wxCloseEvent& WXUNUSED(event))
 {
    Show(false);
 }
@@ -152,7 +153,7 @@ void SuperFrequencyPlotDialog::OnCloseWindow(wxCloseEvent& WXUNUSED(event))
 //-----------------------------------------------------------------
 // PrefsListener interface
 //-----------------------------------------------------------------
-void SuperFrequencyPlotDialog::UpdatePrefs()
+void SuperSpectrogramPlotDialog::UpdatePrefs()
 {
    Layout();
    if (mSpectrogramPanel)
@@ -168,13 +169,13 @@ void SuperFrequencyPlotDialog::UpdatePrefs()
 
 namespace {
    // Define our extra menu item
-   void OnPlotSuperSpectrum(const CommandContext& context)
+   void OnPlotSuperSpectrogram(const CommandContext& context)
    {
       auto& project = context.project;
       CommandManager::Get(project).RegisterLastAnalyzer(context);
 
       // Create a NEW dialog instance each time
-      auto* dialog = new SuperFrequencyPlotDialog(
+      auto* dialog = new SuperSpectrogramPlotDialog(
          &GetProjectFrame(project),
          wxID_ANY,
          project,
@@ -191,8 +192,8 @@ namespace {
    // Register that menu item
    using namespace MenuRegistry;
    AttachedItem sAttachment{
-       Command(wxT("PlotSuperSpectrum"), XXO("Plot Super Spectrum..."),
-           OnPlotSuperSpectrum,
+       Command(wxT("PlotSuperSpectrogram"), XXO("Plot Super Spectrogram..."),
+           OnPlotSuperSpectrogram,
            AudioIONotBusyFlag() | WaveTracksSelectedFlag() | TimeSelectedFlag()),
        wxT("Analyze/Analyzers/Windows")
    };

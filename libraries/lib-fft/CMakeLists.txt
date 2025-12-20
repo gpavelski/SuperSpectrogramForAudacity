@@ -39,8 +39,8 @@ set( SOURCES
    SpectrumTransformer.h
    STFTProcessor.cpp
    STFTProcessor.h
-   SuperSpectrumAnalyst.cpp
-   SuperSpectrumAnalyst.h
+   SuperSpectrogramAnalyst.cpp
+   SuperSpectrogramAnalyst.h
 )
 
 set( LIBRARIES

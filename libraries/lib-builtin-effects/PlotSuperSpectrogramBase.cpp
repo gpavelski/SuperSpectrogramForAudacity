@@ -2,29 +2,29 @@
 
   Audacity: A Digital Audio Editor
 
-  PlotSuperSpectrumBase.cpp
+  PlotSuperSpectrogramBase.cpp
 
   Tony Bee
   Dominic Mazzoni
   Matthieu Hodgkinson split from FreqWindow.cpp
 
 **********************************************************************/
-#include "PlotSuperSpectrumBase.h"
+#include "PlotSuperSpectrogramBase.h"
 #include "BasicUI.h"
 #include "Prefs.h"
 #include "SampleFormat.h"
 #include "ViewInfo.h"
 #include "WaveTrack.h"
 
-PlotSuperSpectrumBase::PlotSuperSpectrumBase(AudacityProject& project)
+PlotSuperSpectrogramBase::PlotSuperSpectrogramBase(AudacityProject& project)
    : mProject{ &project }
-   , mAnalyst(std::make_unique<SuperSpectrumAnalyst>())
+   , mAnalyst(std::make_unique<SuperSpectrogramAnalyst>())
 {
    mRate = 0;
    mDataLen = 0;
 }
 
-bool PlotSuperSpectrumBase::GetAudio()
+bool PlotSuperSpectrogramBase::GetAudio()
 {
    mData.reset();
    mDataLen = 0;

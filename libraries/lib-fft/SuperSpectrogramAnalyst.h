@@ -2,7 +2,7 @@
 
   Audacity: A Digital Audio Editor
 
-  SuperSpectrumAnalyst.h
+  SuperSpectrogramAnalyst.h
 
   Dominic Mazzoni
   Paul Licameli split from FreqWindow.h
@@ -14,11 +14,11 @@
 #include <vector>
 #include <functional>
 
-class FFT_API SuperSpectrumAnalyst
+class FFT_API SuperSpectrogramAnalyst
 {
 public:
-   SuperSpectrumAnalyst();
-   ~SuperSpectrumAnalyst();
+   SuperSpectrogramAnalyst();
+   ~SuperSpectrogramAnalyst();
 
    // Return true if successful
    bool Calculate(

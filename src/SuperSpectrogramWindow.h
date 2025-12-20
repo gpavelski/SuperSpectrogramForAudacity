@@ -1,7 +1,7 @@
 #ifndef __AUDACITY_SUPER_FREQ_WINDOW__
 #define __AUDACITY_SUPER_FREQ_WINDOW__
 
-#include "PlotSuperSpectrumBase.h"
+#include "PlotSuperSpectrogramBase.h"
 #include <vector>
 #include <memory>
 #include <wx/font.h>
@@ -11,20 +11,20 @@ class AudacityProject;
 class SpectrogramPanel;
 
 //=================================================================
-// SuperFrequencyPlotDialog: hosts the SpectrogramPanel
+// SuperSpectrogramPlotDialog: hosts the SpectrogramPanel
 //=================================================================
-class SuperFrequencyPlotDialog final :
-   public PlotSuperSpectrumBase,   // used for spectrum data computation
+class SuperSpectrogramPlotDialog final :
+   public PlotSuperSpectrogramBase,   // used for spectrum data computation
    public wxDialogWrapper,
    public PrefsListener
 {
 public:
    // Constructor / Destructor
-   SuperFrequencyPlotDialog(wxWindow* parent, wxWindowID id,
+   SuperSpectrogramPlotDialog(wxWindow* parent, wxWindowID id,
       AudacityProject& project,
       const TranslatableString& title,
       const wxPoint& pos = wxDefaultPosition);
-   virtual ~SuperFrequencyPlotDialog();
+   virtual ~SuperSpectrogramPlotDialog();
 
    // Override Show() to display dialog
    bool Show(bool show = true) override;

@@ -2,7 +2,7 @@
 
   Audacity: A Digital Audio Editor
 
-  PlotSuperSpectrumBase.h
+  PlotSuperSpectrogramBase.h
 
   Tony Bee
   Dominic Mazzoni
@@ -12,21 +12,21 @@
 #pragma once
 
 #include "MemoryX.h"
-#include "SuperSpectrumAnalyst.h"
+#include "SuperSpectrogramAnalyst.h"
 #include <memory>
 
 class AudacityProject;
 
-class BUILTIN_EFFECTS_API PlotSuperSpectrumBase
+class BUILTIN_EFFECTS_API PlotSuperSpectrogramBase
 {
 public:
-   PlotSuperSpectrumBase(AudacityProject& project);
+   PlotSuperSpectrogramBase(AudacityProject& project);
 
 protected:
    bool GetAudio();
 
    AudacityProject* mProject;
-   std::unique_ptr<SuperSpectrumAnalyst> mAnalyst;
+   std::unique_ptr<SuperSpectrogramAnalyst> mAnalyst;
 
    int mAxis;
    double mRate;
