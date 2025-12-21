@@ -79,22 +79,26 @@ void SpectrogramPanel::SetNoteFrequencyRange(double minFreq, double maxFreq)
    Refresh();
 }
 
-void SpectrogramPanel::SetMatrix(const std::vector<std::vector<double>>& matrix,
-       double maxFreq
-)
+void SpectrogramPanel::SetMatrix(
+   const std::vector<std::vector<double>>& matrix,
+   double maxFreq)
 {
    m_maxFreq = maxFreq;
-   if (matrix.empty()) {
-      // Clear everything when receiving empty matrix
-      Clear();
-   }
-   else {
-      m_matrix = matrix;
-      m_dirty = true;
 
-      Refresh();
+   if (matrix.empty()) {
+      Clear();
+      return;
    }
+
+   m_matrix = matrix;
+
+   // Rebuild immediately when data changes
+   RebuildBitmap();
+   m_dirty = false;
+
+   Refresh();
 }
+
 
 void SpectrogramPanel::Clear()
 {
@@ -119,168 +123,95 @@ void SpectrogramPanel::Clear()
    Refresh();
 }
 
-void SpectrogramPanel::OnPaint(wxPaintEvent& event)
+void SpectrogramPanel::OnPaint(wxPaintEvent&)
 {
    wxAutoBufferedPaintDC dc(this);
-
-   // Clear background
-   wxColour customBackground(15, 15, 84);
-   dc.SetBackground(wxBrush(customBackground));
-   dc.Clear();
-
-   if (!m_bitmap.IsOk()) {
-      wxSize clientSize = GetClientSize();
-      dc.DrawText("No spectrogram data available",
-         clientSize.GetWidth() / 2 - 100,
-         clientSize.GetHeight() / 2);
-   }
-
-   // Use wxGraphicsContext for GPU-accelerated transformations
-   wxGraphicsContext* gc = wxGraphicsContext::Create(dc);
-   if (gc) {
-      // Apply transformation
-      gc->Scale(m_zoom, m_zoom);
-      gc->Translate(m_offsetX / m_zoom, m_offsetY / m_zoom);
-
-      // Draw the bitmap with transformation applied by GPU
-      gc->DrawBitmap(m_bitmap, 0, 0,
-         m_bitmap.GetWidth(), m_bitmap.GetHeight());
-
-      delete gc;
-   }
-   else {
-      // Fallback to normal DC if graphics context not available
-      dc.SetUserScale(m_zoom, m_zoom);
-      dc.DrawBitmap(m_bitmap, m_offsetX / m_zoom, m_offsetY / m_zoom, false);
-   }
-
-   // Draw note lines (in widget coordinates, not transformed)
-   if (m_showNoteLines && !m_matrix.empty()) {
-      DrawNoteLines(dc);  // Extract note drawing to separate method
-   }
+   Render(dc, GetClientSize());
 }
 
-void SpectrogramPanel::DrawNoteLines(wxDC& dc)
+
+void SpectrogramPanel::DrawNoteLines(wxDC& dc, const wxSize& targetSize) const
 {
-   if (!m_showNoteLines || m_matrix.empty()) return;
-
-   double minFreq = s_noteFrequencies[0];
-   double maxFreq = m_maxFreq;
-   int imageHeight = static_cast<int>(m_matrix.size());
-
-   wxSize widgetSize = GetClientSize();
-
-   // Set up drawing
-   dc.SetPen(wxPen(*wxWHITE, 1, wxPENSTYLE_SOLID)); // Thinner lines
+   dc.SetPen(wxPen(*wxWHITE, 1));
    dc.SetTextForeground(*wxWHITE);
-   wxFont font(8, wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL);
+
+   wxFont font(8, wxFONTFAMILY_DEFAULT,
+      wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL);
    dc.SetFont(font);
 
-   // Separate tracking for labels vs lines
-   std::vector<double> visibleLinePositions;
-   std::vector<wxString> visibleLineLabels;
+   const int rows = static_cast<int>(m_matrix.size());
+   const double minFreq = s_noteFrequencies.front();
+   const double maxFreq = m_maxFreq;
 
-   // First pass: collect all visible lines
+   double lastLabelBottom = -1e9;
+
    for (size_t i = 0; i < s_noteFrequencies.size(); ++i) {
       double freq = s_noteFrequencies[i];
-      if (freq < minFreq || freq > maxFreq) continue;
+      if (freq < minFreq || freq > maxFreq)
+         continue;
 
-      // Calculate position in image coordinates
+      // ---- image -> view space ----
       double norm = (freq - minFreq) / (maxFreq - minFreq);
-      double imageY = norm * (imageHeight - 1);
+      double imageY = norm * (rows - 1);
+      double y = imageY * m_zoom + m_offsetY;
 
-      // Convert to widget coordinates
-      double widgetY = m_offsetY + (imageY * m_zoom);
+      if (y < 0 || y > targetSize.GetHeight())
+         continue;
 
-      // Check if line is visible
-      if (widgetY >= 0 && widgetY <= widgetSize.GetHeight()) {
-         visibleLinePositions.push_back(widgetY);
-         visibleLineLabels.push_back(s_noteLabels[i]);
-      }
-   }
+      // ---- horizontal line ----
+      dc.DrawLine(0, (int)y,
+         targetSize.GetWidth(), (int)y);
 
-   // Draw all lines first
-   for (double widgetY : visibleLinePositions) {
-      dc.DrawLine(0, static_cast<int>(widgetY),
-         widgetSize.GetWidth(), static_cast<int>(widgetY));
-   }
+      // ---- label (anchored LEFT, not panning!) ----
+      const wxString& label = s_noteLabels[i];
 
-   // Now draw labels with intelligent spacing
-   double lastLabelY = -1000.0;
-   for (size_t i = 0; i < visibleLinePositions.size(); ++i) {
-      double widgetY = visibleLinePositions[i];
-      wxString label = visibleLineLabels[i];
+      wxCoord tw, th;
+      dc.GetTextExtent(label, &tw, &th);
 
-      // Get text dimensions
-      wxCoord textWidth, textHeight;
-      dc.GetTextExtent(label, &textWidth, &textHeight);
+      double labelY = y - th - 2;
+      if (labelY < 2)
+         labelY = y + 2;
 
-      // Check for overlap - more lenient spacing
-      const double MIN_LABEL_SPACING = 8.0; // Reduced from 15
+      if (labelY < lastLabelBottom + 4)
+         continue;
 
-      if (widgetY > lastLabelY + MIN_LABEL_SPACING) {
-         // Position label ABOVE the line
-         double labelX = 5.0;
-         double labelY = widgetY - textHeight - 2; // Above line
+      // background box
+      dc.SetBrush(wxBrush(wxColour(0, 0, 0)));
+      dc.SetPen(*wxTRANSPARENT_PEN);
+      dc.DrawRectangle(2, (int)labelY - 1,
+         tw + 6, th + 2);
 
-         // Ensure label doesn't go off screen
-         if (labelY < 2.0) {
-            labelY = widgetY + 4.0; // Below line if too close to top
-         }
+      dc.SetPen(wxPen(*wxWHITE, 1));
+      dc.DrawText(label, 5, (int)labelY);
 
-         // Check if this would overlap with next line's label
-         if (i + 1 < visibleLinePositions.size()) {
-            double nextLineY = visibleLinePositions[i + 1];
-            if (labelY + textHeight + 2 > nextLineY) {
-               // Skip this label to avoid overlap
-               continue;
-            }
-         }
-
-         // Draw background for readability
-         dc.SetPen(*wxTRANSPARENT_PEN);
-         dc.SetBrush(wxBrush(wxColour(0, 0, 0, 180)));
-         dc.DrawRectangle(static_cast<int>(labelX - 2),
-            static_cast<int>(labelY - 1),
-            textWidth + 4,
-            textHeight + 2);
-
-         // Draw the label
-         dc.DrawText(label, static_cast<int>(labelX), static_cast<int>(labelY));
-
-         // Update last label Y position (use bottom of label, not line)
-         lastLabelY = labelY + textHeight;
-      }
+      lastLabelBottom = labelY + th;
    }
 }
 
-void SpectrogramPanel::DrawNoteLabel(wxDC& dc, const wxString& label, double widgetY, const wxSize& widgetSize)
+
+void SpectrogramPanel::DrawNoteLabel(wxDC& dc, const wxString& label,
+   double widgetY, const wxSize& widgetSize) const
 {
-   // Calculate text dimensions
    wxCoord textWidth, textHeight;
    dc.GetTextExtent(label, &textWidth, &textHeight);
 
-   // Calculate X position: we want it to follow with panning
-   // Base position is 5px from left edge, adjusted by horizontal panning
    double xPos = 5 - m_offsetX;
-
-   // Clamp to keep label visible
-   if (xPos < 5) xPos = 5; // Don't go too far left
-   if (xPos + textWidth > widgetSize.GetWidth() - 5) {
+   if (xPos < 5) xPos = 5;
+   if (xPos + textWidth > widgetSize.GetWidth() - 5)
       xPos = widgetSize.GetWidth() - textWidth - 5;
-   }
 
-   // Calculate Y position: above the line
    double yPos = widgetY - textHeight - 2;
 
-   // Optional: Draw background for better readability
+   // **Opaque black background**
    dc.SetPen(*wxTRANSPARENT_PEN);
-   dc.SetBrush(wxBrush(wxColour(0, 0, 0, 180))); // Semi-transparent black
+   dc.SetBrush(wxBrush(wxColour(0, 0, 0, 255))); // Fully opaque black
    dc.DrawRectangle(xPos - 2, yPos - 1, textWidth + 4, textHeight + 2);
 
-   // Draw the text
+   // **White text**
+   dc.SetTextForeground(*wxWHITE);
    dc.DrawText(label, xPos, yPos);
 }
+
 
 void SpectrogramPanel::OnSize(wxSizeEvent& event)
 {
@@ -394,11 +325,6 @@ void SpectrogramPanel::FitImageToWidget()
    if (m_matrix.empty() || m_matrix[0].empty())
       return;
 
-   if (m_dirty) {
-      RebuildBitmap();
-      m_dirty = false;
-   }
-
    if (!m_bitmap.IsOk())
       return;
 
@@ -408,19 +334,16 @@ void SpectrogramPanel::FitImageToWidget()
    if (widgetSize.GetHeight() <= 0 || imageSize.GetHeight() <= 0)
       return;
 
-   // Y-anchored zoom: always show all frequency bins
    m_zoom =
       static_cast<double>(widgetSize.GetHeight()) /
       imageSize.GetHeight();
 
-   // Left-align time axis
    m_offsetX = 0.0;
    m_offsetY = 0.0;
 
    ClampOffsets();
    Refresh();
 }
-
 
 void SpectrogramPanel::RebuildBitmap()
 {
@@ -493,6 +416,57 @@ void SpectrogramPanel::RebuildBitmap()
 
    m_bitmap = wxBitmap(img);
 }
+
+wxBitmap SpectrogramPanel::RenderCurrentViewToBitmap() const
+{
+   wxSize size = GetClientSize();
+   wxBitmap bmp(size.GetWidth(), size.GetHeight(), 24);
+
+   wxMemoryDC dc(bmp);
+   Render(dc, size);
+   dc.SelectObject(wxNullBitmap);
+
+   return bmp;
+}
+
+void SpectrogramPanel::Render(wxDC& dc, const wxSize& targetSize) const
+{
+   // ---- Background ----
+   wxColour bg(15, 15, 84);
+   dc.SetBackground(wxBrush(bg));
+   dc.Clear();
+
+   if (!m_bitmap.IsOk())
+      return;
+
+   // ---- Draw spectrogram ----
+   if (auto* gc = wxGraphicsContext::CreateFromUnknownDC(dc)) {
+      gc->Scale(m_zoom, m_zoom);
+      gc->Translate(m_offsetX / m_zoom, m_offsetY / m_zoom);
+
+      gc->DrawBitmap(
+         m_bitmap,
+         0, 0,
+         m_bitmap.GetWidth(),
+         m_bitmap.GetHeight());
+
+      delete gc;
+   }
+   else {
+      dc.SetUserScale(m_zoom, m_zoom);
+      dc.DrawBitmap(
+         m_bitmap,
+         m_offsetX / m_zoom,
+         m_offsetY / m_zoom,
+         false);
+   }
+
+   // ---- Overlays (screen space) ----
+   if (m_showNoteLines && !m_matrix.empty()) {
+      DrawNoteLines(dc, targetSize);
+   }
+}
+
 
 void SpectrogramPanel::OnRightClick(wxMouseEvent& event)
 {

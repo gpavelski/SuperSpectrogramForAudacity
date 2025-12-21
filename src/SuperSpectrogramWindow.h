@@ -44,10 +44,15 @@ private:
    // PrefsListener interface
    void UpdatePrefs() override;
 
-   void CreateControls(wxBoxSizer* mainSizer);
-   void OnThresholdChanged(wxCommandEvent& event);
+   void CreateControls(wxSizer* parentSizer);
+   void OnNoiseFloorChanged(wxCommandEvent& event);
 
-   wxChoice* mThresholdChoice = nullptr;
+   void OnExport(wxCommandEvent& event);
+   void ExportMatrixAsText();
+   void ExportViewAsPNG();
+
+   wxChoice* mNoiseFloorChoice = nullptr;
+   wxButton* mExportButton = nullptr;
 
 private:
 #ifdef __WXMSW__
@@ -58,7 +63,7 @@ private:
 
    size_t mDetailLevel = 7;
    size_t mDecimationLevel = 10;
-   size_t mLowerThreshold = -70;
+   size_t mNoiseFloor = -70;
 
    // Font for optional overlays (timestamps, peak labels, etc.)
    wxFont mFreqFont;

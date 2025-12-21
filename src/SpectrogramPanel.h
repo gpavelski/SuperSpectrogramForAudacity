@@ -28,6 +28,8 @@ public:
    // Note display functionality
    void EnableNoteLines(bool enable = true) { m_showNoteLines = enable; Refresh(); }
    void SetNoteFrequencyRange(double minFreq, double maxFreq);
+   wxBitmap RenderCurrentViewToBitmap() const;
+   void Render(wxDC& dc, const wxSize& targetSize) const;
 
 private:
    // Event handlers
@@ -37,8 +39,9 @@ private:
    void OnRightClick(wxMouseEvent& event);
    void OnWheel(wxMouseEvent& event);
    void OnEraseBackground(wxEraseEvent& event) { /* Prevent flicker */ }
-   void DrawNoteLabel(wxDC& dc, const wxString& label, double widgetY, const wxSize& widgetSize);
-   void DrawNoteLines(wxDC& dc);
+   void DrawNoteLabel(wxDC& dc, const wxString& label,
+      double widgetY, const wxSize& widgetSize) const;
+   void DrawNoteLines(wxDC& dc, const wxSize& targetSize) const;
    void ClampOffsets();
    void Clear();
 

@@ -29,6 +29,7 @@ the mouse around.
 
 
 #include "SuperSpectrogramWindow.h"
+#include <fstream>
 #include <wx/wx.h>
 #include "SpectrogramPanel.h"
 #include "STFTProcessor.h"     
@@ -40,7 +41,8 @@ the mouse around.
 //-----------------------------------------------------------------
 BEGIN_EVENT_TABLE(SuperSpectrogramPlotDialog, wxDialogWrapper)
 EVT_CLOSE(SuperSpectrogramPlotDialog::OnCloseWindow)
-EVT_CHOICE(wxID_ANY, SuperSpectrogramPlotDialog::OnThresholdChanged)
+EVT_CHOICE(wxID_ANY, SuperSpectrogramPlotDialog::OnNoiseFloorChanged)
+EVT_BUTTON(wxID_SAVE, SuperSpectrogramPlotDialog::OnExport)
 END_EVENT_TABLE()
 
 //-----------------------------------------------------------------
@@ -53,21 +55,30 @@ SuperSpectrogramPlotDialog::SuperSpectrogramPlotDialog(
    const TranslatableString& title,
    const wxPoint& pos)
    : PlotSuperSpectrogramBase{ project }
-   , wxDialogWrapper(parent, id, title, pos, wxSize(1000, 600),
+   , wxDialogWrapper(
+      parent,
+      id,
+      title,
+      pos,
+      wxSize(1000, 600),
       wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER | wxMAXIMIZE_BOX)
 {
    SetName();
 
    auto* mainSizer = new wxBoxSizer(wxVERTICAL);
 
+   // 1) Create toolbar (export + noise floor)
    CreateControls(mainSizer);
 
+   // 2) Create spectrogram panel ONCE
    mSpectrogramPanel = std::make_unique<SpectrogramPanel>(this);
    mSpectrogramPanel->EnableNoteLines(true);
+
    mainSizer->Add(mSpectrogramPanel.get(), 1, wxEXPAND | wxALL, 5);
 
    SetSizer(mainSizer);
 }
+
 
 SuperSpectrogramPlotDialog::~SuperSpectrogramPlotDialog() = default;
 
@@ -141,54 +152,131 @@ void SuperSpectrogramPlotDialog::Recalc()
       mDataLen,
       mDetailLevel,
       mDecimationLevel,
-      mLowerThreshold);
+      mNoiseFloor);
    PlotSTFTMatrix(mAnalyst->GetMatrix());
 }
 
-void SuperSpectrogramPlotDialog::CreateControls(wxBoxSizer* mainSizer)
+void SuperSpectrogramPlotDialog::CreateControls(wxSizer* parentSizer)
 {
-   auto* controlSizer = new wxBoxSizer(wxHORIZONTAL);
+   auto* toolbarSizer = new wxBoxSizer(wxHORIZONTAL);
 
-   controlSizer->Add(
-      new wxStaticText(this, wxID_ANY, _("Noise floor (dB):")),
-      0, wxALIGN_CENTER_VERTICAL | wxRIGHT, 8);
+   // Noise floor selector
+   toolbarSizer->Add(
+      new wxStaticText(this, wxID_ANY, _("Noise floor:")),
+      0, wxALIGN_CENTER_VERTICAL | wxLEFT | wxRIGHT, 5);
 
-   static const wxString choices[] = {
-      "-120", "-100", "-85", "-70", "-55"
-   };
+   mNoiseFloorChoice = new wxChoice(this, wxID_ANY);
 
-   mThresholdChoice = new wxChoice(
-      this, wxID_ANY,
-      wxDefaultPosition, wxDefaultSize,
-      WXSIZEOF(choices), choices);
+   mNoiseFloorChoice->Append("-100 dB", reinterpret_cast<void*>(-100));
+   mNoiseFloorChoice->Append("-85 dB", reinterpret_cast<void*>(-85));
+   mNoiseFloorChoice->Append("-70 dB", reinterpret_cast<void*>(-70));
+   mNoiseFloorChoice->Append("-55 dB", reinterpret_cast<void*>(-55));
+   mNoiseFloorChoice->Append("-30 dB", reinterpret_cast<void*>(-30));
 
-   // Default selection matches mLowerThreshold initial value
-   mThresholdChoice->SetStringSelection(
-      wxString::Format("%d", static_cast<int>(mLowerThreshold)));
+   mNoiseFloorChoice->SetSelection(2); // -70 dB default
+   mNoiseFloor = -70;
 
-   controlSizer->Add(mThresholdChoice, 0);
+   toolbarSizer->Add(mNoiseFloorChoice, 0, wxALIGN_CENTER_VERTICAL | wxRIGHT, 10);
 
-   mainSizer->Add(controlSizer, 0, wxLEFT | wxTOP | wxRIGHT, 8);
+   // Export button
+   mExportButton = new wxButton(this, wxID_SAVE, _("Export…"));
+   toolbarSizer->Add(mExportButton, 0, wxALIGN_CENTER_VERTICAL | wxRIGHT, 5);
+
+   toolbarSizer->AddStretchSpacer();
+
+   parentSizer->Add(toolbarSizer, 0, wxEXPAND | wxALL, 5);
 }
 
-void SuperSpectrogramPlotDialog::OnThresholdChanged(wxCommandEvent& event)
+void SuperSpectrogramPlotDialog::OnNoiseFloorChanged(wxCommandEvent&)
 {
-   if (!mThresholdChoice)
+   int sel = mNoiseFloorChoice->GetSelection();
+   if (sel == wxNOT_FOUND)
       return;
 
-   long value = 0;
-   if (!mThresholdChoice->GetStringSelection().ToLong(&value))
+   int value = static_cast<int>(
+      reinterpret_cast<intptr_t>(
+         mNoiseFloorChoice->GetClientData(sel)));
+
+   if (mNoiseFloor == value)
       return;
 
-   if (mLowerThreshold == value)
-      return; // no-op
-
-   mLowerThreshold = static_cast<int>(value);
-
-   // Recompute spectrogram with new threshold
+   mNoiseFloor = value;
    Recalc();
 }
 
+void SuperSpectrogramPlotDialog::OnExport(wxCommandEvent&)
+{
+   if (!mSpectrogramPanel || mMatrix.empty())
+      return;
+
+   wxArrayString choices;
+   choices.Add(_("Export matrix as text (.txt)"));
+   choices.Add(_("Export current view as image (.png)"));
+
+   wxSingleChoiceDialog dlg(
+      this,
+      _("Choose export format"),
+      _("Export Spectrogram"),
+      choices
+   );
+
+   if (dlg.ShowModal() != wxID_OK)
+      return;
+
+   if (dlg.GetSelection() == 0)
+      ExportMatrixAsText();
+   else
+      ExportViewAsPNG();
+}
+
+void SuperSpectrogramPlotDialog::ExportMatrixAsText()
+{
+   wxFileDialog dlg(
+      this,
+      _("Save spectrogram matrix"),
+      "",
+      "spectrogram.txt",
+      "Text files (*.txt)|*.txt",
+      wxFD_SAVE | wxFD_OVERWRITE_PROMPT
+   );
+
+   if (dlg.ShowModal() != wxID_OK)
+      return;
+
+   std::ofstream out(dlg.GetPath().ToStdString());
+   if (!out.is_open())
+      return;
+
+   for (const auto& column : mMatrix) {
+      for (size_t i = 0; i < column.size(); ++i) {
+         out << column[i];
+         if (i + 1 < column.size())
+            out << '\t';
+      }
+      out << '\n';
+   }
+}
+
+void SuperSpectrogramPlotDialog::ExportViewAsPNG()
+{
+   wxFileDialog dlg(
+      this,
+      _("Save spectrogram image"),
+      "",
+      "spectrogram.png",
+      "PNG files (*.png)|*.png",
+      wxFD_SAVE | wxFD_OVERWRITE_PROMPT
+   );
+
+   if (dlg.ShowModal() != wxID_OK)
+      return;
+
+   wxBitmap bmp = mSpectrogramPanel->RenderCurrentViewToBitmap();
+   if (!bmp.IsOk())
+      return;
+
+   bmp.SaveFile(dlg.GetPath(), wxBITMAP_TYPE_PNG);
+}
 
 //-----------------------------------------------------------------
 // PrefsListener interface
