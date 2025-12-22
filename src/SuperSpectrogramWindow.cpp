@@ -166,14 +166,13 @@ void SuperSpectrogramPlotDialog::CreateControls(wxSizer* parentSizer)
       0, wxALIGN_CENTER_VERTICAL | wxLEFT | wxRIGHT, 5);
 
    mNoiseFloorChoice = new wxChoice(this, wxID_ANY);
-
+   mNoiseFloorChoice->Append("-120 dB", reinterpret_cast<void*>(-120));
    mNoiseFloorChoice->Append("-100 dB", reinterpret_cast<void*>(-100));
    mNoiseFloorChoice->Append("-85 dB", reinterpret_cast<void*>(-85));
    mNoiseFloorChoice->Append("-70 dB", reinterpret_cast<void*>(-70));
    mNoiseFloorChoice->Append("-55 dB", reinterpret_cast<void*>(-55));
-   mNoiseFloorChoice->Append("-30 dB", reinterpret_cast<void*>(-30));
 
-   mNoiseFloorChoice->SetSelection(2); // -70 dB default
+   mNoiseFloorChoice->SetSelection(3); // -70 dB default
    mNoiseFloor = -70;
 
    toolbarSizer->Add(mNoiseFloorChoice, 0, wxALIGN_CENTER_VERTICAL | wxRIGHT, 10);
