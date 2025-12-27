@@ -13,6 +13,7 @@
 
 #include <vector>
 #include <functional>
+#include <unordered_map>
 
 class FFT_API SuperSpectrogramAnalyst
 {
@@ -25,7 +26,7 @@ public:
       const float *data,
       size_t dataLen,
       size_t detailLevel,
-      size_t decimationLevel,
+      size_t rate,
       size_t lowerThreshold
    );
 
@@ -35,8 +36,30 @@ public:
       return mMatrix;
    }
 
+   const double& GetTargetRate() const
+   {
+      return mTargetRate;
+   }
+
 private:
    double mRate;
    size_t mWindowSize;
+   double mTargetRate;
    std::vector<std::vector<double>> mMatrix;  // stores last computed spectrogram
+
+   // Maps detailLevel to the desired target sampling rate (decimated frequency)
+   const std::unordered_map<size_t, double> DETAIL_TO_DECIMATED_FREQ = {
+       {4, 551.25},
+       {5, 1102.5},
+       {6, 2205.0},
+       {7, 4410.0},
+       {8, 8820.0}
+   };
+
+   size_t computeDecimationLevel(
+      double inputRate,
+      double targetRate
+   );
+
+
 };

@@ -32,16 +32,39 @@ SuperSpectrogramAnalyst::~SuperSpectrogramAnalyst()
 {
 }
 
+size_t SuperSpectrogramAnalyst::computeDecimationLevel(double inputRate, double targetRate)
+{
+   if (targetRate <= 0.0) {
+      throw std::invalid_argument("targetRate must be > 0");
+   }
+
+   double ratio = inputRate / targetRate;
+   size_t decimation = static_cast<size_t>(std::round(ratio));
+
+   // enforce minimum of 1 (no decimation) to avoid invalid factors
+   return decimation < 1 ? 1 : decimation;
+}
+
 bool SuperSpectrogramAnalyst::Calculate(
    const float* data,
    size_t dataLen,
    size_t detailLevel,
-   size_t decimationLevel,
+   size_t frequencyRate,
    size_t lowerThreshold
 )
 {
    STFTProcessor stftProcessor(detailLevel);
    stftProcessor.setLowerThreshold(lowerThreshold);
+
+   auto it = DETAIL_TO_DECIMATED_FREQ.find(detailLevel);
+   if (it == DETAIL_TO_DECIMATED_FREQ.end()) {
+      return false;
+   }
+
+   mTargetRate = it->second;
+
+   size_t decimationLevel = computeDecimationLevel(frequencyRate, mTargetRate);
+
    auto spectrogram = stftProcessor.processFullSTFT(data, dataLen, decimationLevel);
 
    // Convert flat vector to 2D matrix

@@ -46,12 +46,14 @@ private:
 
    void CreateControls(wxSizer* parentSizer);
    void OnNoiseFloorChanged(wxCommandEvent& event);
+   void OnHighestNoteChanged(wxCommandEvent&);
 
    void OnExport(wxCommandEvent& event);
    void ExportMatrixAsText();
    void ExportViewAsPNG();
 
    wxChoice* mNoiseFloorChoice = nullptr;
+   wxChoice* mHighestNoteChoice = nullptr;
    wxButton* mExportButton = nullptr;
 
 private:
@@ -62,8 +64,13 @@ private:
 #endif
 
    size_t mDetailLevel = 7;
-   size_t mDecimationLevel = 10;
+   size_t mMaxFreq = 1;
    size_t mNoiseFloor = -70;
+
+   enum {
+      ID_NoiseFloorChoice = wxID_HIGHEST + 200,
+      ID_HighestNoteChoice
+   };
 
    // Font for optional overlays (timestamps, peak labels, etc.)
    wxFont mFreqFont;

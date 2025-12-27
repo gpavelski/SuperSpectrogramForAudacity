@@ -41,7 +41,8 @@ the mouse around.
 //-----------------------------------------------------------------
 BEGIN_EVENT_TABLE(SuperSpectrogramPlotDialog, wxDialogWrapper)
 EVT_CLOSE(SuperSpectrogramPlotDialog::OnCloseWindow)
-EVT_CHOICE(wxID_ANY, SuperSpectrogramPlotDialog::OnNoiseFloorChanged)
+EVT_CHOICE(ID_NoiseFloorChoice, SuperSpectrogramPlotDialog::OnNoiseFloorChanged)
+EVT_CHOICE(ID_HighestNoteChoice, SuperSpectrogramPlotDialog::OnHighestNoteChanged)
 EVT_BUTTON(wxID_SAVE, SuperSpectrogramPlotDialog::OnExport)
 END_EVENT_TABLE()
 
@@ -135,8 +136,8 @@ void SuperSpectrogramPlotDialog::PlotSTFTMatrix(
       return;
 
    mMatrix = matrix;
-   double maxFreq = mRate / (2.0 * mDecimationLevel);  // Nyquist frequency after decimation
-   mSpectrogramPanel->SetMatrix(mMatrix, maxFreq);
+   mMaxFreq = mAnalyst->GetTargetRate() / 2.0;
+   mSpectrogramPanel->SetMatrix(mMatrix, mMaxFreq);
    mSpectrogramPanel->ResetView();
 }
 
@@ -151,7 +152,7 @@ void SuperSpectrogramPlotDialog::Recalc()
    mAnalyst->Calculate(mData.get(),
       mDataLen,
       mDetailLevel,
-      mDecimationLevel,
+      mRate,
       mNoiseFloor);
    PlotSTFTMatrix(mAnalyst->GetMatrix());
 }
@@ -165,7 +166,7 @@ void SuperSpectrogramPlotDialog::CreateControls(wxSizer* parentSizer)
       new wxStaticText(this, wxID_ANY, _("Noise floor:")),
       0, wxALIGN_CENTER_VERTICAL | wxLEFT | wxRIGHT, 5);
 
-   mNoiseFloorChoice = new wxChoice(this, wxID_ANY);
+   mNoiseFloorChoice = new wxChoice(this, ID_NoiseFloorChoice);
    mNoiseFloorChoice->Append("-120 dB", reinterpret_cast<void*>(-120));
    mNoiseFloorChoice->Append("-100 dB", reinterpret_cast<void*>(-100));
    mNoiseFloorChoice->Append("-85 dB", reinterpret_cast<void*>(-85));
@@ -176,6 +177,23 @@ void SuperSpectrogramPlotDialog::CreateControls(wxSizer* parentSizer)
    mNoiseFloor = -70;
 
    toolbarSizer->Add(mNoiseFloorChoice, 0, wxALIGN_CENTER_VERTICAL | wxRIGHT, 10);
+
+   // Highest note selector
+   toolbarSizer->Add(
+      new wxStaticText(this, wxID_ANY, _("Highest Note:")),
+      0, wxALIGN_CENTER_VERTICAL | wxLEFT | wxRIGHT, 5);
+
+   mHighestNoteChoice = new wxChoice(this, ID_HighestNoteChoice);
+   mHighestNoteChoice->Append("C4", reinterpret_cast<void*>(4));
+   mHighestNoteChoice->Append("C5", reinterpret_cast<void*>(5));
+   mHighestNoteChoice->Append("C6", reinterpret_cast<void*>(6));
+   mHighestNoteChoice->Append("C7", reinterpret_cast<void*>(7));
+   mHighestNoteChoice->Append("C8", reinterpret_cast<void*>(8));
+
+   mHighestNoteChoice->SetSelection(3); // C7 default
+   mDetailLevel = 7;
+
+   toolbarSizer->Add(mHighestNoteChoice, 0, wxALIGN_CENTER_VERTICAL | wxRIGHT, 15);
 
    // Export button
    mExportButton = new wxButton(this, wxID_SAVE, _("Export…"));
@@ -200,6 +218,23 @@ void SuperSpectrogramPlotDialog::OnNoiseFloorChanged(wxCommandEvent&)
       return;
 
    mNoiseFloor = value;
+   Recalc();
+}
+
+void SuperSpectrogramPlotDialog::OnHighestNoteChanged(wxCommandEvent&)
+{
+   int sel = mHighestNoteChoice->GetSelection();
+   if (sel == wxNOT_FOUND)
+      return;
+
+   int value = static_cast<int>(
+      reinterpret_cast<intptr_t>(
+         mHighestNoteChoice->GetClientData(sel)));
+
+   if (mDetailLevel == value)
+      return;
+
+   mDetailLevel = value;
    Recalc();
 }
 
