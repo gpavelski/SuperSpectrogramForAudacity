@@ -61,36 +61,43 @@ std::vector<double> Decimator::process(const std::unique_ptr<float[]>& signal, s
 std::vector<double> Decimator::process(const float* signal, size_t length) {
    const size_t state_size = initial_offset + filter_order;
    const size_t buffer_size = length + state_size + 1;
-   const size_t output_size = static_cast<size_t>(
-      std::ceil(static_cast<double>(length) / decimation_factor));
 
-   // Use double buffers for precision (crucial!)
+   // FLOOR output size
+   const size_t output_size = length / decimation_factor;
+
    std::vector<double> X(buffer_size, 0.0);
    std::vector<double> Y(buffer_size, 0.0);
    std::vector<double> output;
    output.reserve(output_size);
 
-   // Initialize input buffer - convert float to double
+   // Convert input float -> double
    for (size_t i = filter_order + 1; i <= length + filter_order + 1; ++i) {
-      // Convert float to double at this stage
       X[i] = static_cast<double>(signal[i - filter_order - 1]);
    }
 
-   // Process samples - all calculations in double precision
    size_t st = initial_offset + filter_order;
-   for (size_t i = filter_order + 1; i < buffer_size; ++i) {
-      Y[i] = b_coeffs[0] * X[i];
+   size_t written = 0;
 
+   for (size_t i = filter_order + 1; i < buffer_size; ++i) {
+
+      Y[i] = b_coeffs[0] * X[i];
       for (size_t j = 1; j <= filter_order; ++j) {
          Y[i] += b_coeffs[j] * X[i - j];
          Y[i] -= a_coeffs[j] * Y[i - j];
       }
 
-      if (i == st) {
+      // push only if below target size
+      if (i == st && written < output_size) {
          output.push_back(Y[i]);
+         ++written;
          st += decimation_factor;
       }
+
+      // stop early if we already have the expected number of samples
+      if (written == output_size)
+         break;
    }
 
    return output;
 }
+
