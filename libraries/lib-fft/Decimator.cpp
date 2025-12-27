@@ -88,9 +88,17 @@ std::vector<double> Decimator::process(const float* signal, size_t length) {
 
       // push only if below target size
       if (i == st && written < output_size) {
-         output.push_back(Y[i]);
-         ++written;
-         st += decimation_factor;
+         if ((Y[i] > -1) && (Y[i] < 1)) {
+            output.push_back(Y[i]);
+            ++written;
+            st += decimation_factor;
+         }
+         else
+         {
+            output.push_back(0);
+            ++written;
+            st += decimation_factor;
+         }
       }
 
       // stop early if we already have the expected number of samples
