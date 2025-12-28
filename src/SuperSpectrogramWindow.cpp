@@ -83,14 +83,17 @@ SuperSpectrogramPlotDialog::SuperSpectrogramPlotDialog(
 
 SuperSpectrogramPlotDialog::~SuperSpectrogramPlotDialog() = default;
 
+bool SuperSpectrogramPlotDialog::IsAudioSelectionValid()
+{
+   return GetAudio();
+}
+
 //-----------------------------------------------------------------
 // Show / Hide dialog
 //-----------------------------------------------------------------
 bool SuperSpectrogramPlotDialog::Show(bool show)
 {
    if (show && !IsShown()) {
-      if (!GetAudio())
-         return false;
 
       // 1) Compute spectrogram (this fills the matrix)
       Recalc();
@@ -358,6 +361,13 @@ namespace {
          SuperSpectrogramTitle,
          wxPoint{ 150, 150 }
       );
+
+      if (!gSpectrogramDialog->IsAudioSelectionValid())
+      {
+         gSpectrogramDialog->Destroy();
+         gSpectrogramDialog = nullptr;
+         return;
+      }
 
       gSpectrogramDialog->Show(true);
    }

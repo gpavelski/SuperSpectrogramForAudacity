@@ -30,6 +30,7 @@ public:
    void SetNoteFrequencyRange(double minFreq, double maxFreq);
    wxBitmap RenderCurrentViewToBitmap() const;
    void Render(wxDC& dc, const wxSize& targetSize) const;
+   void Clear();
 
 private:
    // Event handlers
@@ -43,7 +44,6 @@ private:
       double widgetY, const wxSize& widgetSize) const;
    void DrawNoteLines(wxDC& dc, const wxSize& targetSize) const;
    void ClampOffsets();
-   void Clear();
 
    // Helper methods
    void RebuildBitmap();

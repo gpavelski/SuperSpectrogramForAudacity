@@ -24,12 +24,16 @@ public:
 
 protected:
    bool GetAudio();
+   size_t ComputeMaxSamples();
+   size_t ComputeMinSamples();
 
    AudacityProject* mProject;
    std::unique_ptr<SuperSpectrogramAnalyst> mAnalyst;
 
-   int mAxis;
    double mRate;
    size_t mDataLen;
    ArrayOf<float> mData;
+   double maxProcessingTime = 30.0;
+   double maxTargetRate = 8820.0;
+   size_t maxWindowSize = 4096;
 };

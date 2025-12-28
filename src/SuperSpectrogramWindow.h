@@ -29,6 +29,8 @@ public:
    // Override Show() to display dialog
    bool Show(bool show = true) override;
 
+   bool IsAudioSelectionValid();
+
    // Feed a 2D STFT / spectrogram matrix to the panel
    void PlotSTFTMatrix(const std::vector<std::vector<double>>& matrix);
 

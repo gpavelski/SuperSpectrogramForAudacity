@@ -30,7 +30,8 @@ bool PlotSuperSpectrogramBase::GetAudio()
    mDataLen = 0;
 
    int selcount = 0;
-   bool warning = false;
+   bool maxDataLenWarning = false;
+   bool minDataLenWarning = false;
    for (auto track : TrackList::Get(*mProject).Selected<const WaveTrack>())
    {
       auto& selectedRegion = ViewInfo::Get(*mProject).selectedRegion;
@@ -40,13 +41,25 @@ bool PlotSuperSpectrogramBase::GetAudio()
          mRate = track->GetRate();
          auto end = track->TimeToLongSamples(selectedRegion.t1());
          auto dataLen = end - start;
-         // Permit approximately 46.60 minutes of selected samples at
-         // a sampling frequency of 48 kHz (11.65 minutes at 192 kHz).
-         auto maxDataLen = size_t(2) << 26;
+         size_t maxDataLen = ComputeMaxSamples();
+         size_t minDataLen = ComputeMinSamples();
+         // Permit 30 seconds of processing at a decimated sample rate of 8.82 kHz
          if (dataLen > maxDataLen)
          {
-            warning = true;
+            maxDataLenWarning = true;
             mDataLen = maxDataLen;
+         }
+         // At least one window should be calculated at decimated sample rate of 8.82 kHz
+         else if (dataLen < minDataLen)
+         {
+            using namespace BasicUI;
+            ShowMessageBox(
+               XO("To plot the spectrogram, at least %zu samples must be selected.")
+               .Format(minDataLen),
+               MessageBoxOptions{}.Caption(XO("Error")).IconStyle(Icon::Error));
+            mData.reset();
+            mDataLen = 0;
+            return false;
          }
          else
             mDataLen = dataLen.as_size_t();
@@ -57,7 +70,7 @@ bool PlotSuperSpectrogramBase::GetAudio()
       {
          using namespace BasicUI;
          ShowMessageBox(
-            XO("To plot the spectrum, all selected tracks must have the same sample rate."),
+            XO("To plot the spectrogram, all selected tracks must have the same sample rate."),
             MessageBoxOptions{}.Caption(XO("Error")).IconStyle(Icon::Error));
          mData.reset();
          mDataLen = 0;
@@ -106,7 +119,7 @@ bool PlotSuperSpectrogramBase::GetAudio()
          mData[i] /= divisor;
    }
 
-   if (warning)
+   if (maxDataLenWarning)
    {
       auto msg =
          XO("Too much audio was selected. Only the first %.1f seconds of audio will be analyzed.")
@@ -114,4 +127,23 @@ bool PlotSuperSpectrogramBase::GetAudio()
       BasicUI::ShowMessageBox(msg);
    }
    return true;
+}
+
+size_t PlotSuperSpectrogramBase::ComputeMaxSamples()
+{
+   size_t maxSamplesAfterDecimation = static_cast<size_t>(maxProcessingTime * maxTargetRate);
+   double minDecimationRatio = mRate / maxTargetRate;
+   size_t maxNumberOfSamples = static_cast<size_t>(maxSamplesAfterDecimation * minDecimationRatio);
+
+   return maxNumberOfSamples;
+}
+
+// At least one window should be computed for a decimated rate of 8820 Hz;
+// That would represent 2 windows at 4410 Hz, 4 windows at 2205 Hz and so on.
+size_t PlotSuperSpectrogramBase::ComputeMinSamples()
+{
+   double minDecimationRatio = mRate / maxTargetRate;
+   size_t minNumberOfSamples = static_cast<size_t>(maxWindowSize * minDecimationRatio);
+
+   return minNumberOfSamples;
 }
