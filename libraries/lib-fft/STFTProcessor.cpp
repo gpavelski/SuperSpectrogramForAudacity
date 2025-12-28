@@ -161,18 +161,14 @@ std::vector<double> STFTProcessor::resize_signal(
 
 
 std::vector<double> STFTProcessor::processFullSTFT(
-       const float * data,
-       size_t dataLen,
-       size_t decimationLevel) {
-    Decimator decimator(decimationLevel);
-    auto decimatedSignal = decimator.process(data, dataLen);
+    const std::vector<double>& data) {
     
-    int signal_length = decimatedSignal.size();
+    int signal_length = data.size();
     int numSegments = std::ceil(static_cast<double>(signal_length) / windowLength);
     int resized_length = numSegments * windowLength;
     
     std::vector<double> spectrogram(sigma * resized_length, -INFINITY);
-    std::vector<double> resizedSignal = resize_signal(decimatedSignal, resized_length);
+    std::vector<double> resizedSignal = resize_signal(data, resized_length);
 
     FFTWContainer fftContainer(numSegments, windowLength);
 

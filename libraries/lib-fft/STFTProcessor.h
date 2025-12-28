@@ -30,9 +30,8 @@ public:
     std::vector<double> computeGaussianWindow() const;
 
     std::vector<double> processFullSTFT(
-        const float* data,
-        size_t dataLen,
-        size_t decimationLevel);
+       const std::vector<double>& data
+    );
 
     int getSigma() const {
         return sigma;

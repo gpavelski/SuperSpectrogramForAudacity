@@ -18,9 +18,6 @@
 class FFT_API SuperSpectrogramAnalyst
 {
 public:
-   SuperSpectrogramAnalyst();
-   ~SuperSpectrogramAnalyst();
-
    // Return true if successful
    bool Calculate(
       const float *data,
@@ -42,8 +39,6 @@ public:
    }
 
 private:
-   double mRate;
-   size_t mWindowSize;
    double mTargetRate;
    std::vector<std::vector<double>> mMatrix;  // stores last computed spectrogram
 
@@ -55,11 +50,4 @@ private:
        {7, 4410.0},
        {8, 8820.0}
    };
-
-   size_t computeDecimationLevel(
-      double inputRate,
-      double targetRate
-   );
-
-
 };

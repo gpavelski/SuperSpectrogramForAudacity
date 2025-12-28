@@ -8,7 +8,7 @@
 
 class Decimator {
 public:
-   Decimator(int decimationFactor = 10);
+   Decimator(double frequencyRate, double targetRate);
 
    std::vector<double> process(const double* signal, size_t length) {
       return processImpl(signal, length);
@@ -36,42 +36,56 @@ public:
 private:
    // Internal template implementation
    template<typename T>
-   std::vector<double> processImpl(const T* signal, size_t length) {
-      const size_t state_size = initial_offset + filter_order;
-      const size_t buffer_size = length + state_size + 1;
-      const size_t output_size = length / decimation_factor;
+   std::vector<double> processImpl(const T* signal, size_t length)
+   {
+      const double start = initial_offset + filter_order;
 
-      std::vector<double> X(buffer_size, 0.0);
-      std::vector<double> Y(buffer_size, 0.0);
+      // Estimate output length
+      const size_t outputSize = static_cast<size_t>(length / step);
+
+      std::vector<double> X(length + filter_order + 2, 0.0); // padded
+      std::vector<double> Y(length + filter_order + 2, 0.0);
       std::vector<double> output;
-      output.reserve(output_size);
+      output.reserve(outputSize);
 
-      // Convert input to double
-      for (size_t i = filter_order + 1; i <= length + filter_order + 1; ++i) {
-         X[i] = static_cast<double>(signal[i - filter_order - 1]);
-      }
+      // Copy & shift into padded buffer
+      for (size_t i = 0; i < length; ++i)
+         X[i + filter_order + 1] = static_cast<double>(signal[i]);
 
-      size_t st = initial_offset + filter_order;
-      size_t written = 0;
-
-      for (size_t i = filter_order + 1; i < buffer_size; ++i) {
+      // Filter everything (as before; unchanged)
+      for (size_t i = filter_order + 1; i < X.size(); ++i) {
          Y[i] = b_coeffs[0] * X[i];
          for (size_t j = 1; j <= filter_order; ++j) {
             Y[i] += b_coeffs[j] * X[i - j];
             Y[i] -= a_coeffs[j] * Y[i - j];
          }
+      }
 
-         if (i == st && written < output_size) {
-            output.push_back((Y[i] > -1 && Y[i] < 1) ? Y[i] : 0.0);
-            ++written;
-            st += decimation_factor;
-         }
+      // FRACTIONAL DECIMATION: sample at non-integer positions
+      double pos = start;
+      for (size_t n = 0; n < outputSize; ++n) {
+         if (pos + 1 >= Y.size())
+            break;
 
-         if (written == output_size) break;
+         const double y = linearInterp(Y, pos);
+         output.push_back((y > -1.0 && y < 1.0) ? y : 0.0);
+
+         pos += step;
       }
 
       return output;
    }
+
+   inline double linearInterp(const std::vector<double>& buf, double idx) {
+      size_t i = (size_t)idx;
+      double frac = idx - i;
+      return buf[i] * (1.0 - frac) + buf[i + 1] * frac;
+   }
+
+   double computeDecimationLevel(
+      double inputRate,
+      double targetRate
+   ) const;
 
    const std::vector<double> b_coeffs{
        3.58632432538361e-09 , 2.86905946030689e-08 , 1.00417081110741e-07 ,
@@ -87,7 +101,7 @@ private:
 
    const int filter_order = 8;
    const int initial_offset = 32;
-   int decimation_factor;
+   double step;
 };
 
 #endif // DECIMATOR_H
