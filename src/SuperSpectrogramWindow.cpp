@@ -236,6 +236,11 @@ void SuperSpectrogramPlotDialog::OnHighestNoteChanged(wxCommandEvent&)
 
    mDetailLevel = value;
    Recalc();
+   ApplyDataDrivenMinSize();
+   Layout();
+   Fit();
+   Centre();
+
 }
 
 void SuperSpectrogramPlotDialog::OnExport(wxCommandEvent&)

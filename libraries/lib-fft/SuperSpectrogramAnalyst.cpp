@@ -72,7 +72,7 @@ bool SuperSpectrogramAnalyst::Calculate(
    int rows = 8 * sigma;
    int cols = spectrogram.size() / rows;
 
-   mMatrix.resize(rows, std::vector<double>(cols));
+   mMatrix.assign(rows, std::vector<double>(cols));
 
    for (int col = 0; col < cols; ++col) {
       for (int row = 0; row < rows; ++row) {

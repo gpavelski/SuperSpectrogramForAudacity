@@ -64,7 +64,7 @@ private:
 #endif
 
    size_t mDetailLevel = 7;
-   size_t mMaxFreq = 1;
+   double mMaxFreq = 1.0;
    size_t mNoiseFloor = -70;
 
    enum {
