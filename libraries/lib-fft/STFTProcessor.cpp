@@ -159,22 +159,38 @@ std::vector<double> STFTProcessor::resize_signal(
     return resized_signal;
 }
 
+std::vector<std::vector<double>> STFTProcessor::processFullSTFTMatrix(
+   const std::vector<double>& data)
+{
+   int signal_length = static_cast<int>(data.size());
+   int numSegments = std::ceil(static_cast<double>(signal_length) / windowLength);
+   resizedLength = numSegments * windowLength;
 
-std::vector<double> STFTProcessor::processFullSTFT(
-    const std::vector<double>& data) {
-    
-    int signal_length = data.size();
-    int numSegments = std::ceil(static_cast<double>(signal_length) / windowLength);
-    int resized_length = numSegments * windowLength;
-    
-    std::vector<double> spectrogram(sigma * resized_length, -INFINITY);
-    std::vector<double> resizedSignal = resize_signal(data, resized_length);
+   // Resize signal to match integer number of segments
+   std::vector<double> resizedSignal = resize_signal(data, resizedLength);
 
-    FFTWContainer fftContainer(numSegments, windowLength);
+   // Spectrogram stored as flat vector
+   std::vector<double> flatSpectrogram(sigma * resizedLength, -INFINITY);
 
-    processWindows(spectrogram, resizedSignal, numSegments, fftContainer.data());
-    removeEdgeEffects(spectrogram, resizedSignal, numSegments, fftContainer.data());
+   FFTWContainer fftContainer(numSegments, windowLength);
 
-    return spectrogram;
+   processWindows(flatSpectrogram, resizedSignal, numSegments, fftContainer.data());
+   removeEdgeEffects(flatSpectrogram, resizedSignal, numSegments, fftContainer.data());
+
+   // Convert to 2D matrix: 
+   int rows = sigma * 8;
+   int cols = static_cast<int>(flatSpectrogram.size()) / rows;
+
+   std::vector<std::vector<double>> matrix(rows, std::vector<double>(cols));
+
+   for (int col = 0; col < cols; ++col) {
+      for (int row = 0; row < rows; ++row) {
+         size_t idx = col * rows + row;
+         matrix[row][col] = flatSpectrogram[idx];
+      }
+   }
+
+   return matrix;
 }
+
 

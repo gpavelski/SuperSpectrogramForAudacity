@@ -29,8 +29,8 @@ public:
     // Main interface methods
     std::vector<double> computeGaussianWindow() const;
 
-    std::vector<double> processFullSTFT(
-       const std::vector<double>& data
+    std::vector<std::vector<double>> processFullSTFTMatrix(
+          const std::vector<double>& data
     );
 
     int getSigma() const {
@@ -53,6 +53,10 @@ public:
         return windowSpectrogramSize;
     }
 
+    int getResizedSignalLength() const {
+       return resizedLength;
+    }
+
 private:
     const int sigmaExp;
     const int sigma;
@@ -64,6 +68,7 @@ private:
     const std::vector<double> gwin;
     int lowerThreshold = -70;
     const int upperThreshold = 0;
+    int resizedLength = 0;
 
     std::vector<int> computeSignalCursors(
         int numSegments,

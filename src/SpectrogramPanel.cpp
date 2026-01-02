@@ -39,12 +39,16 @@ std::vector<wxColour> SpectrogramPanel::MakeJetColormap()
    return cmap;
 }
 
-void SpectrogramPanel::SetMatrix(const std::vector<std::vector<double>>& m, double maxFreq)
+void SpectrogramPanel::SetData(const std::vector<std::vector<double>>& m,
+       double maxFreq,
+       size_t numSamples
+)
 {
    m_matrix = m;
    m_maxFreq = maxFreq;
+   m_signalLength = numSamples;
 
-   RebuildBitmap();  // min/max computed inside RebuildBitmap
+   BuildBitmap();
    ResetView();
 }
 
@@ -237,7 +241,7 @@ double SpectrogramPanel::FreqToWidgetY(double freq, int widgetHeight) const
    return binRel * widgetHeight;
 }
 
-void SpectrogramPanel::RebuildBitmap()
+void SpectrogramPanel::BuildBitmap()
 {
    if (m_matrix.empty() || m_matrix[0].empty()) {
       // Create a placeholder bitmap
@@ -313,8 +317,7 @@ wxBitmap SpectrogramPanel::RenderCurrentViewToBitmap() const
 
 void SpectrogramPanel::Render(wxDC& dc, const wxSize& target) const
 {
-   // ---- CLEAR THE BACK BUFFER ----
-   dc.SetBackground(*wxBLACK_BRUSH);   // or *wxWHITE_BRUSH if preferred
+   dc.SetBackground(*wxBLACK_BRUSH);
    dc.Clear();
 
    if (!m_bitmap.IsOk())
@@ -344,6 +347,9 @@ void SpectrogramPanel::Render(wxDC& dc, const wxSize& target) const
 
    if (m_showNoteLines)
       DrawNoteLines(dc, target);
+
+   if (m_showTimeTicks)
+      DrawTimeTicks(dc, target);
 }
 
 void SpectrogramPanel::OnRightClick(wxMouseEvent& event)
@@ -366,4 +372,66 @@ void SpectrogramPanel::ResetView()
    m_viewRightFrame = (double)totalFrames;
 
    Refresh(false);
+}
+
+void SpectrogramPanel::DrawTimeTicks(wxDC& dc, const wxSize& size) const
+{
+   if (!m_showTimeTicks || m_signalLength == 0 || m_matrix.empty())
+      return;
+
+   dc.SetFont(wxFont(8, wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL));
+   dc.SetTextForeground(*wxWHITE);
+
+   const double totalDuration = static_cast<double>(m_signalLength) / (2 * m_maxFreq);
+
+   const double viewLeftTime = (m_viewLeftFrame / m_matrix[0].size()) * totalDuration;
+   const double viewRightTime = (m_viewRightFrame / m_matrix[0].size()) * totalDuration;
+
+   const double viewWidthSec = viewRightTime - viewLeftTime;
+
+   // --- Compute a nice tick interval ---
+   static const double tickSteps[] = {0.05, 0.1, 0.5, 1, 2, 5, 10, 20, 30, 60, 120, 300, 600, 1800 }; // in seconds
+   double targetPixelsPerTick = 80.0; // aim for ~80 px between ticks
+   double secondsPerPixel = viewWidthSec / size.GetWidth();
+   double bestTick = tickSteps[0];
+
+   for (double t : tickSteps)
+      if (t / secondsPerPixel >= targetPixelsPerTick) {
+         bestTick = t;
+         break;
+      }
+
+   // Compute first tick >= viewLeftTime
+   double tick = std::ceil(viewLeftTime / bestTick) * bestTick;
+
+   while (tick <= viewRightTime) {
+      // Convert time to pixel x
+      double fx = (tick - viewLeftTime) / viewWidthSec * size.GetWidth();
+
+      // Draw label only (no line)
+      wxString label;
+      if (tick < 60) {
+         label = wxString::Format("%g", tick); // %g automatically trims
+      }
+      else {
+         label.Printf("%.0f:%02.0f", std::floor(tick / 60.0), std::fmod(tick, 60.0));
+      }
+
+      wxCoord tw, th;
+      dc.GetTextExtent(label, &tw, &th);
+
+      int x = static_cast<int>(fx - tw / 2);
+      int y = size.GetHeight() - th - 2;
+
+      // Draw black background for readability
+      dc.SetBrush(*wxBLACK_BRUSH);
+      dc.SetPen(*wxTRANSPARENT_PEN);
+      dc.DrawRectangle(x - 2, y - 1, tw + 4, th + 2);
+
+      // Draw text
+      dc.SetPen(*wxWHITE_PEN);
+      dc.DrawText(label, x, y);
+
+      tick += bestTick;
+   }
 }

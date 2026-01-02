@@ -16,7 +16,9 @@ public:
    // --------------------------
    // Public API
    // --------------------------
-   void SetMatrix(const std::vector<std::vector<double>>& matrix, double maxFreq);
+   void SetData(const std::vector<std::vector<double>>& matrix,
+          double maxFreq,
+          size_t numSamples);
    void ResetView();
    void Clear();
 
@@ -27,6 +29,7 @@ public:
 
    // Note line display
    void EnableNoteLines(bool enable = true) { m_showNoteLines = enable; Refresh(); }
+   void EnableTimeTicks(bool enable = true) { m_showTimeTicks = enable; Refresh(); }
 
    // Render
    wxBitmap RenderCurrentViewToBitmap() const;
@@ -46,9 +49,10 @@ private:
    // Internal helpers
    // --------------------------
    void DrawNoteLines(wxDC& dc, const wxSize& targetSize) const;
+   void DrawTimeTicks(wxDC& dc, const wxSize& targetSize) const;
    void ClampViewRanges();
    double FreqToWidgetY(double freq, int widgetHeight) const;
-   void RebuildBitmap();
+   void BuildBitmap();
 
    static std::vector<wxColour> MakeJetColormap();
 
@@ -76,6 +80,10 @@ private:
    // Min/max values in the current matrix
    double m_minValue = 0.0;
    double m_maxValue = 1.0;
+
+   // Time tick data
+   bool m_showTimeTicks = false;
+   size_t m_signalLength = 0;       // length of the resampled signal
 
    // --------------------------
    // Musical note reference

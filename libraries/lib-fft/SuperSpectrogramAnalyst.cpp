@@ -31,9 +31,7 @@ bool SuperSpectrogramAnalyst::Calculate(
 )
 {
    auto it = DETAIL_TO_DECIMATED_FREQ.find(detailLevel);
-   if (it == DETAIL_TO_DECIMATED_FREQ.end()) {
-      return false;
-   }
+   if (it == DETAIL_TO_DECIMATED_FREQ.end()) return false;
 
    mTargetRate = it->second;
 
@@ -42,21 +40,11 @@ bool SuperSpectrogramAnalyst::Calculate(
 
    STFTProcessor stftProcessor(detailLevel);
    stftProcessor.setLowerThreshold(lowerThreshold);
-   auto spectrogram = stftProcessor.processFullSTFT(decimatedSignal);
 
-   // Convert flat vector to 2D matrix
-   int sigma = stftProcessor.getSigma();
-   int rows = 8 * sigma;
-   int cols = spectrogram.size() / rows;
-
-   mMatrix.assign(rows, std::vector<double>(cols));
-
-   for (int col = 0; col < cols; ++col) {
-      for (int row = 0; row < rows; ++row) {
-         size_t idx = col * rows + row;
-         mMatrix[row][col] = spectrogram[idx];
-      }
-   }
+   // <-- NEW: directly get 2D matrix
+   mMatrix = stftProcessor.processFullSTFTMatrix(decimatedSignal);
+   mSignalLength = stftProcessor.getResizedSignalLength();
 
    return true;
 }
+

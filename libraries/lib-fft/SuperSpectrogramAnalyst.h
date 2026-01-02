@@ -38,8 +38,14 @@ public:
       return mTargetRate;
    }
 
+   const size_t GetSignalLength() const
+   {
+      return mSignalLength;
+   }
+
 private:
    double mTargetRate;
+   int mSignalLength;
    std::vector<std::vector<double>> mMatrix;  // stores last computed spectrogram
 
    // Maps detailLevel to the desired target sampling rate (decimated frequency)

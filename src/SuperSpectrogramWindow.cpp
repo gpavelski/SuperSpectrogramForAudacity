@@ -74,6 +74,7 @@ SuperSpectrogramPlotDialog::SuperSpectrogramPlotDialog(
    // 2) Create spectrogram panel ONCE
    mSpectrogramPanel = std::make_unique<SpectrogramPanel>(this);
    mSpectrogramPanel->EnableNoteLines(true);
+   mSpectrogramPanel->EnableTimeTicks(true);
 
    mainSizer->Add(mSpectrogramPanel.get(), 1, wxEXPAND | wxALL, 5);
 
@@ -140,7 +141,8 @@ void SuperSpectrogramPlotDialog::PlotSTFTMatrix(
 
    mMatrix = matrix;
    mMaxFreq = mAnalyst->GetTargetRate() / 2.0;
-   mSpectrogramPanel->SetMatrix(mMatrix, mMaxFreq);
+   mNumSamples = mAnalyst->GetSignalLength();
+   mSpectrogramPanel->SetData(mMatrix, mMaxFreq, mNumSamples);
    mSpectrogramPanel->ResetView();
 }
 

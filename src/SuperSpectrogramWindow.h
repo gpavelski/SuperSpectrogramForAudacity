@@ -60,6 +60,7 @@ private:
 
 private:
    size_t mDetailLevel = 7;
+   size_t mNumSamples = 0;
    double mMaxFreq = 1.0;
    size_t mNoiseFloor = -70;
 
