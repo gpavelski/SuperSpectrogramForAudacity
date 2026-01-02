@@ -284,13 +284,13 @@ double SpectrogramPanel::FreqToWidgetY(double freq, int widgetHeight) const
       return -1;
 
    const int rows = m_bitmap.GetHeight();
-   const double fNyq = m_maxFreq;   // IMPORTANT: this must be Nyquist
+   const double fNyq = m_maxFreq;
 
    if (freq < 0.0 || freq > fNyq)
       return -1;
 
    // Frequency -> bin center
-   const double binIndex = (freq / fNyq) * rows - 0.5;
+   const double binIndex = (freq / fNyq) * rows + 0.5;
 
    // Clip to valid bin range
    if (binIndex < m_viewTopBin || binIndex > m_viewBottomBin)
