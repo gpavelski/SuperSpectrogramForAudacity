@@ -1,3 +1,22 @@
+/**********************************************************************
+
+  Audacity: A Digital Audio Editor
+
+  SpectrogramPanel.cpp
+
+  Guilherme Pavelski
+
+*******************************************************************//**
+
+\class SpectrogramPanel
+\brief Responsible for the steps of computing an STFT.
+
+wxPanel responsible for rendering a spectrogram bitmap, handling
+user interaction (pan, zoom, reset), and drawing auxiliary overlays
+such as note lines and time ticks.
+
+*//*******************************************************************/
+
 #include "SpectrogramPanel.h"
 #include <wx/dcclient.h>
 #include <wx/dcmemory.h>
@@ -14,7 +33,9 @@ EVT_RIGHT_DOWN(SpectrogramPanel::OnRightClick)
 EVT_MOUSEWHEEL(SpectrogramPanel::OnWheel)
 wxEND_EVENT_TABLE()
 
-// Update the constructor to use the new static data:
+//----------------------------------------------------------------------
+// Constructs the spectrogram panel and initializes rendering defaults
+//----------------------------------------------------------------------
 SpectrogramPanel::SpectrogramPanel(wxWindow* parent)
    : wxPanel(parent), m_showNoteLines(false)
 {
@@ -22,6 +43,9 @@ SpectrogramPanel::SpectrogramPanel(wxWindow* parent)
    SetDoubleBuffered(true);
 }
 
+//----------------------------------------------------------------------
+// Generates a 256-entry Jet-style colormap for value-to-color mapping
+//----------------------------------------------------------------------
 std::vector<wxColour> SpectrogramPanel::MakeJetColormap()
 {
    std::vector<wxColour> cmap(256);
@@ -39,6 +63,10 @@ std::vector<wxColour> SpectrogramPanel::MakeJetColormap()
    return cmap;
 }
 
+//----------------------------------------------------------------------
+// Sets the spectrogram data matrix and associated metadata, then
+// rebuilds the backing bitmap and resets the view extents
+//----------------------------------------------------------------------
 void SpectrogramPanel::SetData(const std::vector<std::vector<double>>& m,
        double maxFreq,
        size_t numSamples
@@ -52,6 +80,9 @@ void SpectrogramPanel::SetData(const std::vector<std::vector<double>>& m,
    ResetView();
 }
 
+//----------------------------------------------------------------------
+// Clears all spectrogram data and replaces it with a placeholder bitmap
+//----------------------------------------------------------------------
 void SpectrogramPanel::Clear()
 {
    // Clear the matrix
@@ -68,12 +99,29 @@ void SpectrogramPanel::Clear()
    Refresh();
 }
 
+//----------------------------------------------------------------------
+// Handles paint events by rendering the current view to the panel
+//----------------------------------------------------------------------
 void SpectrogramPanel::OnPaint(wxPaintEvent&)
 {
    wxAutoBufferedPaintDC dc(this);
    Render(dc, GetClientSize());
 }
 
+//----------------------------------------------------------------------
+// Handles resize events by triggering a repaint when data is present
+//----------------------------------------------------------------------
+void SpectrogramPanel::OnSize(wxSizeEvent& event)
+{
+   if (!m_matrix.empty() && m_bitmap.IsOk()) {
+      Refresh();
+   }
+   event.Skip();
+}
+
+//----------------------------------------------------------------------
+// Renders horizontal musical note reference lines and labels
+//----------------------------------------------------------------------
 void SpectrogramPanel::DrawNoteLines(wxDC& dc, const wxSize& size) const
 {
    if (m_matrix.empty()) return;
@@ -114,110 +162,10 @@ void SpectrogramPanel::DrawNoteLines(wxDC& dc, const wxSize& size) const
    }
 }
 
-void SpectrogramPanel::OnSize(wxSizeEvent& event)
-{
-   if (!m_matrix.empty() && m_bitmap.IsOk()) {
-         Refresh();
-   }
-   event.Skip();
-}
-
-void SpectrogramPanel::OnWheel(wxMouseEvent& event)
-{
-   if (m_matrix.empty()) return;
-
-   double factor = (event.GetWheelRotation() > 0) ? 0.8 : 1.25; // 20% zoom
-
-   int mouseY = event.GetY();
-   int mouseX = event.GetX();
-   wxSize size = GetClientSize();
-
-   // Mouse percentage in window
-   double fy = (double)mouseY / size.GetHeight();
-   double fx = (double)mouseX / size.GetWidth();
-
-   // Current ranges
-   double height = m_viewBottomBin - m_viewTopBin;
-   double width = m_viewRightFrame - m_viewLeftFrame;
-
-   // New ranges
-   double newHeight = height * factor;
-   double newWidth = width * factor;
-
-   // Anchor at mouse position
-   m_viewTopBin += (height - newHeight) * fy;
-   m_viewBottomBin = m_viewTopBin + newHeight;
-
-   m_viewLeftFrame += (width - newWidth) * fx;
-   m_viewRightFrame = m_viewLeftFrame + newWidth;
-
-   ClampViewRanges();
-   Refresh();
-}
-
-void SpectrogramPanel::ClampViewRanges()
-{
-   if (m_matrix.empty()) return;
-
-   const int totalBins = (int)m_matrix.size();
-   const int totalFrames = (int)m_matrix[0].size();
-
-   // Vertical clamp (frequency bins)
-   if (m_viewTopBin < 0) m_viewTopBin = 0;
-   if (m_viewBottomBin > totalBins) m_viewBottomBin = totalBins;
-   if (m_viewBottomBin - m_viewTopBin < 2) {
-      m_viewBottomBin = m_viewTopBin + 2; // minimum 2 bins
-   }
-
-   // Horizontal clamp (time frames)
-   if (m_viewLeftFrame < 0) m_viewLeftFrame = 0;
-   if (m_viewRightFrame > totalFrames) m_viewRightFrame = totalFrames;
-   if (m_viewRightFrame - m_viewLeftFrame < 2) {
-      m_viewRightFrame = m_viewLeftFrame + 2; // minimum 2 frames
-   }
-}
-
-void SpectrogramPanel::OnMouse(wxMouseEvent& event)
-{
-   if (!m_bitmap.IsOk()) {
-      event.Skip();
-      return;
-   }
-
-   if (event.LeftDown()) {
-      m_lastMouse = event.GetPosition();
-      CaptureMouse();
-   }
-   else if (event.LeftUp()) {
-      if (HasCapture()) ReleaseMouse();
-   }
-      else if (event.Dragging() && event.LeftIsDown())
-      {
-         wxPoint pos = event.GetPosition();
-         wxPoint delta = pos - m_lastMouse;
-         m_lastMouse = pos;
-
-         wxSize size = GetClientSize();
-
-         // Current ranges
-         double height = m_viewBottomBin - m_viewTopBin;
-         double width = m_viewRightFrame - m_viewLeftFrame;
-
-         // Convert pixel delta to data delta
-         double dx = (double)delta.x / size.GetWidth() * width;
-         double dy = (double)delta.y / size.GetHeight() * height;
-
-         m_viewLeftFrame -= dx;
-         m_viewRightFrame -= dx;
-
-         m_viewTopBin -= dy;
-         m_viewBottomBin -= dy;
-
-         ClampViewRanges();
-         Refresh();
-      }
-}
-
+//----------------------------------------------------------------------
+// Converts a frequency value (Hz) to a Y coordinate in widget space,
+// accounting for the current vertical view range
+//----------------------------------------------------------------------
 double SpectrogramPanel::FreqToWidgetY(double freq, int widgetHeight) const
 {
    const int rows = m_bitmap.GetHeight();
@@ -241,6 +189,66 @@ double SpectrogramPanel::FreqToWidgetY(double freq, int widgetHeight) const
    return binRel * widgetHeight;
 }
 
+//----------------------------------------------------------------------
+// Renders the spectrogram view (including overlays) into the target DC
+//----------------------------------------------------------------------
+void SpectrogramPanel::Render(wxDC& dc, const wxSize& target) const
+{
+   dc.SetBackground(*wxBLACK_BRUSH);
+   dc.Clear();
+
+   if (!m_bitmap.IsOk())
+      return;
+
+   const int srcX = (int)m_viewLeftFrame;
+   const int srcY = (int)m_viewTopBin;
+   const int srcW = (int)(m_viewRightFrame - m_viewLeftFrame);
+   const int srcH = (int)(m_viewBottomBin - m_viewTopBin);
+
+   wxBitmap sub = m_bitmap.GetSubBitmap(
+      wxRect(srcX, srcY, std::max(1, srcW), std::max(1, srcH))
+   );
+
+   wxMemoryDC srcDC;
+   srcDC.SelectObject(sub);
+
+   dc.StretchBlit(
+      0, 0,
+      target.GetWidth(), target.GetHeight(),
+      &srcDC,
+      0, 0,
+      srcW, srcH
+   );
+
+   srcDC.SelectObject(wxNullBitmap);
+
+   if (m_showNoteLines)
+      DrawNoteLines(dc, target);
+
+   if (m_showTimeTicks)
+      DrawTimeTicks(dc, target);
+}
+
+//----------------------------------------------------------------------
+// Renders the currently visible spectrogram region into a bitmap,
+// used primarily for exporting the view as an image
+//----------------------------------------------------------------------
+wxBitmap SpectrogramPanel::RenderCurrentViewToBitmap() const
+{
+   wxSize size = GetClientSize();
+   wxBitmap bmp(size.GetWidth(), size.GetHeight(), 24);
+
+   wxMemoryDC dc(bmp);
+   Render(dc, size);
+   dc.SelectObject(wxNullBitmap);
+
+   return bmp;
+}
+
+//----------------------------------------------------------------------
+// Builds the full-resolution backing bitmap from the spectrogram matrix,
+// performing value normalization and colormap mapping
+//----------------------------------------------------------------------
 void SpectrogramPanel::BuildBitmap()
 {
    if (m_matrix.empty() || m_matrix[0].empty()) {
@@ -303,61 +311,115 @@ void SpectrogramPanel::BuildBitmap()
    m_bitmap = wxBitmap(img);
 }
 
-wxBitmap SpectrogramPanel::RenderCurrentViewToBitmap() const
+//----------------------------------------------------------------------
+// Handles mouse wheel input to perform zooming centered at the cursor
+//----------------------------------------------------------------------
+void SpectrogramPanel::OnWheel(wxMouseEvent& event)
 {
+   if (m_matrix.empty()) return;
+
+   double factor = (event.GetWheelRotation() > 0) ? 0.8 : 1.25; // 20% zoom
+
+   int mouseY = event.GetY();
+   int mouseX = event.GetX();
    wxSize size = GetClientSize();
-   wxBitmap bmp(size.GetWidth(), size.GetHeight(), 24);
 
-   wxMemoryDC dc(bmp);
-   Render(dc, size);
-   dc.SelectObject(wxNullBitmap);
+   // Mouse percentage in window
+   double fy = (double)mouseY / size.GetHeight();
+   double fx = (double)mouseX / size.GetWidth();
 
-   return bmp;
+   // Current ranges
+   double height = m_viewBottomBin - m_viewTopBin;
+   double width = m_viewRightFrame - m_viewLeftFrame;
+
+   // New ranges
+   double newHeight = height * factor;
+   double newWidth = width * factor;
+
+   // Anchor at mouse position
+   m_viewTopBin += (height - newHeight) * fy;
+   m_viewBottomBin = m_viewTopBin + newHeight;
+
+   m_viewLeftFrame += (width - newWidth) * fx;
+   m_viewRightFrame = m_viewLeftFrame + newWidth;
+
+   ClampViewRanges();
+   Refresh();
 }
 
-void SpectrogramPanel::Render(wxDC& dc, const wxSize& target) const
+//----------------------------------------------------------------------
+// Handles mouse press, release, and drag events to support panning
+//----------------------------------------------------------------------
+void SpectrogramPanel::OnMouse(wxMouseEvent& event)
 {
-   dc.SetBackground(*wxBLACK_BRUSH);
-   dc.Clear();
-
-   if (!m_bitmap.IsOk())
+   if (!m_bitmap.IsOk()) {
+      event.Skip();
       return;
+   }
 
-   const int srcX = (int)m_viewLeftFrame;
-   const int srcY = (int)m_viewTopBin;
-   const int srcW = (int)(m_viewRightFrame - m_viewLeftFrame);
-   const int srcH = (int)(m_viewBottomBin - m_viewTopBin);
+   if (event.LeftDown()) {
+      m_lastMouse = event.GetPosition();
+      CaptureMouse();
+   }
+   else if (event.LeftUp()) {
+      if (HasCapture()) ReleaseMouse();
+   }
+   else if (event.Dragging() && event.LeftIsDown())
+   {
+      wxPoint pos = event.GetPosition();
+      wxPoint delta = pos - m_lastMouse;
+      m_lastMouse = pos;
 
-   wxBitmap sub = m_bitmap.GetSubBitmap(
-      wxRect(srcX, srcY, std::max(1, srcW), std::max(1, srcH))
-   );
+      wxSize size = GetClientSize();
 
-   wxMemoryDC srcDC;
-   srcDC.SelectObject(sub);
+      // Current ranges
+      double height = m_viewBottomBin - m_viewTopBin;
+      double width = m_viewRightFrame - m_viewLeftFrame;
 
-   dc.StretchBlit(
-      0, 0,
-      target.GetWidth(), target.GetHeight(),
-      &srcDC,
-      0, 0,
-      srcW, srcH
-   );
+      // Convert pixel delta to data delta
+      double dx = (double)delta.x / size.GetWidth() * width;
+      double dy = (double)delta.y / size.GetHeight() * height;
 
-   srcDC.SelectObject(wxNullBitmap);
+      m_viewLeftFrame -= dx;
+      m_viewRightFrame -= dx;
 
-   if (m_showNoteLines)
-      DrawNoteLines(dc, target);
+      m_viewTopBin -= dy;
+      m_viewBottomBin -= dy;
 
-   if (m_showTimeTicks)
-      DrawTimeTicks(dc, target);
+      ClampViewRanges();
+      Refresh();
+   }
 }
 
-void SpectrogramPanel::OnRightClick(wxMouseEvent& event)
+//----------------------------------------------------------------------
+// Clamps the current view extents to valid spectrogram bounds and
+// enforces minimum visible ranges
+//----------------------------------------------------------------------
+void SpectrogramPanel::ClampViewRanges()
 {
-   ResetView();
-   event.Skip(); 
+   if (m_matrix.empty()) return;
+
+   const int totalBins = (int)m_matrix.size();
+   const int totalFrames = (int)m_matrix[0].size();
+
+   // Vertical clamp (frequency bins)
+   if (m_viewTopBin < 0) m_viewTopBin = 0;
+   if (m_viewBottomBin > totalBins) m_viewBottomBin = totalBins;
+   if (m_viewBottomBin - m_viewTopBin < 2) {
+      m_viewBottomBin = m_viewTopBin + 2; // minimum 2 bins
+   }
+
+   // Horizontal clamp (time frames)
+   if (m_viewLeftFrame < 0) m_viewLeftFrame = 0;
+   if (m_viewRightFrame > totalFrames) m_viewRightFrame = totalFrames;
+   if (m_viewRightFrame - m_viewLeftFrame < 2) {
+      m_viewRightFrame = m_viewLeftFrame + 2; // minimum 2 frames
+   }
 }
 
+//----------------------------------------------------------------------
+// Resets the view extents to show the entire spectrogram
+//----------------------------------------------------------------------
 void SpectrogramPanel::ResetView()
 {
    if (m_matrix.empty())
@@ -374,6 +436,19 @@ void SpectrogramPanel::ResetView()
    Refresh(false);
 }
 
+//----------------------------------------------------------------------
+// Handles right-click events by resetting the spectrogram view
+//----------------------------------------------------------------------
+void SpectrogramPanel::OnRightClick(wxMouseEvent& event)
+{
+   ResetView();
+   event.Skip();
+}
+
+//----------------------------------------------------------------------
+// Draws time tick labels along the bottom edge of the panel, selecting
+// an appropriate tick spacing based on zoom level
+//----------------------------------------------------------------------
 void SpectrogramPanel::DrawTimeTicks(wxDC& dc, const wxSize& size) const
 {
    if (!m_showTimeTicks || m_signalLength == 0 || m_matrix.empty())

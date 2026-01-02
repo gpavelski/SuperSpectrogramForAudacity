@@ -6,6 +6,7 @@
 
   Dominic Mazzoni
   Paul Licameli split from FreqWindow.h
+  Guilherme Pavelski adapted from SpectrumAnalyst.h
 
 **********************************************************************/
 

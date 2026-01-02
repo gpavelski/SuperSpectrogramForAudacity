@@ -4,18 +4,18 @@
 
   SuperSpectrogramAnalyst.cpp
 
-  Tony Bee
+  Guilherme Pavelski
 
 *******************************************************************//**
 
 \class SuperSpectrogramAnalyst
-\brief Used for finding the peaks, for snapping to peaks.
+\brief Used for wrapping the calculation of the Spectrogram.
 
-This class is used to do the 'find peaks' snapping both in FreqPlot
-and in the spectrogram spectral selection.
+This class is responsible for reading the performing an interpolation
+on the selected audio signal to the selected frequency, calling the
+STFT calculation and returning the calculated Spectrogram.
 
 *//*******************************************************************/
-
 
 #include "STFTProcessor.h"
 #include "SuperSpectrogramAnalyst.h"
@@ -41,7 +41,6 @@ bool SuperSpectrogramAnalyst::Calculate(
    STFTProcessor stftProcessor(detailLevel);
    stftProcessor.setLowerThreshold(lowerThreshold);
 
-   // <-- NEW: directly get 2D matrix
    mMatrix = stftProcessor.processFullSTFTMatrix(decimatedSignal);
    mSignalLength = stftProcessor.getResizedSignalLength();
 

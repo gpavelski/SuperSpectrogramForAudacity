@@ -1,3 +1,13 @@
+/**********************************************************************
+
+  Audacity: A Digital Audio Editor
+
+  STFTProcessor.h
+
+  Guilherme Pavelski
+
+**********************************************************************/
+
 #ifndef STFT_PROCESSOR_H
 #define STFT_PROCESSOR_H
 

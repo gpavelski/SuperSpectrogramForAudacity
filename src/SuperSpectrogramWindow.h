@@ -1,3 +1,13 @@
+/**********************************************************************
+
+  Audacity: A Digital Audio Editor
+
+  SuperSpectrogramWindow.h
+
+  Guilherme Pavelski
+
+**********************************************************************/
+
 #ifndef __AUDACITY_SUPER_SPECTROGRAM_WINDOW__
 #define __AUDACITY_SUPER_SPECTROGRAM_WINDOW__
 
@@ -15,8 +25,7 @@ class SpectrogramPanel;
 //=================================================================
 class SuperSpectrogramPlotDialog final :
    public PlotSuperSpectrogramBase,   // used for spectrum data computation
-   public wxDialogWrapper,
-   public PrefsListener
+   public wxDialogWrapper
 {
 public:
    // Constructor / Destructor
@@ -42,9 +51,6 @@ private:
    void ApplyDataDrivenMinSize();
    // Event handlers
    void OnCloseWindow(wxCloseEvent& event);
-
-   // PrefsListener interface
-   void UpdatePrefs() override;
 
    void CreateControls(wxSizer* parentSizer);
    void OnNoiseFloorChanged(wxCommandEvent& event);

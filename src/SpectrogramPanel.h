@@ -1,3 +1,12 @@
+/**********************************************************************
+
+  Audacity: A Digital Audio Editor
+
+  SpectrogramPanel.h
+
+  Guilherme Pavelski
+
+**********************************************************************/
 #pragma once
 
 #include <wx/wx.h>

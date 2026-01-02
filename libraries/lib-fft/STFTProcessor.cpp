@@ -1,5 +1,28 @@
+/**********************************************************************
+
+  Audacity: A Digital Audio Editor
+
+  STFTProcessor.cpp
+
+  Guilherme Pavelski
+
+*******************************************************************//**
+
+\class STFTProcessor
+\brief Responsible for the steps of computing an STFT.
+
+This is a low-level class that is responsible for performing a
+Short-Term Fourier Transform on the input audio signal and returning
+a 2-Dimensional array representing the results of the calculation.
+
+*//*******************************************************************/
+
 #include "STFTProcessor.h"
 
+/**
+ * Computes a Gaussian window of length 16*sigma centered at 8*sigma.
+ * Used for windowing signal segments before FFT.
+ */
 std::vector<double> STFTProcessor::computeGaussianWindow() const {
     const int size = 16 * sigma;
     const int center = 8 * sigma;
@@ -14,6 +37,12 @@ std::vector<double> STFTProcessor::computeGaussianWindow() const {
     return gwin;
 }
 
+/**
+ * Computes starting positions (cursors) for each window segment in the signal.
+ * @param numSegments Number of segments/windows.
+ * @param startCursor Initial starting index in the signal.
+ * @return Vector of starting indices for each segment.
+ */
 std::vector<int> STFTProcessor::computeSignalCursors(
     int numSegments, 
     int startCursor) const {
@@ -26,6 +55,10 @@ std::vector<int> STFTProcessor::computeSignalCursors(
     return cursors;
 }
 
+/**
+ * Updates a portion of the spectrogram matrix from a single STFT computation.
+ * Handles placement of the transformed segment into the correct indices.
+ */
 void STFTProcessor::updateSpectrogramFromSTFT(
     const double* inputSegment,
     FFTData& fftData,
@@ -55,6 +88,10 @@ void STFTProcessor::updateSpectrogramFromSTFT(
     }
 }
 
+/**
+ * Processes all signal windows, computing the STFT for each, and fills the flat spectrogram.
+ * Can execute window processing in parallel for performance.
+ */
 void STFTProcessor::processWindows(
     std::vector<double>& spectrogram,
     const std::vector<double>& inputSignal,
@@ -73,6 +110,9 @@ void STFTProcessor::processWindows(
     });
 }
 
+/**
+ * Processes overlapping edge windows to remove boundary effects in the spectrogram.
+ */
 void STFTProcessor::removeEdgeEffects(
     std::vector<double>& spectrogram,
     const std::vector<double>& inputSignal,
@@ -92,6 +132,13 @@ void STFTProcessor::removeEdgeEffects(
     });
 }
 
+/**
+ * Computes the Short-Time Fourier Transform (STFT) of a single time-domain segment.
+ * Applies the Gaussian window and executes FFT on each windowed portion.
+ * @param timeSignal Input signal segment.
+ * @param fftData FFT container with plan and buffers.
+ * @return Flattened STFT magnitude vector for this segment.
+ */
 std::vector<double> STFTProcessor::computeSTFT(
     const double* timeSignal,
     FFTData& fftData
@@ -126,6 +173,10 @@ std::vector<double> STFTProcessor::computeSTFT(
     return out;
 }
 
+/**
+ * Converts a linear magnitude to dB and applies a lower/upper threshold.
+ * Values outside thresholds are set to -INFINITY.
+ */
 double STFTProcessor::applyLogAndThreshold(double value) const {
     double db = 20 * std::log10(value);
     if (db < lowerThreshold || db > upperThreshold) {
@@ -134,6 +185,10 @@ double STFTProcessor::applyLogAndThreshold(double value) const {
     return db;
 }
 
+/**
+ * Inserts a transformed STFT segment into the spectrogram with log scaling and thresholding.
+ * Maps the flat transformed vector into a smaller segment of the full spectrogram.
+ */
 void STFTProcessor::insertTransformedSegment(
     std::vector<double>& spectrogram,
     const std::vector<double>& transform
@@ -147,6 +202,10 @@ void STFTProcessor::insertTransformedSegment(
     }
 }
 
+/**
+ * Resizes the input signal to length N by padding with zeros if necessary.
+ * Useful to ensure integer number of windows for STFT.
+ */
 std::vector<double> STFTProcessor::resize_signal(
     const std::vector<double>& signal, 
     size_t N) const {
@@ -159,6 +218,10 @@ std::vector<double> STFTProcessor::resize_signal(
     return resized_signal;
 }
 
+/**
+ * Performs full STFT on the input signal and returns a 2D spectrogram matrix.
+ * Handles windowing, FFT computation, edge effect removal, and flatten -> matrix conversion.
+ */
 std::vector<std::vector<double>> STFTProcessor::processFullSTFTMatrix(
    const std::vector<double>& data)
 {

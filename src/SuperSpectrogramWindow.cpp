@@ -4,17 +4,21 @@
 
   SuperSpectrogramWindow.cpp
 
-  Tony Bee
+  Guilherme Pavelski
 
 *******************************************************************//**
 
 \class SuperSpectrogramPlotDialog
-\brief Displays a more detail spectrum plot of the waveform.
-Has options for selecting parameters of the plot.
-
-Has a feature that finds peaks and reports their value as you move
-the mouse around.
-
+\brief Displays a detailed spectrogram of the waveform.
+* Responsibilities:
+ *  - Acts as the top-level UI controller for the Super Spectrogram analyzer.
+ *  - Owns and manages the SpectrogramPanel used to render the STFT matrix.
+ *  - Coordinates audio extraction, STFT computation, and visualization updates.
+ *  - Translates user interactions (noise floor, highest note, export actions)
+ *    into recalculation or rendering changes.
+ *  - Enforces data-driven layout constraints based on spectrogram dimensions.
+ *  - Provides export facilities for both raw spectrogram data and rendered views.
+ *
 *//****************************************************************//**
 
 \class SuperSpectrogramPlot
@@ -22,17 +26,13 @@ the mouse around.
 spectrum plot of the waveform.
 This class actually does the graph display.
 
-Has a feature that finds peaks and reports their value as you move
-the mouse around.
-
 *//*******************************************************************/
 
-
 #include "SuperSpectrogramWindow.h"
-#include <fstream>
-#include <wx/wx.h>
 #include "SpectrogramPanel.h"
-#include "STFTProcessor.h"     
+#include "STFTProcessor.h"
+#include <fstream>
+#include <wx/wx.h> 
 
 #define SuperSpectrogramTitle XO("Super Spectrogram")
 
@@ -40,14 +40,14 @@ the mouse around.
 // Event table for the dialog
 //-----------------------------------------------------------------
 BEGIN_EVENT_TABLE(SuperSpectrogramPlotDialog, wxDialogWrapper)
-EVT_CLOSE(SuperSpectrogramPlotDialog::OnCloseWindow)
-EVT_CHOICE(ID_NoiseFloorChoice, SuperSpectrogramPlotDialog::OnNoiseFloorChanged)
-EVT_CHOICE(ID_HighestNoteChoice, SuperSpectrogramPlotDialog::OnHighestNoteChanged)
-EVT_BUTTON(wxID_SAVE, SuperSpectrogramPlotDialog::OnExport)
+   EVT_CLOSE(SuperSpectrogramPlotDialog::OnCloseWindow)
+   EVT_CHOICE(ID_NoiseFloorChoice, SuperSpectrogramPlotDialog::OnNoiseFloorChanged)
+   EVT_CHOICE(ID_HighestNoteChoice, SuperSpectrogramPlotDialog::OnHighestNoteChanged)
+   EVT_BUTTON(wxID_SAVE, SuperSpectrogramPlotDialog::OnExport)
 END_EVENT_TABLE()
 
 //-----------------------------------------------------------------
-// Constructor / Destructor
+// View: Dialog construction & teardown
 //-----------------------------------------------------------------
 SuperSpectrogramPlotDialog::SuperSpectrogramPlotDialog(
    wxWindow* parent,
@@ -81,28 +81,16 @@ SuperSpectrogramPlotDialog::SuperSpectrogramPlotDialog(
    SetSizer(mainSizer);
 }
 
-
 SuperSpectrogramPlotDialog::~SuperSpectrogramPlotDialog() = default;
 
-bool SuperSpectrogramPlotDialog::IsAudioSelectionValid()
-{
-   return GetAudio();
-}
-
 //-----------------------------------------------------------------
-// Show / Hide dialog
+// View: Visibility and layout
 //-----------------------------------------------------------------
 bool SuperSpectrogramPlotDialog::Show(bool show)
 {
    if (show && !IsShown()) {
-
-      // 1) Compute spectrogram (this fills the matrix)
       Recalc();
-
-      // 2) Apply data-driven size constraints
       ApplyDataDrivenMinSize();
-
-      // 3) Finalize layout
       Layout();
       Fit();
       Centre();
@@ -131,23 +119,15 @@ void SuperSpectrogramPlotDialog::ApplyDataDrivenMinSize()
 }
 
 //-----------------------------------------------------------------
-// Plot a 2D STFT matrix
+// Model: Audio validity & spectrogram data
 //-----------------------------------------------------------------
-void SuperSpectrogramPlotDialog::PlotSTFTMatrix(
-   const std::vector<std::vector<double>>& matrix)
+bool SuperSpectrogramPlotDialog::IsAudioSelectionValid()
 {
-   if (!mSpectrogramPanel)
-      return;
-
-   mMatrix = matrix;
-   mMaxFreq = mAnalyst->GetTargetRate() / 2.0;
-   mNumSamples = mAnalyst->GetSignalLength();
-   mSpectrogramPanel->SetData(mMatrix, mMaxFreq, mNumSamples);
-   mSpectrogramPanel->ResetView();
+   return GetAudio();
 }
 
 //-----------------------------------------------------------------
-// Recalculate the spectrogram from current selection
+// Model: Spectrogram computation
 //-----------------------------------------------------------------
 void SuperSpectrogramPlotDialog::Recalc()
 {
@@ -159,9 +139,35 @@ void SuperSpectrogramPlotDialog::Recalc()
       mDetailLevel,
       mRate,
       mNoiseFloor);
+
    PlotSTFTMatrix(mAnalyst->GetMatrix());
 }
 
+//-----------------------------------------------------------------
+// Model: Data -> View Binding
+//-----------------------------------------------------------------
+void SuperSpectrogramPlotDialog::PlotSTFTMatrix(
+   const std::vector<std::vector<double>>& matrix)
+{
+   if (!mSpectrogramPanel)
+      return;
+
+   mMatrix = matrix;
+   mMaxFreq = mAnalyst->GetTargetRate() / 2.0;
+   mNumSamples = mAnalyst->GetSignalLength();
+
+   mSpectrogramPanel->SetData(
+      mMatrix,
+      mMaxFreq,
+      mNumSamples
+   );
+
+   mSpectrogramPanel->ResetView();
+}
+
+//-----------------------------------------------------------------
+// Controller: UI controls & bindings
+//-----------------------------------------------------------------
 void SuperSpectrogramPlotDialog::CreateControls(wxSizer* parentSizer)
 {
    auto* toolbarSizer = new wxBoxSizer(wxHORIZONTAL);
@@ -209,6 +215,9 @@ void SuperSpectrogramPlotDialog::CreateControls(wxSizer* parentSizer)
    parentSizer->Add(toolbarSizer, 0, wxEXPAND | wxALL, 5);
 }
 
+//-----------------------------------------------------------------
+// Controller: Parameter Change Handlers
+//-----------------------------------------------------------------
 void SuperSpectrogramPlotDialog::OnNoiseFloorChanged(wxCommandEvent&)
 {
    int sel = mNoiseFloorChoice->GetSelection();
@@ -248,6 +257,9 @@ void SuperSpectrogramPlotDialog::OnHighestNoteChanged(wxCommandEvent&)
 
 }
 
+//-----------------------------------------------------------------
+// Export: Data and rendering output
+//-----------------------------------------------------------------
 void SuperSpectrogramPlotDialog::OnExport(wxCommandEvent&)
 {
    if (!mSpectrogramPanel || mMatrix.empty())
@@ -323,14 +335,8 @@ void SuperSpectrogramPlotDialog::ExportViewAsPNG()
 }
 
 //-----------------------------------------------------------------
-// PrefsListener interface
+// Application integration & command registration
 //-----------------------------------------------------------------
-void SuperSpectrogramPlotDialog::UpdatePrefs()
-{
-   Layout();
-}
-
-// Remaining code hooks this add-on into the application
 #include "CommandContext.h"
 #include "CommandManager.h"
 #include "ProjectWindows.h"
@@ -384,7 +390,7 @@ namespace {
 }
 
 //-----------------------------------------------------------------
-// Event handlers
+// View: Close handling
 //-----------------------------------------------------------------
 void SuperSpectrogramPlotDialog::OnCloseWindow(wxCloseEvent& WXUNUSED(event))
 {
