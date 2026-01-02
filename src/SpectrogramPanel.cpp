@@ -48,7 +48,7 @@ wxEND_EVENT_TABLE()
 SpectrogramPanel::SpectrogramPanel(wxWindow* parent)
    : wxPanel(parent), m_dirty(true), m_showNoteLines(false),
    m_minDisplayFreq(0.0), m_maxDisplayFreq(8000.0),
-   m_zoom(1.0), m_offsetX(0.0), m_offsetY(0.0) // Add these
+   m_zoom(1.0)
 {
    SetBackgroundStyle(wxBG_STYLE_PAINT);
    SetDoubleBuffered(true);
@@ -79,25 +79,30 @@ void SpectrogramPanel::SetNoteFrequencyRange(double minFreq, double maxFreq)
    Refresh();
 }
 
-void SpectrogramPanel::SetMatrix(
-   const std::vector<std::vector<double>>& matrix,
-   double maxFreq)
+void SpectrogramPanel::SetMatrix(const std::vector<std::vector<double>>& m, double maxFreq)
 {
+   m_matrix = m;
    m_maxFreq = maxFreq;
 
-   if (matrix.empty()) {
-      Clear();
-      return;
+   // compute min/max once
+   m_minValue = +std::numeric_limits<double>::infinity();
+   m_maxValue = -std::numeric_limits<double>::infinity();
+   for (const auto& row : m_matrix)
+      for (double v : row)
+         if (std::isfinite(v)) {
+            m_minValue = std::min(m_minValue, v);
+            m_maxValue = std::max(m_maxValue, v);
+         }
+
+   if (!std::isfinite(m_minValue) || m_minValue == m_maxValue) {
+      m_minValue = 0.0;
+      m_maxValue = 1.0;
    }
 
-   m_matrix = matrix;
-
-   // Rebuild immediately when data changes
-   RebuildBitmap();
-   m_dirty = false;
-
-   Refresh();
+   RebuildBitmap();  // new function, see below
+   ResetView();
 }
+
 
 
 void SpectrogramPanel::Clear()
@@ -108,8 +113,6 @@ void SpectrogramPanel::Clear()
 
    // Reset view state
    m_zoom = 1.0;
-   m_offsetX = 0.0;
-   m_offsetY = 0.0;
 
    // Create empty bitmap
    m_bitmap = wxBitmap(100, 100);
@@ -130,88 +133,45 @@ void SpectrogramPanel::OnPaint(wxPaintEvent&)
 }
 
 
-void SpectrogramPanel::DrawNoteLines(wxDC& dc, const wxSize& targetSize) const
+void SpectrogramPanel::DrawNoteLines(wxDC& dc, const wxSize& size) const
 {
+   if (m_matrix.empty()) return;
+
    dc.SetPen(wxPen(*wxWHITE, 1));
    dc.SetTextForeground(*wxWHITE);
+   dc.SetFont(wxFont(8, wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL));
 
-   wxFont font(8, wxFONTFAMILY_DEFAULT,
-      wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL);
-   dc.SetFont(font);
-
-   const int rows = static_cast<int>(m_matrix.size());
-   const double minFreq = s_noteFrequencies.front();
-   const double maxFreq = m_maxFreq;
-
-   double lastLabelBottom = -1e9;
+   double lastLabelY = -1e9;
 
    for (size_t i = 0; i < s_noteFrequencies.size(); ++i) {
       double freq = s_noteFrequencies[i];
-      if (freq < minFreq || freq > maxFreq)
-         continue;
+      double y = FreqToWidgetY(freq, size.GetHeight());
+      if (y < 0) continue;
 
-      // ---- image -> view space ----
-      double norm = (freq - minFreq) / (maxFreq - minFreq);
-      double imageY = norm * (rows - 1);
-      double y = imageY * m_zoom + m_offsetY;
+      // Draw the horizontal line across full widget width
+      dc.DrawLine(0, y, size.GetWidth(), y);
 
-      if (y < 0 || y > targetSize.GetHeight())
-         continue;
-
-      // ---- horizontal line ----
-      dc.DrawLine(0, (int)y,
-         targetSize.GetWidth(), (int)y);
-
-      // ---- label (anchored LEFT, not panning!) ----
+      // Compute label position
       const wxString& label = s_noteLabels[i];
-
       wxCoord tw, th;
       dc.GetTextExtent(label, &tw, &th);
-
       double labelY = y - th - 2;
-      if (labelY < 2)
-         labelY = y + 2;
 
-      if (labelY < lastLabelBottom + 4)
-         continue;
+      if (labelY < lastLabelY + th + 4)
+         continue; // avoid overlaps
 
-      // background box
-      dc.SetBrush(wxBrush(wxColour(0, 0, 0)));
+      // Draw black background for readability
+      dc.SetBrush(*wxBLACK_BRUSH);
       dc.SetPen(*wxTRANSPARENT_PEN);
-      dc.DrawRectangle(2, (int)labelY - 1,
-         tw + 6, th + 2);
+      dc.DrawRectangle(2, labelY - 1, tw + 6, th + 2);
 
-      dc.SetPen(wxPen(*wxWHITE, 1));
-      dc.DrawText(label, 5, (int)labelY);
+      // Draw text
+      dc.SetPen(*wxWHITE_PEN);
+      dc.DrawText(label, 5, labelY);
 
-      lastLabelBottom = labelY + th;
+      lastLabelY = labelY;
    }
 }
-
-
-void SpectrogramPanel::DrawNoteLabel(wxDC& dc, const wxString& label,
-   double widgetY, const wxSize& widgetSize) const
-{
-   wxCoord textWidth, textHeight;
-   dc.GetTextExtent(label, &textWidth, &textHeight);
-
-   double xPos = 5 - m_offsetX;
-   if (xPos < 5) xPos = 5;
-   if (xPos + textWidth > widgetSize.GetWidth() - 5)
-      xPos = widgetSize.GetWidth() - textWidth - 5;
-
-   double yPos = widgetY - textHeight - 2;
-
-   // **Opaque black background**
-   dc.SetPen(*wxTRANSPARENT_PEN);
-   dc.SetBrush(wxBrush(wxColour(0, 0, 0, 255))); // Fully opaque black
-   dc.DrawRectangle(xPos - 2, yPos - 1, textWidth + 4, textHeight + 2);
-
-   // **White text**
-   dc.SetTextForeground(*wxWHITE);
-   dc.DrawText(label, xPos, yPos);
-}
-
 
 void SpectrogramPanel::OnSize(wxSizeEvent& event)
 {
@@ -223,40 +183,57 @@ void SpectrogramPanel::OnSize(wxSizeEvent& event)
 
 void SpectrogramPanel::OnWheel(wxMouseEvent& event)
 {
-   if (!m_bitmap.IsOk()) {
-      event.Skip();
-      return;
+   if (m_matrix.empty()) return;
+
+   double factor = (event.GetWheelRotation() > 0) ? 0.8 : 1.25; // 20% zoom
+
+   int mouseY = event.GetY();
+   int mouseX = event.GetX();
+   wxSize size = GetClientSize();
+
+   // Mouse percentage in window
+   double fy = (double)mouseY / size.GetHeight();
+   double fx = (double)mouseX / size.GetWidth();
+
+   // Current ranges
+   double height = m_viewBottomBin - m_viewTopBin;
+   double width = m_viewRightFrame - m_viewLeftFrame;
+
+   // New ranges
+   double newHeight = height * factor;
+   double newWidth = width * factor;
+
+   // Anchor at mouse position
+   m_viewTopBin += (height - newHeight) * fy;
+   m_viewBottomBin = m_viewTopBin + newHeight;
+
+   m_viewLeftFrame += (width - newWidth) * fx;
+   m_viewRightFrame = m_viewLeftFrame + newWidth;
+
+   ClampViewRanges();
+   Refresh(false);   // false = erase background handled manually
+}
+
+void SpectrogramPanel::ClampViewRanges()
+{
+   if (m_matrix.empty()) return;
+
+   const int totalBins = (int)m_matrix.size();
+   const int totalFrames = (int)m_matrix[0].size();
+
+   // Vertical clamp (frequency bins)
+   if (m_viewTopBin < 0) m_viewTopBin = 0;
+   if (m_viewBottomBin > totalBins) m_viewBottomBin = totalBins;
+   if (m_viewBottomBin - m_viewTopBin < 2) {
+      m_viewBottomBin = m_viewTopBin + 2; // minimum 2 bins
    }
 
-   const wxPoint mousePos = event.GetPosition();
-
-   const double factor =
-      (event.GetWheelRotation() > 0) ? 1.15 : (1.0 / 1.15);
-
-   const double oldZoom = m_zoom;
-   m_zoom *= factor;
-
-   const wxSize widgetSize = GetClientSize();
-   const wxSize imageSize = m_bitmap.GetSize();
-
-   // ---- CORRECT MIN ZOOM (Y-anchored) ----
-   const double minZoom =
-      static_cast<double>(widgetSize.GetHeight()) /
-      imageSize.GetHeight();
-
-   const double maxZoom = 10.0;
-
-   m_zoom = std::clamp(m_zoom, minZoom, maxZoom);
-
-   // ---- Zoom around mouse position ----
-   const double imageX = (mousePos.x - m_offsetX) / oldZoom;
-   const double imageY = (mousePos.y - m_offsetY) / oldZoom;
-
-   m_offsetX = mousePos.x - imageX * m_zoom;
-   m_offsetY = mousePos.y - imageY * m_zoom;
-
-   ClampOffsets();
-   Refresh();
+   // Horizontal clamp (time frames)
+   if (m_viewLeftFrame < 0) m_viewLeftFrame = 0;
+   if (m_viewRightFrame > totalFrames) m_viewRightFrame = totalFrames;
+   if (m_viewRightFrame - m_viewLeftFrame < 2) {
+      m_viewRightFrame = m_viewLeftFrame + 2; // minimum 2 frames
+   }
 }
 
 
@@ -274,50 +251,59 @@ void SpectrogramPanel::OnMouse(wxMouseEvent& event)
    else if (event.LeftUp()) {
       if (HasCapture()) ReleaseMouse();
    }
-   else if (event.Dragging() && event.LeftIsDown()) {
-      wxPoint pos = event.GetPosition();
-      wxPoint delta = pos - m_lastMouse;
-      m_lastMouse = pos;
+      else if (event.Dragging() && event.LeftIsDown())
+      {
+         wxPoint pos = event.GetPosition();
+         wxPoint delta = pos - m_lastMouse;
+         m_lastMouse = pos;
 
-      m_offsetX += delta.x;
-      m_offsetY += delta.y;
+         wxSize size = GetClientSize();
 
-      ClampOffsets();
-      Refresh();
-   }
+         // Current ranges
+         double height = m_viewBottomBin - m_viewTopBin;
+         double width = m_viewRightFrame - m_viewLeftFrame;
+
+         // Convert pixel delta to data delta
+         double dx = (double)delta.x / size.GetWidth() * width;
+         double dy = (double)delta.y / size.GetHeight() * height;
+
+         m_viewLeftFrame -= dx;
+         m_viewRightFrame -= dx;
+
+         m_viewTopBin -= dy;
+         m_viewBottomBin -= dy;
+
+         ClampViewRanges();
+         Refresh();
+      }
 }
 
-void SpectrogramPanel::ClampOffsets()
+double SpectrogramPanel::FreqToWidgetY(double freq, int widgetHeight) const
 {
    if (!m_bitmap.IsOk())
-      return;
+      return -1;
 
-   const wxSize widgetSize = GetClientSize();
-   const double scaledWidth = GetScaledWidth();
-   const double scaledHeight = GetScaledHeight();
+   const int rows = m_bitmap.GetHeight();
+   const double fNyq = m_maxFreq;   // IMPORTANT: this must be Nyquist
 
-   // ---- X axis ----
-   if (scaledWidth <= widgetSize.GetWidth()) {
-      // Do NOT center — align left
-      m_offsetX = 0.0;
-   }
-   else {
-      const double minOffsetX = widgetSize.GetWidth() - scaledWidth;
-      const double maxOffsetX = 0.0;
-      m_offsetX = std::clamp(m_offsetX, minOffsetX, maxOffsetX);
-   }
+   if (freq < 0.0 || freq > fNyq)
+      return -1;
 
-   // ---- Y axis ----
-   if (scaledHeight <= widgetSize.GetHeight()) {
-      // Do NOT center — align top
-      m_offsetY = 0.0;
-   }
-   else {
-      const double minOffsetY = widgetSize.GetHeight() - scaledHeight;
-      const double maxOffsetY = 0.0;
-      m_offsetY = std::clamp(m_offsetY, minOffsetY, maxOffsetY);
-   }
+   // Frequency -> bin center
+   const double binIndex = (freq / fNyq) * rows - 0.5;
+
+   // Clip to valid bin range
+   if (binIndex < m_viewTopBin || binIndex > m_viewBottomBin)
+      return -1;
+
+   // Map visible bins -> widget Y
+   const double binRel =
+      (binIndex - m_viewTopBin) /
+      (m_viewBottomBin - m_viewTopBin);
+
+   return binRel * widgetHeight;
 }
+
 
 
 void SpectrogramPanel::FitImageToWidget()
@@ -338,10 +324,6 @@ void SpectrogramPanel::FitImageToWidget()
       static_cast<double>(widgetSize.GetHeight()) /
       imageSize.GetHeight();
 
-   m_offsetX = 0.0;
-   m_offsetY = 0.0;
-
-   ClampOffsets();
    Refresh();
 }
 
@@ -429,44 +411,47 @@ wxBitmap SpectrogramPanel::RenderCurrentViewToBitmap() const
    return bmp;
 }
 
-void SpectrogramPanel::Render(wxDC& dc, const wxSize& targetSize) const
+int SpectrogramPanel::valueToColorIndex(double v) const
 {
-   // ---- Background ----
-   wxColour bg(15, 15, 84);
-   dc.SetBackground(wxBrush(bg));
+   if (!std::isfinite(v)) return 0;
+   const double t = (v - m_minValue) / (m_maxValue - m_minValue + 1e-12);
+   return std::clamp((int)(t * 255.0), 0, 255);
+}
+
+void SpectrogramPanel::Render(wxDC& dc, const wxSize& target) const
+{
+   // ---- CLEAR THE BACK BUFFER ----
+   dc.SetBackground(*wxBLACK_BRUSH);   // or *wxWHITE_BRUSH if preferred
    dc.Clear();
 
    if (!m_bitmap.IsOk())
       return;
 
-   // ---- Draw spectrogram ----
-   if (auto* gc = wxGraphicsContext::CreateFromUnknownDC(dc)) {
-      gc->Scale(m_zoom, m_zoom);
-      gc->Translate(m_offsetX / m_zoom, m_offsetY / m_zoom);
+   const int srcX = (int)m_viewLeftFrame;
+   const int srcY = (int)m_viewTopBin;
+   const int srcW = (int)(m_viewRightFrame - m_viewLeftFrame);
+   const int srcH = (int)(m_viewBottomBin - m_viewTopBin);
 
-      gc->DrawBitmap(
-         m_bitmap,
-         0, 0,
-         m_bitmap.GetWidth(),
-         m_bitmap.GetHeight());
+   wxBitmap sub = m_bitmap.GetSubBitmap(
+      wxRect(srcX, srcY, std::max(1, srcW), std::max(1, srcH))
+   );
 
-      delete gc;
-   }
-   else {
-      dc.SetUserScale(m_zoom, m_zoom);
-      dc.DrawBitmap(
-         m_bitmap,
-         m_offsetX / m_zoom,
-         m_offsetY / m_zoom,
-         false);
-   }
+   wxMemoryDC srcDC;
+   srcDC.SelectObject(sub);
 
-   // ---- Overlays (screen space) ----
-   if (m_showNoteLines && !m_matrix.empty()) {
-      DrawNoteLines(dc, targetSize);
-   }
+   dc.StretchBlit(
+      0, 0,
+      target.GetWidth(), target.GetHeight(),
+      &srcDC,
+      0, 0,
+      srcW, srcH
+   );
+
+   srcDC.SelectObject(wxNullBitmap);
+
+   if (m_showNoteLines)
+      DrawNoteLines(dc, target);
 }
-
 
 void SpectrogramPanel::OnRightClick(wxMouseEvent& event)
 {
@@ -476,8 +461,18 @@ void SpectrogramPanel::OnRightClick(wxMouseEvent& event)
 
 void SpectrogramPanel::ResetView()
 {
-   FitImageToWidget();
-   Refresh();
+   if (m_matrix.empty())
+      return;
+
+   const int totalBins = (int)m_matrix.size();
+   const int totalFrames = (int)m_matrix[0].size();
+
+   m_viewTopBin = 0.0;
+   m_viewBottomBin = (double)totalBins;
+   m_viewLeftFrame = 0.0;
+   m_viewRightFrame = (double)totalFrames;
+
+   Refresh(false);
 }
 
 void SpectrogramPanel::UpdatePrefs()

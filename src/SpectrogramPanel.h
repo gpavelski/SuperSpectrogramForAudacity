@@ -29,7 +29,7 @@ public:
    void EnableNoteLines(bool enable = true) { m_showNoteLines = enable; Refresh(); }
    void SetNoteFrequencyRange(double minFreq, double maxFreq);
    wxBitmap RenderCurrentViewToBitmap() const;
-   void Render(wxDC& dc, const wxSize& targetSize) const;
+   void Render(wxDC& dc, const wxSize& target) const;
    void Clear();
 
 private:
@@ -40,10 +40,10 @@ private:
    void OnRightClick(wxMouseEvent& event);
    void OnWheel(wxMouseEvent& event);
    void OnEraseBackground(wxEraseEvent& event) { /* Prevent flicker */ }
-   void DrawNoteLabel(wxDC& dc, const wxString& label,
-      double widgetY, const wxSize& widgetSize) const;
    void DrawNoteLines(wxDC& dc, const wxSize& targetSize) const;
-   void ClampOffsets();
+   void ClampViewRanges();
+   double FreqToWidgetY(double freq, int widgetHeight) const;
+   int valueToColorIndex(double v) const;
 
    // Helper methods
    void RebuildBitmap();
@@ -84,12 +84,21 @@ private:
    double m_maxDisplayFreq;
 
    double m_zoom;
-   double m_offsetX;
-   double m_offsetY;
 
    // Color map
    static std::vector<wxColour> MakeJetColormap();
    static const std::vector<wxColour> s_jet;
+
+   // These replace m_zoom + m_offsetY for frequency zoom
+   double m_viewTopBin = 0;        // highest frequency bin in view
+   double m_viewBottomBin = 512;   // lowest freq bin in view (rows)
+
+   // Horizontal (time) axis
+   double m_viewLeftFrame = 0;
+   double m_viewRightFrame = 1000;
+
+   double m_minValue;
+   double m_maxValue;
 
    DECLARE_EVENT_TABLE()
 };

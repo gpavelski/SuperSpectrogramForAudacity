@@ -59,12 +59,6 @@ private:
    wxButton* mExportButton = nullptr;
 
 private:
-#ifdef __WXMSW__
-   static const int fontSize = 8;
-#else
-   static const int fontSize = 10;
-#endif
-
    size_t mDetailLevel = 7;
    double mMaxFreq = 1.0;
    size_t mNoiseFloor = -70;
