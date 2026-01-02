@@ -95,13 +95,13 @@ if __name__ == '__main__':
         safe_rm_tree(os.path.join(directories.build_dir, 'generators'))
 
         profiles = Profiles(args)
-
         for build_type, host_profile in profiles.host_profile_paths:
             conan_options = [
                 get_conan(), 'install', directories.root_dir,
                 '--build='*'' if args.force_build else '--build=missing',
                 '--output-folder', args.build_dir,
                 '--remote', 'audacity-recipes-conan2' if (args.force_build or args.disallow_prebuilt) else 'audacity-binaries-conan2',
+                '--remote', 'conancenter',
                 '--profile:build', profiles.build_profile_path,
                 '--profile:host', host_profile,
             ]

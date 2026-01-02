@@ -1,9 +1,10 @@
 from dataclasses import dataclass
 from conan import ConanFile
 from conan.tools.cmake import cmake_layout
-from conan.tools.files import copy
+from conan.tools.files import copy, rename
 import os
 import subprocess
+import shutil
 
 required_conan_version = ">=2.0.0"
 
@@ -168,7 +169,61 @@ class CurlDependency(AudacityDependency):
         else:
             package.with_ssl = "openssl"
 
+@dataclass
+class FFTWAudacityDependency(AudacityDependency):
+    def __init__(self, package_options: dict = None):
+        super().__init__(
+            name="fftw",
+            version="3.3.10",
+            channel=None,
+            package_options=package_options,
+            default_enabled=True,
+            override=False
+        )
 
+    def reference(self, conanfile):
+        return f"{self.name}/{self.version}"
+
+    def apply_options(self, conanfile, package):
+        defaults = {
+            "shared": True,
+            "precision": "double",
+            "threads": True,
+            "combinedthreads": True,
+            "openmp": False
+        }
+        if self.package_options:
+            defaults.update(self.package_options)
+        for key, value in defaults.items():
+            conanfile.output.info(f"\t{self.name}:{key}={value}")
+            setattr(package, key, value)
+
+    def copy_files(self, conanfile, dependency_info):
+        # Perform the standard copy
+        global_copy_files(conanfile, dependency_info)
+
+        # On Windows, create alias DLLs with legacy names
+        if conanfile.settings.os == "Windows":
+            build_type_folder = os.path.join(conanfile.build_folder, str(conanfile.settings.build_type))
+
+            # Original DLLs exported
+            original_dlls = {
+                "fftw3.dll": "libfftw3-3.dll",
+                "fftw3f.dll": "libfftw3f-3.dll",
+                "fftw3l.dll": "libfftw3l-3.dll",
+            }
+
+            for orig, alias in original_dlls.items():
+                orig_path = os.path.join(build_type_folder, orig)
+                alias_path = os.path.join(build_type_folder, alias)
+
+                if os.path.isfile(orig_path):
+                    conanfile.output.info(f"Creating alias DLL: {alias}")
+                    try:
+                        # Use shutil.copyfile since Conan copy(src=dst) is not allowed
+                        shutil.copyfile(orig_path, alias_path)
+                    except Exception as e:
+                        conanfile.output.error(f"Failed to create alias {alias}: {e}")
 
 class AudacityConan(ConanFile):
     settings = "os", "compiler", "build_type", "arch"
@@ -194,6 +249,8 @@ class AudacityConan(ConanFile):
         AudacityDependency("opusfile", "0.12", package_options={ "shared": False, "http": False }),
         AudacityDependency("vorbis", "1.3.7"),
         AudacityDependency("libsndfile", "1.0.31", package_options={ "programs": False }),
+        
+        FFTWAudacityDependency(),
 
         AudacityDependency("vst3sdk", "3.7.7"),
 
