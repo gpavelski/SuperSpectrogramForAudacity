@@ -326,8 +326,6 @@ void SuperSpectrogramPlotDialog::ExportViewAsPNG()
 void SuperSpectrogramPlotDialog::UpdatePrefs()
 {
    Layout();
-   if (mSpectrogramPanel)
-      mSpectrogramPanel->UpdatePrefs();
 }
 
 // Remaining code hooks this add-on into the application
