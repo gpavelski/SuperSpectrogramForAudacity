@@ -35,6 +35,7 @@ audacity_find_package(Opus OPTION_NAME libopus)
 audacity_find_package(opusfile OPTION_NAME opusfile)
 audacity_find_package(Vorbis OPTION_NAME libvorbis)
 audacity_find_package(SndFile CONAN_PACKAGE_NAME libsndfile OPTION_NAME libsndfile)
+audacity_find_package(FFTW3 CONAN_PACKAGE_NAME fftw OPTION_NAME fftw)
 
 # Allow building with ASIO for windows users
 cmake_dependent_option(

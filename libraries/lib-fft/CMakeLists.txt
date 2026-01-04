@@ -6,19 +6,8 @@ Note -- this cannot be combined with lib-math, which depends on libsoxr, which
 includes a different version of pffft.h
 ]]
 
-add_library(FFTW3::fftw3 INTERFACE IMPORTED)
-set_property(TARGET FFTW3::fftw3 PROPERTY
-                    INTERFACE_INCLUDE_DIRECTORIES "C:/Program Files/FFTW3/"
-)
+find_package(FFTW3 REQUIRED)
 
-set_property(TARGET FFTW3::fftw3 PROPERTY
-                    INTERFACE_LINK_LIBRARIES 
-                         "C:/Program Files/FFTW3/libfftw3-3.lib"
-                         "C:/Program Files/FFTW3/libfftw3f-3.lib"
-                         "C:/Program Files/FFTW3/libfftw3l-3.lib"
-                  
-)
-               
 set( SOURCES
    Decimator.cpp
    Decimator.h
