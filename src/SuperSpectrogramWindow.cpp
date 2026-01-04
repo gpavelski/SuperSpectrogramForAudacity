@@ -118,6 +118,23 @@ void SuperSpectrogramPlotDialog::ApplyDataDrivenMinSize()
    SetMinSize(wxSize(minWidth, initialHeight));
 }
 
+void SuperSpectrogramPlotDialog::UpdateLayoutPreservingState()
+{
+   const bool wasMaximized = IsMaximized();
+
+   if (!wasMaximized) {
+      ApplyDataDrivenMinSize();
+      Layout();
+      Fit();
+      Centre();
+   }
+   else {
+      Layout();
+      // Explicitly re-maximize to guard against platform quirks
+      Maximize(true);
+   }
+}
+
 //-----------------------------------------------------------------
 // Model: Audio validity & spectrogram data
 //-----------------------------------------------------------------
@@ -250,11 +267,7 @@ void SuperSpectrogramPlotDialog::OnHighestNoteChanged(wxCommandEvent&)
 
    mDetailLevel = value;
    Recalc();
-   ApplyDataDrivenMinSize();
-   Layout();
-   Fit();
-   Centre();
-
+   UpdateLayoutPreservingState();
 }
 
 //-----------------------------------------------------------------

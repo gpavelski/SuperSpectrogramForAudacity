@@ -49,6 +49,7 @@ public:
 private:
 
    void ApplyDataDrivenMinSize();
+   void UpdateLayoutPreservingState();
    // Event handlers
    void OnCloseWindow(wxCloseEvent& event);
 
