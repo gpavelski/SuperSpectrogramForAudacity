@@ -32,6 +32,7 @@ This class actually does the graph display.
 #include "SpectrogramPanel.h"
 #include "STFTProcessor.h"
 #include <fstream>
+#include <wx/display.h>
 #include <wx/wx.h> 
 
 #define SuperSpectrogramTitle XO("Super Spectrogram")
@@ -101,9 +102,8 @@ bool SuperSpectrogramPlotDialog::Show(bool show)
 
 void SuperSpectrogramPlotDialog::ApplyDataDrivenMinSize()
 {
-   constexpr int MAX_VISIBLE_COLUMNS = 800;  // Increased for better initial view
+   constexpr int MAX_VISIBLE_COLUMNS = 800;
    constexpr int PIXELS_PER_COLUMN = 1;
-   constexpr int INITIAL_HEIGHT = 800;
 
    int columns = mSpectrogramPanel
       ? mSpectrogramPanel->GetColumnCount()
@@ -112,10 +112,28 @@ void SuperSpectrogramPlotDialog::ApplyDataDrivenMinSize()
    if (columns == 0)
       return;
 
+   // -----------------------------
+   // Width: data-driven 
+   // -----------------------------
    int visibleColumns = std::min(columns, MAX_VISIBLE_COLUMNS);
    int minWidth = visibleColumns * PIXELS_PER_COLUMN;
-   int initialHeight = INITIAL_HEIGHT;
-   SetMinSize(wxSize(minWidth, initialHeight));
+
+   // -----------------------------------
+   // Height: derived from screen size
+   // -----------------------------------
+   wxDisplay display(GetParent() ? GetParent() : this);
+   wxRect clientArea = display.GetClientArea();
+
+   // Use a conservative fraction of usable screen height
+   constexpr double HEIGHT_RATIO = 0.75; // 75% of available height
+
+   int minHeight = static_cast<int>(clientArea.GetHeight() * HEIGHT_RATIO);
+
+   // enforce a reasonable lower bound
+   constexpr int MIN_HEIGHT_FALLBACK = 400;
+   minHeight = std::max(minHeight, MIN_HEIGHT_FALLBACK);
+
+   SetMinSize(wxSize(minWidth, minHeight));
 }
 
 void SuperSpectrogramPlotDialog::UpdateLayoutPreservingState()
