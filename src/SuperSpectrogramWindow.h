@@ -15,7 +15,8 @@
 #include <vector>
 #include <memory>
 #include <wx/font.h>
-#include "wxPanelWrapper.h"  // for wxDialogWrapper
+#include <wx/choice.h>
+#include "wxPanelWrapper.h"
 
 class AudacityProject;
 class SpectrogramPanel;
