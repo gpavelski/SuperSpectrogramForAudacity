@@ -212,42 +212,71 @@ void SuperSpectrogramPlotDialog::CreateControls(wxSizer* parentSizer)
       new wxStaticText(this, wxID_ANY, _("Noise floor:")),
       0, wxALIGN_CENTER_VERTICAL | wxLEFT | wxRIGHT, 5);
 
-   mNoiseFloorChoice = new wxChoice(this, ID_NoiseFloorChoice);
-   mNoiseFloorChoice->Append("-120 dB", reinterpret_cast<void*>(-120));
-   mNoiseFloorChoice->Append("-100 dB", reinterpret_cast<void*>(-100));
-   mNoiseFloorChoice->Append("-85 dB", reinterpret_cast<void*>(-85));
-   mNoiseFloorChoice->Append("-70 dB", reinterpret_cast<void*>(-70));
-   mNoiseFloorChoice->Append("-55 dB", reinterpret_cast<void*>(-55));
+   mNoiseFloorChoice = CreateChoice(
+      this,
+      ID_NoiseFloorChoice,
+      kNoiseFloorOptions,
+      kDefaultNoiseFloor);
 
-   mNoiseFloorChoice->SetSelection(3); // -70 dB default
-   mNoiseFloor = -70;
+   mNoiseFloor = kDefaultNoiseFloor;
 
-   toolbarSizer->Add(mNoiseFloorChoice, 0, wxALIGN_CENTER_VERTICAL | wxRIGHT, 10);
+   toolbarSizer->Add(
+      mNoiseFloorChoice,
+      0, wxALIGN_CENTER_VERTICAL | wxRIGHT, 10);
 
    // Highest note selector
    toolbarSizer->Add(
       new wxStaticText(this, wxID_ANY, _("Highest Note:")),
       0, wxALIGN_CENTER_VERTICAL | wxLEFT | wxRIGHT, 5);
 
-   mHighestNoteChoice = new wxChoice(this, ID_HighestNoteChoice);
-   mHighestNoteChoice->Append("C4", reinterpret_cast<void*>(4));
-   mHighestNoteChoice->Append("C5", reinterpret_cast<void*>(5));
-   mHighestNoteChoice->Append("C6", reinterpret_cast<void*>(6));
-   mHighestNoteChoice->Append("C7", reinterpret_cast<void*>(7));
-   mHighestNoteChoice->Append("C8", reinterpret_cast<void*>(8));
+   mHighestNoteChoice = CreateChoice(
+      this,
+      ID_HighestNoteChoice,
+      kHighestNoteOptions,
+      kDefaultHighestNote);
 
-   mHighestNoteChoice->SetSelection(3); // C7 default
-   mDetailLevel = 7;
+   mDetailLevel = kDefaultHighestNote;
 
-   toolbarSizer->Add(mHighestNoteChoice, 0, wxALIGN_CENTER_VERTICAL | wxRIGHT, 15);
+   toolbarSizer->Add(
+      mHighestNoteChoice,
+      0, wxALIGN_CENTER_VERTICAL | wxRIGHT, 15);
 
    // Export button
    mExportButton = new wxButton(this, wxID_SAVE, _("Export…"));
-   toolbarSizer->Add(mExportButton, 0, wxALIGN_CENTER_VERTICAL | wxRIGHT, 5);
+   toolbarSizer->Add(
+      mExportButton,
+      0, wxALIGN_CENTER_VERTICAL | wxRIGHT, 5);
 
    toolbarSizer->AddStretchSpacer();
 
-   parentSizer->Add(toolbarSizer, 0, wxEXPAND | wxALL, 5);
+   parentSizer->Add(
+      toolbarSizer,
+      0, wxEXPAND | wxALL, 5);
+}
+
+wxChoice* SuperSpectrogramPlotDialog::CreateChoice(
+   wxWindow* parent,
+   wxWindowID id,
+   const std::vector<ChoiceOption>& options,
+   int defaultValue)
+{
+   auto* choice = new wxChoice(parent, id);
+
+   int defaultIndex = wxNOT_FOUND;
+
+   for (size_t i = 0; i < options.size(); ++i) {
+      choice->Append(
+         options[i].label,
+         reinterpret_cast<void*>(static_cast<intptr_t>(options[i].value)));
+
+      if (options[i].value == defaultValue)
+         defaultIndex = static_cast<int>(i);
+   }
+
+   if (defaultIndex != wxNOT_FOUND)
+      choice->SetSelection(defaultIndex);
+
+   return choice;
 }
 
 //-----------------------------------------------------------------

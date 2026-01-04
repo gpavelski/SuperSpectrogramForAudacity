@@ -48,12 +48,28 @@ public:
 
 private:
 
+   enum {
+      ID_NoiseFloorChoice = wxID_HIGHEST + 200,
+      ID_HighestNoteChoice
+   };
+
+   struct ChoiceOption
+   {
+      wxString label;
+      int value;
+   };
+
    void ApplyDataDrivenMinSize();
    void UpdateLayoutPreservingState();
    // Event handlers
    void OnCloseWindow(wxCloseEvent& event);
 
    void CreateControls(wxSizer* parentSizer);
+   wxChoice* CreateChoice(
+      wxWindow* parent,
+      wxWindowID id,
+      const std::vector<ChoiceOption>& options,
+      int defaultValue);
    void OnNoiseFloorChanged(wxCommandEvent& event);
    void OnHighestNoteChanged(wxCommandEvent&);
 
@@ -65,16 +81,30 @@ private:
    wxChoice* mHighestNoteChoice = nullptr;
    wxButton* mExportButton = nullptr;
 
-private:
    size_t mDetailLevel = 7;
    size_t mNumSamples = 0;
    double mMaxFreq = 1.0;
    size_t mNoiseFloor = -70;
 
-   enum {
-      ID_NoiseFloorChoice = wxID_HIGHEST + 200,
-      ID_HighestNoteChoice
+   const std::vector<ChoiceOption> kNoiseFloorOptions{
+      { "-120 dB", -120 },
+      { "-100 dB", -100 },
+      {  "-85 dB",  -85 },
+      {  "-70 dB",  -70 },
+      {  "-55 dB",  -55 }
    };
+
+   const int kDefaultNoiseFloor = -70;
+
+   const std::vector<ChoiceOption> kHighestNoteOptions{
+      { "C4", 4 },
+      { "C5", 5 },
+      { "C6", 6 },
+      { "C7", 7 },
+      { "C8", 8 }
+   };
+
+   const int kDefaultHighestNote = 7;
 
    // Font for optional overlays (timestamps, peak labels, etc.)
    wxFont mFreqFont;
