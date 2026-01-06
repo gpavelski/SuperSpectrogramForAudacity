@@ -39,6 +39,17 @@ bool PlotSuperSpectrogramBase::GetAudio()
       if (selcount == 0)
       {
          mRate = track->GetRate();
+         if (mRate < maxTargetRate)
+         {
+            using namespace BasicUI;
+            ShowMessageBox(
+               XO("The signal sampling rate is too low. Minimum sampling rate: %.2f")
+               .Format(maxTargetRate),
+               MessageBoxOptions{}.Caption(XO("Error")).IconStyle(Icon::Error));
+            mData.reset();
+            mDataLen = 0;
+            return false;
+         }
          auto end = track->TimeToLongSamples(selectedRegion.t1());
          auto dataLen = end - start;
          size_t maxDataLen = ComputeMaxSamples();

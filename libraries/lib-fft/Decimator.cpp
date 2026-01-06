@@ -9,7 +9,7 @@
 *******************************************************************//**
 
 \class Decimator
-\brief Constructs a fractional decimator with an anti-aliasing FIR filter.
+\brief Constructs a fractional decimator with an anti-aliasing IIR filter.
 
 This class is responsible for downsampling the selected audio for
 reducing the computational overhead of the STFT. Besides, it also
@@ -18,144 +18,78 @@ applies a low-pass anti-aliasing filter to the signal.
 
 #include "Decimator.h"
 
-/**
- * 
- * Computes the effective decimation step based on the input and target
- * sampling rates, and designs a Kaiser-windowed low-pass FIR filter to
- * suppress aliasing prior to resampling.
- */
 Decimator::Decimator(double frequencyRate, double targetRate)
 {
    if (frequencyRate <= 0.0 || targetRate <= 0.0)
-      throw std::invalid_argument("Sample rates must be positive");
+      throw std::invalid_argument("Frequencies must be positive");
 
    step = computeDecimationLevel(frequencyRate, targetRate);
 
-   if (step <= 0) {
+   if (step <= 0.0)
       throw std::runtime_error("Computed decimation factor is invalid");
-   }
 
-   // Anti-alias low-pass filter definition
-   double cutoff = targetRate * 0.45;       // 90% of Nyquist
-   double transition = targetRate * 0.05;   // 5% transition band
-   double attenuation = 70.0;               // 70 dB stop-band attenuation
+   // ----------------------------------------------------
+   // Chebyshev Type I low-pass filter design
+   // ----------------------------------------------------
+   const double Wn = 0.8 / step;
+   const double rp = 0.05;
 
-   b_coeffs = designKaiserLowpass(
-      frequencyRate,
-      cutoff,
-      transition,
-      attenuation
-   );
+   Cheby1LowPassIIRFilter filter(filter_order, rp, Wn);
 
-   filter_order = static_cast<int>(b_coeffs.size()) - 1;
+   b_coeffs = filter.b();
+   a_coeffs = filter.a();
 }
 
-/**
- * Computes the fractional decimation ratio between input and target rates.
- *
- * Returns a ratio >= 1.0, where values greater than 1 indicate downsampling
- * and a value of 1 disables decimation.
- */
 double Decimator::computeDecimationLevel(double inputRate, double targetRate) const
 {
-   if (targetRate <= 0.0) {
+   if (targetRate <= 0.0)
       throw std::invalid_argument("targetRate must be > 0");
-   }
 
-   double ratio = inputRate / targetRate;
-
-   // Enforce minimum of 1 (no decimation)
-   return ratio < 1 ? 1 : ratio;
+   const double ratio = inputRate / targetRate;
+   return ratio < 1.0 ? 1.0 : ratio;
 }
 
-// ================= Filter Design =================
-//
-// Windowed-sinc FIR with Kaiser window
-
-/**
- * Designs a low-pass FIR filter using a Kaiser-windowed sinc function.
- *
- * The filter is parameterized by cutoff frequency, transition bandwidth,
- * and desired stop-band attenuation, and is suitable for anti-aliasing
- * prior to decimation.
- */
-std::vector<double> Decimator::designKaiserLowpass(
-   double fs,
-   double cutoff,
-   double transition,
-   double attenuation) const
+void Decimator::iirFilter(
+   const std::vector<double>& x,
+   std::vector<double>& y,
+   const std::vector<double>& b,
+   const std::vector<double>& a)
 {
-   if (transition <= 0.0)
-      throw std::invalid_argument("Transition band must be > 0");
+   const size_t N = x.size();
+   const size_t order = a.size() - 1;
 
-   double nyquist = fs * 0.5;
-   double fc = cutoff / nyquist;           // Normalized cutoff
-   double width = transition / nyquist;    // Normalized transition width
+   y.assign(N, 0.0);
 
-   // Compute Kaiser window beta parameter from attenuation
-   double beta;
-   if (attenuation > 50.0) {
-      beta = 0.1102 * (attenuation - 8.7);
-   }
-   else if (attenuation >= 21.0) {
-      beta = 0.5842 * std::pow(attenuation - 21, 0.4)
-         + 0.07886 * (attenuation - 21);
-   }
-   else {
-      beta = 0.0;
-   }
-
-   // Estimate filter order
-   int N = static_cast<int>(
-      std::ceil((attenuation - 8.0) / (2.285 * 2 * M_PI * width))
-      );
-   if (N % 2 == 0) N++; // Force odd length for symmetry
-
-   int M = (N - 1) / 2;
-   std::vector<double> h(N);
-
-   // Approximation of the modified Bessel function I0
-   auto I0 = [](double x) {
-      double sum = 1.0;
-      double y = x * x / 4.0;
-      double t = y;
-      for (int k = 1; k < 15; ++k) {
-         sum += t / std::tgamma(k + 1);
-         t *= y / (k + 1);
+   for (size_t i = 0; i < N; ++i) {
+      y[i] = b[0] * x[i];
+      for (size_t j = 1; j <= order; ++j) {
+         if (i >= j) {
+            y[i] += b[j] * x[i - j];
+            y[i] -= a[j] * y[i - j];
+         }
       }
-      return sum;
-      };
-
-   // Generate windowed sinc coefficients
-   for (int n = 0; n < N; ++n) {
-      double k = n - M;
-
-      // Ideal low-pass sinc
-      double sinc = (k == 0)
-         ? 2.0 * fc
-         : std::sin(2.0 * M_PI * fc * k) / (M_PI * k);
-
-      // Kaiser window
-      double ratio = (n - M) / static_cast<double>(M);
-      double w = I0(beta * std::sqrt(1.0 - ratio * ratio)) / I0(beta);
-
-      h[n] = sinc * w;
    }
-
-   return h;
 }
 
-// ================= Utilities =================
-
-/**
- * Performs linear interpolation between adjacent samples.
- *
- * Used to resample the filtered signal at fractional positions
- * during decimation.
- */
-double Decimator::linearInterp(const std::vector<double>& buf, double idx) const
+std::vector<double> Decimator::filtfilt(
+   const std::vector<double>& x,
+   const std::vector<double>& b,
+   const std::vector<double>& a)
 {
-   size_t i = static_cast<size_t>(idx);
-   double frac = idx - i;
-   return buf[i] * (1.0 - frac) + buf[i + 1] * frac;
+   std::vector<double> y, yr, y2;
+
+   // forward
+   iirFilter(x, y, b, a);
+
+   // reverse
+   yr = y;
+   std::reverse(yr.begin(), yr.end());
+
+   // backward
+   iirFilter(yr, y2, b, a);
+
+   // reverse back
+   std::reverse(y2.begin(), y2.end());
+
+   return y2;
 }
