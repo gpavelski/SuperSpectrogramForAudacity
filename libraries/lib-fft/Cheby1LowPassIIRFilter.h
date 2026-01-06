@@ -8,9 +8,10 @@
 
 **********************************************************************/
 
-#include <vector>
-#include <complex>
+#include <algorithm>
 #include <cmath>
+#include <complex>
+#include <vector>
 #include <numeric>
 #include <stdexcept>
 
@@ -86,11 +87,6 @@ private:
    // ------------------------------------------------------------
    // Digital Chebyshev Type I prototype
    // ------------------------------------------------------------
-#include <complex>
-#include <vector>
-#include <cmath>
-
-   using cdouble = std::complex<double>;
 
    /**
    * @brief Generate analog Chebyshev Type I low-pass prototype poles.
