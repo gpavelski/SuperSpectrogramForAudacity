@@ -88,8 +88,9 @@ private:
    std::vector<double> a_coeffs;
 
    static constexpr int filter_order = 8;
-   static constexpr int initial_offset = 32;
+   static constexpr double rp = 0.05;
    double step = 1.0;
+   double Wn = 0.8;
 };
 
 #endif // DECIMATOR_H

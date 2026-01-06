@@ -45,8 +45,7 @@ Decimator::Decimator(double frequencyRate, double targetRate)
    // ----------------------------------------------------
    // Chebyshev Type I low-pass filter design
    // ----------------------------------------------------
-   const double Wn = 0.8 / step;
-   const double rp = 0.05;
+   Wn = 0.8 / step;
 
    Cheby1LowPassIIRFilter filter(filter_order, rp, Wn);
 
