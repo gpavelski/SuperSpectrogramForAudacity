@@ -18,8 +18,38 @@
 #define M_PI 3.14159265358979323846
 #endif // !M_PI
 
+/**
+ * @class Cheby1LowPassIIRFilter
+ * @brief Designs a digital Chebyshev Type I low-pass IIR filter.
+ *
+ * This class computes the coefficients of a digital low-pass filter
+ * using the Chebyshev Type I prototype. The filter is represented
+ * in transfer-function form (numerator `b_` and denominator `a_` coefficients)
+ * suitable for direct filtering of discrete-time signals.
+ *
+ * Features:
+ * - Chebyshev Type I prototype generation.
+ * - Low-pass frequency scaling.
+ * - Bilinear transformation to digital domain.
+ * - Conversion from zero-pole-gain (ZPK) to transfer function form.
+ * - Coefficient normalization (a[0] == 1).
+ */
+
 class Cheby1LowPassIIRFilter {
 public:
+   /**
+   * @brief Construct a Chebyshev Type I low-pass filter.
+   *
+   * This constructor runs the full design pipeline:
+   * 1. Generate Chebyshev Type I analog low-pass prototype poles.
+   * 2. Scale to desired cutoff frequency.
+   * 3. Transform to digital domain using bilinear transform.
+   * 4. Convert ZPK representation to transfer-function coefficients.
+   *
+   * @param order Filter order (number of poles).
+   * @param rp Passband ripple in dB.
+   * @param Wn Normalized cutoff frequency (0 < Wn < 1, where 1 corresponds to Nyquist frequency).
+   */
    Cheby1LowPassIIRFilter(int order, double rp, double Wn) {
       design(order, rp, Wn);
    }
@@ -31,9 +61,15 @@ private:
    using cdouble = std::complex<double>;
    std::vector<double> b_, a_;
 
-   // ------------------------------------------------------------
-   // Polynomial from roots
-   // ------------------------------------------------------------
+   /**
+    * @brief Compute polynomial coefficients from roots.
+    *
+    * Given a vector of roots, returns the coefficients of the polynomial
+    * with those roots, i.e., \prod (x - r_i).
+    *
+    * @param roots Vector of complex roots.
+    * @return Polynomial coefficients as complex numbers.
+    */
    static std::vector<cdouble> poly(const std::vector<cdouble>& roots) {
       std::vector<cdouble> p{ 1.0 };
       for (auto r : roots) {
@@ -56,6 +92,18 @@ private:
 
    using cdouble = std::complex<double>;
 
+   /**
+   * @brief Generate analog Chebyshev Type I low-pass prototype poles.
+   *
+   * Computes poles, zeros (empty for Type I), and gain k for an N-th order
+   * Chebyshev Type I analog low-pass filter with passband ripple `rp`.
+   *
+   * @param N Filter order.
+   * @param rp Passband ripple in dB.
+   * @param z Output vector of zeros (empty for Type I).
+   * @param p Output vector of poles.
+   * @param k Output filter gain.
+   */
    static void cheb1ap(
       int N, double rp,
       std::vector<cdouble>& z,
@@ -95,9 +143,17 @@ private:
       }
    }
 
-   // ------------------------------------------------------------
-   // Low-pass frequency scaling
-   // ------------------------------------------------------------
+   /**
+   * @brief Frequency-scale analog low-pass filter.
+   *
+   * Scales the poles and zeros of an analog prototype filter to achieve
+   * the desired cutoff frequency `wo`.
+   *
+   * @param z Zeros of the prototype filter (scaled in-place).
+   * @param p Poles of the prototype filter (scaled in-place).
+   * @param k Filter gain (adjusted in-place).
+   * @param wo Desired analog cutoff frequency.
+   */
    static void lp2lp_zpk(
       std::vector<cdouble>& z,
       std::vector<cdouble>& p,
@@ -109,9 +165,17 @@ private:
       k *= std::pow(wo, static_cast<int>(p.size() - z.size()));
    }
 
-   // ------------------------------------------------------------
-   // Bilinear transform
-   // ------------------------------------------------------------
+   /**
+   * @brief Transform analog ZPK filter to digital using bilinear transform.
+   *
+   * Converts poles and zeros from the s-plane to the z-plane. Adds
+   * additional zeros at z=-1 if the number of poles exceeds the number of zeros.
+   *
+   * @param z Zeros of the analog filter (transformed in-place).
+   * @param p Poles of the analog filter (transformed in-place).
+   * @param k Filter gain (adjusted in-place).
+   * @param fs Sampling frequency.
+   */
    static void bilinear_zpk(
       std::vector<cdouble>& z,
       std::vector<cdouble>& p,
@@ -140,9 +204,21 @@ private:
          z.emplace_back(-1.0, 0.0);
    }
 
-   // ------------------------------------------------------------
-   // ZPK -> transfer function
-   // ------------------------------------------------------------
+   /**
+    * @brief Convert zero-pole-gain representation to transfer-function coefficients.
+    *
+    * Converts the ZPK representation into standard numerator (b) and denominator (a)
+    * coefficient vectors for direct-time-domain filtering. Coefficients are normalized
+    * such that a[0] == 1.
+    *
+    * @param z Zeros of the digital filter.
+    * @param p Poles of the digital filter.
+    * @param k Filter gain.
+    * @param b Output numerator coefficients.
+    * @param a Output denominator coefficients.
+    *
+    * @throws std::runtime_error if the denominator normalization fails (a[0] too small).
+    */
    static void zpk2tf(
       const std::vector<cdouble>& z,
       const std::vector<cdouble>& p,
@@ -180,9 +256,20 @@ private:
       for (auto& ai : a) ai /= a0;
    }
 
-   // ------------------------------------------------------------
-   // Full design pipeline
-   // ------------------------------------------------------------
+   /**
+    * @brief Full filter design pipeline.
+    *
+    * Implements the complete sequence for designing a digital low-pass
+    * Chebyshev Type I filter:
+    * 1. Generate analog Chebyshev prototype (cheb1ap).
+    * 2. Frequency scale to desired cutoff (lp2lp_zpk).
+    * 3. Apply bilinear transform to digital domain (bilinear_zpk).
+    * 4. Convert to transfer-function coefficients (zpk2tf).
+    *
+    * @param N Filter order.
+    * @param rp Passband ripple in dB.
+    * @param Wn Normalized cutoff frequency (0 < Wn < 1).
+    */
    void design(int N, double rp, double Wn) {
       constexpr double fs = 2.0;
 

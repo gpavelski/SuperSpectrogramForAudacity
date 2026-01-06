@@ -43,7 +43,7 @@ bool PlotSuperSpectrogramBase::GetAudio()
          {
             using namespace BasicUI;
             ShowMessageBox(
-               XO("The signal sampling rate is too low. Minimum sampling rate: %.2f")
+               XO("The signal sampling rate is too low. Minimum sampling rate: %.2f Hz")
                .Format(maxTargetRate),
                MessageBoxOptions{}.Caption(XO("Error")).IconStyle(Icon::Error));
             mData.reset();
