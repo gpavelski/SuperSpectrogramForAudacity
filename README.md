@@ -1,6 +1,10 @@
 # Super Spectrogram for Audacity
 
 This repository is a fork from the original [Audacity GitHub project](https://github.com/audacity/audacity), which implements an add-on feature: a detailed Spectrogram for musical purposes.
+
+[![Watch the demo](https://www.bilibili.com/video/BV198iyBTE7t/?spm_id_from=333.1387.homepage.video_card.click)](https://www.bilibili.com/video/BV198iyBTE7t/?spm_id_from=333.1387.homepage.video_card.click&vd_source=cb71d00b65d31e1770d39c1e213644e3)
+
+
 The Super Spectrogram performs a Gaussian-window Short-Term Fourier Transform on the input signal and display it which lines corresponding to the musical notes.
 The window length of the STFT is dependent on the value of sigma, the standard-deviation of the Gaussian distribution. 
 The window length defines the number of frequency bins (rows) in the output matrix.
