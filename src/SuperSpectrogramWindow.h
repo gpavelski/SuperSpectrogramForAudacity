@@ -53,7 +53,8 @@ private:
    enum {
       ID_NoiseFloorChoice = wxID_HIGHEST + 200,
       ID_HighestNoteChoice,
-      ID_ColormapChoice
+      ID_ColormapChoice,
+      ID_NoteNamingChoice
    };
 
    struct ChoiceOption
@@ -76,6 +77,7 @@ private:
    void OnNoiseFloorChanged(wxCommandEvent& event);
    void OnHighestNoteChanged(wxCommandEvent&);
    void OnColormapChanged(wxCommandEvent&);
+   void OnNoteNamingChanged(wxCommandEvent&);
 
    void OnExport(wxCommandEvent& event);
    void ExportMatrixAsText();
@@ -84,6 +86,7 @@ private:
    wxChoice* mNoiseFloorChoice = nullptr;
    wxChoice* mHighestNoteChoice = nullptr;
    wxChoice* mColormapChoice = nullptr;
+   wxChoice* mNoteNamingChoice = nullptr;
    wxButton* mExportButton = nullptr;
 
    size_t mDetailLevel = 7;
@@ -122,8 +125,17 @@ private:
    { "Parula",  static_cast<int>(SpectrogramPanel::ColormapType::Parula) }
    };
 
+   inline static const std::vector<ChoiceOption> kNoteNamingOptions = {
+   { "Sharps (C#)", static_cast<int>(SpectrogramPanel::NoteNamingStyle::Sharps) },
+   { "Flats (Db)",  static_cast<int>(SpectrogramPanel::NoteNamingStyle::Flats) },
+   { "Mixed",       static_cast<int>(SpectrogramPanel::NoteNamingStyle::Mixed) }
+   };
+
    static constexpr int kDefaultColormap =
       static_cast<int>(SpectrogramPanel::ColormapType::Jet);
+
+   static constexpr int kDefaultNoteNaming =
+      static_cast<int>(SpectrogramPanel::NoteNamingStyle::Mixed);
 
    // Font for optional overlays (timestamps, peak labels, etc.)
    wxFont mFreqFont;

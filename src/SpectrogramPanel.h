@@ -56,6 +56,13 @@ public:
       Parula
    };
 
+   enum class NoteNamingStyle
+   {
+      Sharps,
+      Flats,
+      Mixed
+   };
+
    void SetColormap(ColormapType type);
 
    static wxColour Lerp(const wxColour& a,
@@ -67,6 +74,8 @@ public:
       const std::vector<wxColour>& anchors,
       size_t resolution = 256
    );
+
+   void SetNoteNamingStyle(NoteNamingStyle style);
 
 private:
    // --------------------------
@@ -147,18 +156,31 @@ private:
    // --------------------------
    // Musical note reference
    // --------------------------
-   const std::vector<wxString> s_noteLabels = {
-    "sil", "C0", "C#0", "D0", "Eb0", "E0", "F0", "F#0",
-    "G0", "Ab0", "A0", "Bb0", "B0", "C1", "C#1", "D1", "Eb1", "E1", "F1", "F#1",
-    "G1", "Ab1", "A1", "Bb1", "B1", "C2", "C#2", "D2", "Eb2", "E2", "F2", "F#2",
-    "G2", "Ab2", "A2", "Bb2", "B2", "C3", "C#3", "D3", "Eb3", "E3", "F3", "F#3",
-    "G3", "Ab3", "A3", "Bb3", "B3", "C4", "C#4", "D4", "Eb4", "E4", "F4", "F#4",
-    "G4", "Ab4", "A4", "Bb4", "B4", "C5", "C#5", "D5", "Eb5", "E5", "F5", "F#5",
-    "G5", "Ab5", "A5", "Bb5", "B5", "C6", "C#6", "D6", "Eb6", "E6", "F6", "F#6",
-    "G6", "Ab6", "A6", "Bb6", "B6", "C7", "C#7", "D7", "Eb7", "E7", "F7", "F#7",
-    "G7", "Ab7", "A7", "Bb7", "B7", "C8", "C#8", "D8", "Eb8", "E8", "F8", "F#8",
-    "G8", "Ab8", "A8", "Bb8", "B8"
+
+  const std::array<const char*, 12> kSharpNames = {
+      "C", "C#", "D", "D#", "E", "F",
+      "F#", "G", "G#", "A", "A#", "B"
    };
+
+   const std::array<const char*, 12> kFlatNames = {
+         "C", "Db", "D", "Eb", "E", "F",
+         "Gb", "G", "Ab", "A", "Bb", "B"
+   };
+
+  const std::array<const char*, 12> kMixedNames = {
+         "C", "C#", "D", "Eb", "E", "F",
+         "F#", "G", "Ab", "A", "Bb", "B"
+   };
+
+  std::vector<wxString> MakeNoteLabels(NoteNamingStyle style,
+     int minNote,
+     int maxNote);
+
+  NoteNamingStyle mNoteNamingStyle{ NoteNamingStyle::Mixed };
+  std::vector<wxString> mNoteLabels;
+
+  int mMinNote = 0;
+  int mMaxNote = 108;
 
    const std::vector<double> s_noteFrequencies = {
          0.0,

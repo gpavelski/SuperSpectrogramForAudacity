@@ -42,6 +42,7 @@ SpectrogramPanel::SpectrogramPanel(wxWindow* parent)
    SetBackgroundStyle(wxBG_STYLE_PAINT);
    SetDoubleBuffered(true);
    m_cmap = MakeJetColormap();
+   mNoteLabels = MakeNoteLabels(mNoteNamingStyle, mMinNote, mMaxNote);
 }
 
 void SpectrogramPanel::SetColormap(SpectrogramPanel::ColormapType type)
@@ -249,6 +250,61 @@ void SpectrogramPanel::SetData(const std::vector<std::vector<double>>& m,
    ResetView();
 }
 
+std::vector<wxString> SpectrogramPanel::MakeNoteLabels(
+   NoteNamingStyle style,
+   int minNote,
+   int maxNote)
+{
+   static const std::array<const char*, 12> sharpNames = {
+      "C","C#","D","D#","E","F","F#","G","G#","A","A#","B"
+   };
+
+   static const std::array<const char*, 12> flatNames = {
+      "C","Db","D","Eb","E","F","Gb","G","Ab","A","Bb","B"
+   };
+
+   static const std::array<const char*, 12> mixedNames = {
+      "C","C#","D","Eb","E","F","F#","G","Ab","A","Bb","B"
+   };
+
+   const auto* names = &mixedNames;
+
+   switch (style)
+   {
+   case NoteNamingStyle::Sharps: names = &sharpNames; break;
+   case NoteNamingStyle::Flats:  names = &flatNames;  break;
+   case NoteNamingStyle::Mixed:  names = &mixedNames; break;
+   }
+
+   std::vector<wxString> labels;
+   labels.reserve(maxNote - minNote + 2);
+
+   labels.emplace_back("sil");
+
+   for (int note = minNote; note <= maxNote; ++note)
+   {
+      int pitch = note % 12;
+      int octave = note / 12;
+
+      labels.emplace_back(wxString::Format("%s%d", (*names)[pitch], octave));
+   }
+
+   return labels;
+}
+
+void SpectrogramPanel::SetNoteNamingStyle(NoteNamingStyle style)
+{
+   if (mNoteNamingStyle == style)
+      return;
+
+   mNoteNamingStyle = style;
+
+   mNoteLabels = MakeNoteLabels(style, mMinNote, mMaxNote);
+
+   Refresh();
+}
+
+
 //----------------------------------------------------------------------
 // Clears all spectrogram data and replaces it with a placeholder bitmap
 //----------------------------------------------------------------------
@@ -310,7 +366,7 @@ void SpectrogramPanel::DrawNoteLines(wxDC& dc, const wxSize& size) const
       dc.DrawLine(0, y, size.GetWidth(), y);
 
       // Compute label position
-      const wxString& label = s_noteLabels[i];
+      const wxString& label = mNoteLabels[i];
       wxCoord tw, th;
       dc.GetTextExtent(label, &tw, &th);
       double labelY = y - th - 2;

@@ -44,8 +44,9 @@ BEGIN_EVENT_TABLE(SuperSpectrogramPlotDialog, wxDialogWrapper)
    EVT_CLOSE(SuperSpectrogramPlotDialog::OnCloseWindow)
    EVT_CHOICE(ID_NoiseFloorChoice, SuperSpectrogramPlotDialog::OnNoiseFloorChanged)
    EVT_CHOICE(ID_HighestNoteChoice, SuperSpectrogramPlotDialog::OnHighestNoteChanged)
-   EVT_BUTTON(wxID_SAVE, SuperSpectrogramPlotDialog::OnExport)
    EVT_CHOICE(ID_ColormapChoice, SuperSpectrogramPlotDialog::OnColormapChanged)
+   EVT_CHOICE(ID_NoteNamingChoice, SuperSpectrogramPlotDialog::OnNoteNamingChanged)
+   EVT_BUTTON(wxID_SAVE, SuperSpectrogramPlotDialog::OnExport)
 END_EVENT_TABLE()
 
 //-----------------------------------------------------------------
@@ -262,6 +263,20 @@ void SuperSpectrogramPlotDialog::CreateControls(wxSizer* parentSizer)
 
    toolbarSizer->Add(mColormapChoice, 0, wxALIGN_CENTER_VERTICAL | wxRIGHT, 10);
 
+   toolbarSizer->Add(
+      new wxStaticText(this, wxID_ANY, _("Note naming:")),
+      0, wxALIGN_CENTER_VERTICAL | wxLEFT | wxRIGHT, 5);
+
+   mNoteNamingChoice = CreateChoice(
+      this,
+      ID_NoteNamingChoice,
+      kNoteNamingOptions,
+      kDefaultNoteNaming);
+
+   toolbarSizer->Add(
+      mNoteNamingChoice,
+      0, wxALIGN_CENTER_VERTICAL | wxRIGHT, 10);
+
    parentSizer->Add(
       toolbarSizer,
       0, wxEXPAND | wxALL, 5);
@@ -343,6 +358,21 @@ void SuperSpectrogramPlotDialog::OnColormapChanged(wxCommandEvent&)
    mSpectrogramPanel->SetColormap(type);
 }
 
+void SuperSpectrogramPlotDialog::OnNoteNamingChanged(wxCommandEvent&)
+{
+   if (!mSpectrogramPanel || !mNoteNamingChoice)
+      return;
+
+   int sel = mNoteNamingChoice->GetSelection();
+   if (sel == wxNOT_FOUND)
+      return;
+
+   auto style = static_cast<SpectrogramPanel::NoteNamingStyle>(
+      reinterpret_cast<intptr_t>(
+         mNoteNamingChoice->GetClientData(sel)));
+
+   mSpectrogramPanel->SetNoteNamingStyle(style);
+}
 
 //-----------------------------------------------------------------
 // Export: Data and rendering output
