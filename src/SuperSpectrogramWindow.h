@@ -55,6 +55,7 @@ private:
       ID_HighestNoteChoice,
       ID_ColormapChoice,
       ID_ShowNoteLinesCheck,
+      ID_TimeTickChoice,
       ID_NoteNamingChoice
    };
 
@@ -81,6 +82,7 @@ private:
    void OnColormapChanged(wxCommandEvent&);
    void OnNoteNamingChanged(wxCommandEvent&);
    void OnShowNoteLinesChanged(wxCommandEvent& event);
+   void OnTimeTickChanged(wxCommandEvent&);
 
    void OnExport(wxCommandEvent& event);
    void ExportMatrixAsText();
@@ -94,6 +96,7 @@ private:
    wxChoice* mColormapChoice = nullptr;
    wxChoice* mNoteNamingChoice = nullptr;
    wxCheckBox* mShowNoteLinesCheck = nullptr;
+   wxChoice* mTimeTickChoice = nullptr;
    wxButton* mExportButton = nullptr;
 
    size_t mDetailLevel = 7;
@@ -143,6 +146,15 @@ private:
 
    static constexpr int kDefaultNoteNaming =
       static_cast<int>(SpectrogramPanel::NoteNamingStyle::Mixed);
+
+   inline static const std::vector<ChoiceOption> kTimeTickOptions = {
+   { "Seconds", static_cast<int>(SpectrogramPanel::TimeTickMode::Seconds) },
+   { "Samples", static_cast<int>(SpectrogramPanel::TimeTickMode::Samples) },
+   { "None",    static_cast<int>(SpectrogramPanel::TimeTickMode::None) }
+   };
+
+   static constexpr int kDefaultTimeTick =
+      static_cast<int>(SpectrogramPanel::TimeTickMode::Seconds);
 
    // Font for optional overlays (timestamps, peak labels, etc.)
    wxFont mFreqFont;

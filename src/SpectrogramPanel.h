@@ -78,6 +78,16 @@ public:
    void SetNoteNamingStyle(NoteNamingStyle style);
    void SetShowNoteLines(bool show);
 
+   enum class TimeTickMode
+   {
+      None,
+      Seconds,
+      Samples
+   };
+
+   void SetTimeTickMode(TimeTickMode mode);
+   TimeTickMode GetTimeTickMode() const { return m_timeTickMode; }
+
 private:
    // --------------------------
    // Event handlers
@@ -93,6 +103,12 @@ private:
    // --------------------------
    void DrawNoteLines(wxDC& dc, const wxSize& targetSize) const;
    void DrawTimeTicks(wxDC& dc, const wxSize& targetSize) const;
+   void DrawTickLabel(
+      wxDC& dc,
+      const wxSize& size,
+      double fx,
+      const wxString& label) const;
+
    void ClampViewRanges();
    double FreqToWidgetY(double freq, int widgetHeight) const;
    void BuildBitmap();
@@ -154,6 +170,7 @@ private:
       return MakeJetColormap();
    }
 
+   TimeTickMode m_timeTickMode{ TimeTickMode::Seconds };
    // --------------------------
    // Musical note reference
    // --------------------------

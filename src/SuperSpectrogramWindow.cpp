@@ -50,6 +50,7 @@ BEGIN_EVENT_TABLE(SuperSpectrogramPlotDialog, wxDialogWrapper)
    EVT_CHOICE(ID_ColormapChoice, SuperSpectrogramPlotDialog::OnColormapChanged)
    EVT_CHOICE(ID_NoteNamingChoice, SuperSpectrogramPlotDialog::OnNoteNamingChanged)
    EVT_CHECKBOX(ID_ShowNoteLinesCheck, SuperSpectrogramPlotDialog::OnShowNoteLinesChanged)
+   EVT_CHOICE(ID_TimeTickChoice, SuperSpectrogramPlotDialog::OnTimeTickChanged)
    EVT_BUTTON(wxID_SAVE, SuperSpectrogramPlotDialog::OnExport)
 END_EVENT_TABLE()
 
@@ -97,6 +98,12 @@ SuperSpectrogramPlotDialog::SuperSpectrogramPlotDialog(
          reinterpret_cast<intptr_t>(
             mNoteNamingChoice->GetClientData(
                mNoteNamingChoice->GetSelection()))));
+
+   mSpectrogramPanel->SetTimeTickMode(
+      static_cast<SpectrogramPanel::TimeTickMode>(
+         reinterpret_cast<intptr_t>(
+            mTimeTickChoice->GetClientData(
+               mTimeTickChoice->GetSelection()))));
 
    mainSizer->Add(mSpectrogramPanel.get(), 1, wxEXPAND | wxALL, 5);
 
@@ -305,6 +312,19 @@ void SuperSpectrogramPlotDialog::CreateControls(wxSizer* parentSizer)
       wxALIGN_CENTER_VERTICAL | wxLEFT | wxRIGHT,
       10);
 
+   toolbarSizer->Add(
+      new wxStaticText(this, wxID_ANY, _("Time scale:")),
+      0, wxALIGN_CENTER_VERTICAL | wxLEFT | wxRIGHT, 5);
+
+   mTimeTickChoice = CreateChoice(
+      this,
+      ID_TimeTickChoice,
+      kTimeTickOptions,
+      kDefaultTimeTick);
+
+   toolbarSizer->Add(
+      mTimeTickChoice,
+      0, wxALIGN_CENTER_VERTICAL | wxLEFT | wxRIGHT, 10);
 
    // Export button
    mExportButton = new wxButton(this, wxID_SAVE, _("Export…"));
@@ -424,6 +444,21 @@ void SuperSpectrogramPlotDialog::OnShowNoteLinesChanged(wxCommandEvent& event)
    mSpectrogramPanel->SetShowNoteLines(event.IsChecked());
 }
 
+void SuperSpectrogramPlotDialog::OnTimeTickChanged(wxCommandEvent&)
+{
+   if (!mSpectrogramPanel || !mTimeTickChoice)
+      return;
+
+   int sel = mTimeTickChoice->GetSelection();
+   if (sel == wxNOT_FOUND)
+      return;
+
+   auto mode = static_cast<SpectrogramPanel::TimeTickMode>(
+      reinterpret_cast<intptr_t>(
+         mTimeTickChoice->GetClientData(sel)));
+
+   mSpectrogramPanel->SetTimeTickMode(mode);
+}
 
 //-----------------------------------------------------------------
 // Export: Data and rendering output
@@ -544,6 +579,12 @@ void SuperSpectrogramPlotDialog::LoadSettings()
    mShowNoteLinesCheck->SetValue(showNotes);
 
    // -------------------------
+   // Time Tick Mode
+   // -------------------------
+   if (cfg->Read("TimeTickMode", &value))
+      SetChoiceByValue(mTimeTickChoice, static_cast<int>(value));
+
+   // -------------------------
    // Apply to UI-dependent state
    // -------------------------
    SetChoiceByValue(mNoiseFloorChoice, mNoiseFloor);
@@ -603,6 +644,16 @@ void SuperSpectrogramPlotDialog::SaveSettings()
    if (mShowNoteLinesCheck)
       cfg->Write("ShowNoteLines", mShowNoteLinesCheck->GetValue());
 
+   //Time ticks selection
+   if (mTimeTickChoice) {
+      int sel = mTimeTickChoice->GetSelection();
+      if (sel != wxNOT_FOUND) {
+         int value = static_cast<int>(
+            reinterpret_cast<intptr_t>(
+               mTimeTickChoice->GetClientData(sel)));
+         cfg->Write("TimeTickMode", (long)value);
+      }
+   }
    cfg->Flush();
 }
 

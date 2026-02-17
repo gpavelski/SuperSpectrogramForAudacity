@@ -450,8 +450,7 @@ void SpectrogramPanel::Render(wxDC& dc, const wxSize& target) const
    if (m_showNoteLines)
       DrawNoteLines(dc, target);
 
-   if (m_showTimeTicks)
-      DrawTimeTicks(dc, target);
+   DrawTimeTicks(dc, target);
 }
 
 //----------------------------------------------------------------------
@@ -676,65 +675,140 @@ void SpectrogramPanel::OnRightClick(wxMouseEvent& event)
 //----------------------------------------------------------------------
 void SpectrogramPanel::DrawTimeTicks(wxDC& dc, const wxSize& size) const
 {
-   if (!m_showTimeTicks || m_signalLength == 0 || m_matrix.empty())
+   if (m_timeTickMode == TimeTickMode::None ||
+      m_signalLength == 0 ||
+      m_matrix.empty())
       return;
 
    dc.SetFont(wxFont(8, wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL));
    dc.SetTextForeground(*wxWHITE);
 
-   const double totalDuration = static_cast<double>(m_signalLength) / (2 * m_maxFreq);
+   const size_t numFrames = m_matrix[0].size();
 
-   const double viewLeftTime = (m_viewLeftFrame / m_matrix[0].size()) * totalDuration;
-   const double viewRightTime = (m_viewRightFrame / m_matrix[0].size()) * totalDuration;
+   const double viewLeftFrame = m_viewLeftFrame;
+   const double viewRightFrame = m_viewRightFrame;
 
-   const double viewWidthSec = viewRightTime - viewLeftTime;
+   const double frameSpan = viewRightFrame - viewLeftFrame;
+   if (frameSpan <= 0)
+      return;
 
-   // --- Compute a nice tick interval ---
-   static const double tickSteps[] = {0.005, 0.01, 0.05, 0.1, 0.5, 1, 2, 5, 10, 20, 30, 60, 120, 300, 600, 1800 }; // in seconds
-   double targetPixelsPerTick = 80.0; // aim for ~80 px between ticks
-   double secondsPerPixel = viewWidthSec / size.GetWidth();
-   double bestTick = tickSteps[0];
+   // --------------------------------------
+   // Mode: SECONDS
+   // --------------------------------------
+   if (m_timeTickMode == TimeTickMode::Seconds)
+   {
+      const double totalDuration =
+         static_cast<double>(m_signalLength) / (2 * m_maxFreq);
 
-   for (double t : tickSteps)
-      if (t / secondsPerPixel >= targetPixelsPerTick) {
-         bestTick = t;
-         break;
+      const double viewLeftTime =
+         (viewLeftFrame / numFrames) * totalDuration;
+
+      const double viewRightTime =
+         (viewRightFrame / numFrames) * totalDuration;
+
+      const double viewWidthSec = viewRightTime - viewLeftTime;
+
+      // Tick selection
+      static const double tickSteps[] = {
+         0.005, 0.01, 0.05, 0.1, 0.5, 1, 2, 5,
+         10, 20, 30, 60, 120, 300, 600, 1800
+      };
+
+      const double targetPixelsPerTick = 80.0;
+      const double secondsPerPixel = viewWidthSec / size.GetWidth();
+
+      double step = tickSteps[0];
+      for (double t : tickSteps)
+         if (t / secondsPerPixel >= targetPixelsPerTick) {
+            step = t;
+            break;
+         }
+
+      double tick = std::ceil(viewLeftTime / step) * step;
+
+      while (tick <= viewRightTime)
+      {
+         double fx = (tick - viewLeftTime) / viewWidthSec * size.GetWidth();
+
+         wxString label;
+         if (tick < 60)
+            label = wxString::Format("%g", tick);
+         else
+            label.Printf("%.0f:%02.0f",
+               std::floor(tick / 60.0),
+               std::fmod(tick, 60.0));
+
+         DrawTickLabel(dc, size, fx, label);
+
+         tick += step;
       }
+   }
 
-   // Compute first tick >= viewLeftTime
-   double tick = std::ceil(viewLeftTime / bestTick) * bestTick;
+   // --------------------------------------
+   // Mode: SAMPLES
+   // --------------------------------------
+   else if (m_timeTickMode == TimeTickMode::Samples)
+   {
+      // Map frame -> sample
+      const double samplesPerFrame =
+         static_cast<double>(m_signalLength) / numFrames;
 
-   while (tick <= viewRightTime) {
-      // Convert time to pixel x
-      double fx = (tick - viewLeftTime) / viewWidthSec * size.GetWidth();
+      const double viewLeftSample = viewLeftFrame * samplesPerFrame;
+      const double viewRightSample = viewRightFrame * samplesPerFrame;
 
-      // Draw label only (no line)
-      wxString label;
-      if (tick < 60) {
-         label = wxString::Format("%g", tick); // %g automatically trims
+      const double viewWidthSamples = viewRightSample - viewLeftSample;
+
+      // Tick steps in samples
+      static const double tickSteps[] = {
+         1, 10, 50, 100, 500, 1000, 5000,
+         10000, 50000, 100000, 500000, 1000000
+      };
+
+      const double targetPixelsPerTick = 80.0;
+      const double samplesPerPixel = viewWidthSamples / size.GetWidth();
+
+      double step = tickSteps[0];
+      for (double t : tickSteps)
+         if (t / samplesPerPixel >= targetPixelsPerTick) {
+            step = t;
+            break;
+         }
+
+      double tick = std::ceil(viewLeftSample / step) * step;
+
+      while (tick <= viewRightSample)
+      {
+         double fx = (tick - viewLeftSample) / viewWidthSamples * size.GetWidth();
+
+         wxString label = wxString::Format("%.0f", tick);
+
+         DrawTickLabel(dc, size, fx, label);
+
+         tick += step;
       }
-      else {
-         label.Printf("%.0f:%02.0f", std::floor(tick / 60.0), std::fmod(tick, 60.0));
-      }
-
-      wxCoord tw, th;
-      dc.GetTextExtent(label, &tw, &th);
-
-      int x = static_cast<int>(fx - tw / 2);
-      int y = size.GetHeight() - th - 2;
-
-      // Draw black background for readability
-      dc.SetBrush(*wxBLACK_BRUSH);
-      dc.SetPen(*wxTRANSPARENT_PEN);
-      dc.DrawRectangle(x - 2, y - 1, tw + 4, th + 2);
-
-      // Draw text
-      dc.SetPen(*wxWHITE_PEN);
-      dc.DrawText(label, x, y);
-
-      tick += bestTick;
    }
 }
+
+void SpectrogramPanel::DrawTickLabel(
+   wxDC& dc,
+   const wxSize& size,
+   double fx,
+   const wxString& label) const
+{
+   wxCoord tw, th;
+   dc.GetTextExtent(label, &tw, &th);
+
+   int x = static_cast<int>(fx - tw / 2);
+   int y = size.GetHeight() - th - 2;
+
+   dc.SetBrush(*wxBLACK_BRUSH);
+   dc.SetPen(*wxTRANSPARENT_PEN);
+   dc.DrawRectangle(x - 2, y - 1, tw + 4, th + 2);
+
+   dc.SetPen(*wxWHITE_PEN);
+   dc.DrawText(label, x, y);
+}
+
 
 void SpectrogramPanel::SetShowNoteLines(bool show)
 {
@@ -743,4 +817,13 @@ void SpectrogramPanel::SetShowNoteLines(bool show)
 
    m_showNoteLines = show;
    Refresh();
+}
+
+void SpectrogramPanel::SetTimeTickMode(TimeTickMode mode)
+{
+   if (m_timeTickMode == mode)
+      return;
+
+   m_timeTickMode = mode;
+   Refresh();  // trigger repaint
 }
