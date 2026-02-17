@@ -88,16 +88,21 @@ std::vector<wxColour> SpectrogramPanel::MakeGrayColormap()
 
 std::vector<wxColour> SpectrogramPanel::MakeViridisColormap()
 {
-   static const unsigned char viridis[256][3] = {
-      {68,1,84}, {68,2,85}, {69,4,87}, /* ... truncated ... */ {253,231,37}
+   const std::vector<wxColour> anchors = {
+      wxColour(68,  1,  84),   // dark purple
+      wxColour(71,  44, 122),
+      wxColour(59,  81, 139),
+      wxColour(44, 113, 142),
+      wxColour(33, 144, 141),
+      wxColour(39, 173, 129),
+      wxColour(92, 200,  99),
+      wxColour(170, 220,  50),
+      wxColour(253, 231,  37)  // yellow
    };
 
-   std::vector<wxColour> cmap(256);
-   for (int i = 0; i < 256; ++i)
-      cmap[i] = wxColour(viridis[i][0], viridis[i][1], viridis[i][2]);
-
-   return cmap;
+   return BuildColormap(anchors);
 }
+
 
 
 std::vector<wxColour> SpectrogramPanel::MakeHotColormap()
