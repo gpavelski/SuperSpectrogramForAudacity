@@ -44,6 +44,30 @@ public:
    wxBitmap RenderCurrentViewToBitmap() const;
    void Render(wxDC& dc, const wxSize& target) const;
 
+   enum class ColormapType
+   {
+      Jet,
+      Gray,
+      Hot,
+      Viridis,
+      Inferno,
+      Magma,
+      Cividis,
+      Parula
+   };
+
+   void SetColormap(ColormapType type);
+
+   static wxColour Lerp(const wxColour& a,
+      const wxColour& b,
+      double t
+   );
+
+   static std::vector<wxColour> BuildColormap(
+      const std::vector<wxColour>& anchors,
+      size_t resolution = 256
+   );
+
 private:
    // --------------------------
    // Event handlers
@@ -64,6 +88,13 @@ private:
    void BuildBitmap();
 
    static std::vector<wxColour> MakeJetColormap();
+   static std::vector<wxColour> MakeGrayColormap();
+   static std::vector<wxColour> MakeHotColormap();
+   static std::vector<wxColour> MakeViridisColormap();
+   static std::vector<wxColour> MakeInfernoColormap();
+   static std::vector<wxColour> MakeMagmaColormap();
+   static std::vector<wxColour> MakeCividisColormap();
+   static std::vector<wxColour> MakeParulaColormap();
 
    // --------------------------
    // Data
@@ -93,6 +124,25 @@ private:
    // Time tick data
    bool m_showTimeTicks = false;
    size_t m_signalLength = 0;       // length of the resampled signal
+
+   // Colormap
+   ColormapType m_colormap = ColormapType::Jet;
+   std::vector<wxColour> m_cmap;
+
+   std::vector<wxColour> BuildColormap(ColormapType type)
+   {
+      switch (type) {
+         case ColormapType::Jet:     return MakeJetColormap();
+         case ColormapType::Gray:    return MakeGrayColormap();
+         case ColormapType::Hot:     return MakeHotColormap();
+         case ColormapType::Viridis: return MakeViridisColormap();
+         case ColormapType::Inferno: return MakeInfernoColormap();
+         case ColormapType::Magma: return MakeMagmaColormap();
+         case ColormapType::Cividis: return MakeCividisColormap();
+         case ColormapType::Parula: return MakeParulaColormap();
+      }
+      return MakeJetColormap();
+   }
 
    // --------------------------
    // Musical note reference

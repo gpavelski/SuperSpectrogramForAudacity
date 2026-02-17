@@ -45,6 +45,7 @@ BEGIN_EVENT_TABLE(SuperSpectrogramPlotDialog, wxDialogWrapper)
    EVT_CHOICE(ID_NoiseFloorChoice, SuperSpectrogramPlotDialog::OnNoiseFloorChanged)
    EVT_CHOICE(ID_HighestNoteChoice, SuperSpectrogramPlotDialog::OnHighestNoteChanged)
    EVT_BUTTON(wxID_SAVE, SuperSpectrogramPlotDialog::OnExport)
+   EVT_CHOICE(ID_ColormapChoice, SuperSpectrogramPlotDialog::OnColormapChanged)
 END_EVENT_TABLE()
 
 //-----------------------------------------------------------------
@@ -249,6 +250,18 @@ void SuperSpectrogramPlotDialog::CreateControls(wxSizer* parentSizer)
 
    toolbarSizer->AddStretchSpacer();
 
+   toolbarSizer->Add(
+      new wxStaticText(this, wxID_ANY, _("Colormap:")),
+      0, wxALIGN_CENTER_VERTICAL | wxLEFT | wxRIGHT, 5);
+
+   mColormapChoice = CreateChoice(
+      this,
+      ID_ColormapChoice,
+      kColormapOptions,
+      kDefaultColormap);
+
+   toolbarSizer->Add(mColormapChoice, 0, wxALIGN_CENTER_VERTICAL | wxRIGHT, 10);
+
    parentSizer->Add(
       toolbarSizer,
       0, wxEXPAND | wxALL, 5);
@@ -316,6 +329,20 @@ void SuperSpectrogramPlotDialog::OnHighestNoteChanged(wxCommandEvent&)
    Recalc();
    UpdateLayoutPreservingState();
 }
+
+void SuperSpectrogramPlotDialog::OnColormapChanged(wxCommandEvent&)
+{
+   int sel = mColormapChoice->GetSelection();
+   if (sel == wxNOT_FOUND || !mSpectrogramPanel)
+      return;
+
+   auto type = static_cast<SpectrogramPanel::ColormapType>(
+      reinterpret_cast<intptr_t>(
+         mColormapChoice->GetClientData(sel)));
+
+   mSpectrogramPanel->SetColormap(type);
+}
+
 
 //-----------------------------------------------------------------
 // Export: Data and rendering output

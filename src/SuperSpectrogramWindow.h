@@ -12,6 +12,7 @@
 #define __AUDACITY_SUPER_SPECTROGRAM_WINDOW__
 
 #include "PlotSuperSpectrogramBase.h"
+#include "SpectrogramPanel.h"
 #include <vector>
 #include <memory>
 #include <wx/font.h>
@@ -51,7 +52,8 @@ private:
 
    enum {
       ID_NoiseFloorChoice = wxID_HIGHEST + 200,
-      ID_HighestNoteChoice
+      ID_HighestNoteChoice,
+      ID_ColormapChoice
    };
 
    struct ChoiceOption
@@ -73,6 +75,7 @@ private:
       int defaultValue);
    void OnNoiseFloorChanged(wxCommandEvent& event);
    void OnHighestNoteChanged(wxCommandEvent&);
+   void OnColormapChanged(wxCommandEvent&);
 
    void OnExport(wxCommandEvent& event);
    void ExportMatrixAsText();
@@ -80,6 +83,7 @@ private:
 
    wxChoice* mNoiseFloorChoice = nullptr;
    wxChoice* mHighestNoteChoice = nullptr;
+   wxChoice* mColormapChoice = nullptr;
    wxButton* mExportButton = nullptr;
 
    size_t mDetailLevel = 7;
@@ -106,6 +110,20 @@ private:
    };
 
    const int kDefaultHighestNote = 7;
+
+   inline static const std::vector<ChoiceOption> kColormapOptions = {
+   { "Jet",     static_cast<int>(SpectrogramPanel::ColormapType::Jet) },
+   { "Gray",    static_cast<int>(SpectrogramPanel::ColormapType::Gray) },
+   { "Hot",     static_cast<int>(SpectrogramPanel::ColormapType::Hot) },
+   { "Viridis", static_cast<int>(SpectrogramPanel::ColormapType::Viridis) },
+   { "Inferno",  static_cast<int>(SpectrogramPanel::ColormapType::Inferno) },
+   { "Magma",  static_cast<int>(SpectrogramPanel::ColormapType::Magma) },
+   { "Cividis",  static_cast<int>(SpectrogramPanel::ColormapType::Cividis) },
+   { "Parula",  static_cast<int>(SpectrogramPanel::ColormapType::Parula) }
+   };
+
+   static constexpr int kDefaultColormap =
+      static_cast<int>(SpectrogramPanel::ColormapType::Jet);
 
    // Font for optional overlays (timestamps, peak labels, etc.)
    wxFont mFreqFont;
