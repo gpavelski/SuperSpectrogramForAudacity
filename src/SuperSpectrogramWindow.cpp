@@ -46,6 +46,7 @@ BEGIN_EVENT_TABLE(SuperSpectrogramPlotDialog, wxDialogWrapper)
    EVT_CHOICE(ID_HighestNoteChoice, SuperSpectrogramPlotDialog::OnHighestNoteChanged)
    EVT_CHOICE(ID_ColormapChoice, SuperSpectrogramPlotDialog::OnColormapChanged)
    EVT_CHOICE(ID_NoteNamingChoice, SuperSpectrogramPlotDialog::OnNoteNamingChanged)
+   EVT_CHECKBOX(ID_ShowNoteLinesCheck, SuperSpectrogramPlotDialog::OnShowNoteLinesChanged)
    EVT_BUTTON(wxID_SAVE, SuperSpectrogramPlotDialog::OnExport)
 END_EVENT_TABLE()
 
@@ -78,7 +79,8 @@ SuperSpectrogramPlotDialog::SuperSpectrogramPlotDialog(
    mSpectrogramPanel = std::make_unique<SpectrogramPanel>(this);
    mSpectrogramPanel->EnableNoteLines(true);
    mSpectrogramPanel->EnableTimeTicks(true);
-
+   mSpectrogramPanel->SetShowNoteLines(
+      mShowNoteLinesCheck->GetValue());
    mainSizer->Add(mSpectrogramPanel.get(), 1, wxEXPAND | wxALL, 5);
 
    SetSizer(mainSizer);
@@ -241,27 +243,7 @@ void SuperSpectrogramPlotDialog::CreateControls(wxSizer* parentSizer)
 
    toolbarSizer->Add(
       mHighestNoteChoice,
-      0, wxALIGN_CENTER_VERTICAL | wxRIGHT, 15);
-
-   // Export button
-   mExportButton = new wxButton(this, wxID_SAVE, _("Export…"));
-   toolbarSizer->Add(
-      mExportButton,
-      0, wxALIGN_CENTER_VERTICAL | wxRIGHT, 5);
-
-   toolbarSizer->AddStretchSpacer();
-
-   toolbarSizer->Add(
-      new wxStaticText(this, wxID_ANY, _("Colormap:")),
-      0, wxALIGN_CENTER_VERTICAL | wxLEFT | wxRIGHT, 5);
-
-   mColormapChoice = CreateChoice(
-      this,
-      ID_ColormapChoice,
-      kColormapOptions,
-      kDefaultColormap);
-
-   toolbarSizer->Add(mColormapChoice, 0, wxALIGN_CENTER_VERTICAL | wxRIGHT, 10);
+      0, wxALIGN_CENTER_VERTICAL | wxLEFT | wxRIGHT, 15);
 
    toolbarSizer->Add(
       new wxStaticText(this, wxID_ANY, _("Note naming:")),
@@ -275,7 +257,45 @@ void SuperSpectrogramPlotDialog::CreateControls(wxSizer* parentSizer)
 
    toolbarSizer->Add(
       mNoteNamingChoice,
-      0, wxALIGN_CENTER_VERTICAL | wxRIGHT, 10);
+      0, wxALIGN_CENTER_VERTICAL | wxLEFT | wxRIGHT, 10);
+
+   toolbarSizer->Add(
+      new wxStaticText(this, wxID_ANY, _("Colormap:")),
+      0, wxALIGN_CENTER_VERTICAL | wxLEFT | wxRIGHT, 5);
+
+   mColormapChoice = CreateChoice(
+      this,
+      ID_ColormapChoice,
+      kColormapOptions,
+      kDefaultColormap);
+
+   toolbarSizer->Add(
+      mColormapChoice,
+      0,
+      wxALIGN_CENTER_VERTICAL | wxLEFT |wxRIGHT,
+      10);
+
+   mShowNoteLinesCheck = new wxCheckBox(
+      this,
+      ID_ShowNoteLinesCheck,
+      _("Show notes"));
+
+   mShowNoteLinesCheck->SetValue(true);
+
+   toolbarSizer->Add(
+      mShowNoteLinesCheck,
+      0,
+      wxALIGN_CENTER_VERTICAL | wxLEFT | wxRIGHT,
+      10);
+
+
+   // Export button
+   mExportButton = new wxButton(this, wxID_SAVE, _("Export…"));
+   toolbarSizer->Add(
+      mExportButton,
+      0, wxALIGN_CENTER_VERTICAL | wxLEFT | wxRIGHT, 5);
+
+   toolbarSizer->AddStretchSpacer();
 
    parentSizer->Add(
       toolbarSizer,
@@ -373,6 +393,15 @@ void SuperSpectrogramPlotDialog::OnNoteNamingChanged(wxCommandEvent&)
 
    mSpectrogramPanel->SetNoteNamingStyle(style);
 }
+
+void SuperSpectrogramPlotDialog::OnShowNoteLinesChanged(wxCommandEvent& event)
+{
+   if (!mSpectrogramPanel)
+      return;
+
+   mSpectrogramPanel->SetShowNoteLines(event.IsChecked());
+}
+
 
 //-----------------------------------------------------------------
 // Export: Data and rendering output

@@ -54,6 +54,7 @@ private:
       ID_NoiseFloorChoice = wxID_HIGHEST + 200,
       ID_HighestNoteChoice,
       ID_ColormapChoice,
+      ID_ShowNoteLinesCheck,
       ID_NoteNamingChoice
    };
 
@@ -74,10 +75,12 @@ private:
       wxWindowID id,
       const std::vector<ChoiceOption>& options,
       int defaultValue);
+
    void OnNoiseFloorChanged(wxCommandEvent& event);
    void OnHighestNoteChanged(wxCommandEvent&);
    void OnColormapChanged(wxCommandEvent&);
    void OnNoteNamingChanged(wxCommandEvent&);
+   void OnShowNoteLinesChanged(wxCommandEvent& event);
 
    void OnExport(wxCommandEvent& event);
    void ExportMatrixAsText();
@@ -87,6 +90,7 @@ private:
    wxChoice* mHighestNoteChoice = nullptr;
    wxChoice* mColormapChoice = nullptr;
    wxChoice* mNoteNamingChoice = nullptr;
+   wxCheckBox* mShowNoteLinesCheck = nullptr;
    wxButton* mExportButton = nullptr;
 
    size_t mDetailLevel = 7;

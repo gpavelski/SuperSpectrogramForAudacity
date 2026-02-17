@@ -690,7 +690,7 @@ void SpectrogramPanel::DrawTimeTicks(wxDC& dc, const wxSize& size) const
    const double viewWidthSec = viewRightTime - viewLeftTime;
 
    // --- Compute a nice tick interval ---
-   static const double tickSteps[] = {0.05, 0.1, 0.5, 1, 2, 5, 10, 20, 30, 60, 120, 300, 600, 1800 }; // in seconds
+   static const double tickSteps[] = {0.005, 0.01, 0.05, 0.1, 0.5, 1, 2, 5, 10, 20, 30, 60, 120, 300, 600, 1800 }; // in seconds
    double targetPixelsPerTick = 80.0; // aim for ~80 px between ticks
    double secondsPerPixel = viewWidthSec / size.GetWidth();
    double bestTick = tickSteps[0];
@@ -734,4 +734,13 @@ void SpectrogramPanel::DrawTimeTicks(wxDC& dc, const wxSize& size) const
 
       tick += bestTick;
    }
+}
+
+void SpectrogramPanel::SetShowNoteLines(bool show)
+{
+   if (m_showNoteLines == show)
+      return;
+
+   m_showNoteLines = show;
+   Refresh();
 }

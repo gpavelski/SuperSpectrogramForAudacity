@@ -76,6 +76,7 @@ public:
    );
 
    void SetNoteNamingStyle(NoteNamingStyle style);
+   void SetShowNoteLines(bool show);
 
 private:
    // --------------------------
@@ -121,7 +122,7 @@ private:
    double m_viewRightFrame = 1000.0;
 
    // Optional note lines overlay
-   bool m_showNoteLines = false;
+   bool m_showNoteLines = true;
 
    // Precomputed color map
    const std::vector<wxColour> s_jet = MakeJetColormap();
