@@ -85,6 +85,9 @@ private:
    void OnExport(wxCommandEvent& event);
    void ExportMatrixAsText();
    void ExportViewAsPNG();
+   void LoadSettings();
+   void SaveSettings();
+   void SetChoiceByValue(wxChoice* choice, int value);
 
    wxChoice* mNoiseFloorChoice = nullptr;
    wxChoice* mHighestNoteChoice = nullptr;

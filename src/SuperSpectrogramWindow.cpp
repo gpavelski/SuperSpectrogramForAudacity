@@ -32,10 +32,13 @@ This class actually does the graph display.
 #include "SpectrogramPanel.h"
 #include "STFTProcessor.h"
 #include <fstream>
+#include <wx/config.h>
 #include <wx/display.h>
 #include <wx/wx.h> 
 
 #define SuperSpectrogramTitle XO("Super Spectrogram")
+
+static const wxString kConfigPath = "/SuperSpectrogram";
 
 //-----------------------------------------------------------------
 // Event table for the dialog
@@ -77,10 +80,24 @@ SuperSpectrogramPlotDialog::SuperSpectrogramPlotDialog(
 
    // 2) Create spectrogram panel ONCE
    mSpectrogramPanel = std::make_unique<SpectrogramPanel>(this);
-   mSpectrogramPanel->EnableNoteLines(true);
-   mSpectrogramPanel->EnableTimeTicks(true);
+
+   LoadSettings();
+
    mSpectrogramPanel->SetShowNoteLines(
       mShowNoteLinesCheck->GetValue());
+
+   mSpectrogramPanel->SetColormap(
+      static_cast<SpectrogramPanel::ColormapType>(
+         reinterpret_cast<intptr_t>(
+            mColormapChoice->GetClientData(
+               mColormapChoice->GetSelection()))));
+
+   mSpectrogramPanel->SetNoteNamingStyle(
+      static_cast<SpectrogramPanel::NoteNamingStyle>(
+         reinterpret_cast<intptr_t>(
+            mNoteNamingChoice->GetClientData(
+               mNoteNamingChoice->GetSelection()))));
+
    mainSizer->Add(mSpectrogramPanel.get(), 1, wxEXPAND | wxALL, 5);
 
    SetSizer(mainSizer);
@@ -344,6 +361,7 @@ void SuperSpectrogramPlotDialog::OnNoiseFloorChanged(wxCommandEvent&)
       return;
 
    mNoiseFloor = value;
+   SaveSettings();
    Recalc();
 }
 
@@ -361,6 +379,7 @@ void SuperSpectrogramPlotDialog::OnHighestNoteChanged(wxCommandEvent&)
       return;
 
    mDetailLevel = value;
+   SaveSettings();
    Recalc();
    UpdateLayoutPreservingState();
 }
@@ -375,6 +394,7 @@ void SuperSpectrogramPlotDialog::OnColormapChanged(wxCommandEvent&)
       reinterpret_cast<intptr_t>(
          mColormapChoice->GetClientData(sel)));
 
+   SaveSettings();
    mSpectrogramPanel->SetColormap(type);
 }
 
@@ -391,6 +411,7 @@ void SuperSpectrogramPlotDialog::OnNoteNamingChanged(wxCommandEvent&)
       reinterpret_cast<intptr_t>(
          mNoteNamingChoice->GetClientData(sel)));
 
+   SaveSettings();
    mSpectrogramPanel->SetNoteNamingStyle(style);
 }
 
@@ -399,6 +420,7 @@ void SuperSpectrogramPlotDialog::OnShowNoteLinesChanged(wxCommandEvent& event)
    if (!mSpectrogramPanel)
       return;
 
+   SaveSettings();
    mSpectrogramPanel->SetShowNoteLines(event.IsChecked());
 }
 
@@ -480,6 +502,110 @@ void SuperSpectrogramPlotDialog::ExportViewAsPNG()
    bmp.SaveFile(dlg.GetPath(), wxBITMAP_TYPE_PNG);
 }
 
+void SuperSpectrogramPlotDialog::LoadSettings()
+{
+   wxConfigBase* cfg = wxConfigBase::Get(false);
+   if (!cfg)
+      return;
+
+   cfg->SetPath(kConfigPath);
+
+   long value;
+
+   // -------------------------
+   // Noise floor
+   // -------------------------
+   if (cfg->Read("NoiseFloor", &value))
+      mNoiseFloor = static_cast<int>(value);
+
+   // -------------------------
+   // Highest note
+   // -------------------------
+   if (cfg->Read("HighestNote", &value))
+      mDetailLevel = static_cast<int>(value);
+
+   // -------------------------
+   // Colormap
+   // -------------------------
+   if (cfg->Read("Colormap", &value))
+      SetChoiceByValue(mColormapChoice, static_cast<int>(value));
+
+   // -------------------------
+   // Note naming
+   // -------------------------
+   if (cfg->Read("NoteNaming", &value))
+      SetChoiceByValue(mNoteNamingChoice, static_cast<int>(value));
+
+   // -------------------------
+   // Show note lines
+   // -------------------------
+   bool showNotes = true;
+   cfg->Read("ShowNoteLines", &showNotes);
+   mShowNoteLinesCheck->SetValue(showNotes);
+
+   // -------------------------
+   // Apply to UI-dependent state
+   // -------------------------
+   SetChoiceByValue(mNoiseFloorChoice, mNoiseFloor);
+   SetChoiceByValue(mHighestNoteChoice, mDetailLevel);
+}
+
+void SuperSpectrogramPlotDialog::SetChoiceByValue(wxChoice* choice, int value)
+{
+   if (!choice)
+      return;
+
+   for (unsigned i = 0; i < choice->GetCount(); ++i) {
+      int v = static_cast<int>(
+         reinterpret_cast<intptr_t>(choice->GetClientData(i)));
+
+      if (v == value) {
+         choice->SetSelection(i);
+         return;
+      }
+   }
+}
+
+void SuperSpectrogramPlotDialog::SaveSettings()
+{
+   wxConfigBase* cfg = wxConfigBase::Get(false);
+   if (!cfg)
+      return;
+
+   cfg->SetPath(kConfigPath);
+
+   cfg->Write("NoiseFloor", (long)mNoiseFloor);
+   cfg->Write("HighestNote", (long)mDetailLevel);
+
+   // Colormap
+   if (mColormapChoice) {
+      int sel = mColormapChoice->GetSelection();
+      if (sel != wxNOT_FOUND) {
+         int value = static_cast<int>(
+            reinterpret_cast<intptr_t>(
+               mColormapChoice->GetClientData(sel)));
+         cfg->Write("Colormap", (long)value);
+      }
+   }
+
+   // Note naming
+   if (mNoteNamingChoice) {
+      int sel = mNoteNamingChoice->GetSelection();
+      if (sel != wxNOT_FOUND) {
+         int value = static_cast<int>(
+            reinterpret_cast<intptr_t>(
+               mNoteNamingChoice->GetClientData(sel)));
+         cfg->Write("NoteNaming", (long)value);
+      }
+   }
+
+   // Show note lines
+   if (mShowNoteLinesCheck)
+      cfg->Write("ShowNoteLines", mShowNoteLinesCheck->GetValue());
+
+   cfg->Flush();
+}
+
 //-----------------------------------------------------------------
 // Application integration & command registration
 //-----------------------------------------------------------------
@@ -541,5 +667,6 @@ namespace {
 void SuperSpectrogramPlotDialog::OnCloseWindow(wxCloseEvent& WXUNUSED(event))
 {
    gSpectrogramDialog = nullptr;
+   SaveSettings();
    Destroy();
 }
