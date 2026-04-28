@@ -195,6 +195,8 @@ set( SOURCES
       SuperSpectrogramModel.h
       SuperSpectrogramPanel.cpp
       SuperSpectrogramPanel.h
+      SuperSpectrogramSettings.cpp
+      SuperSpectrogramSettings.h
       SseMathFuncs.cpp
       SseMathFuncs.h
       TagsEditor.cpp

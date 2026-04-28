@@ -11,13 +11,14 @@
 #ifndef __AUDACITY_SUPER_SPECTROGRAM_WINDOW__
 #define __AUDACITY_SUPER_SPECTROGRAM_WINDOW__
 
-#include "PlotSuperSpectrogramBase.h"
-#include "SuperSpectrogramPanel.h"
-#include "SuperSpectrogramModel.h"
 #include <vector>
 #include <memory>
 #include <wx/font.h>
 #include <wx/choice.h>
+#include "PlotSuperSpectrogramBase.h"
+#include "SuperSpectrogramPanel.h"
+#include "SuperSpectrogramModel.h"
+#include "SuperSpectrogramSettings.h"
 #include "wxPanelWrapper.h"
 
 class AudacityProject;
@@ -66,6 +67,7 @@ private:
       int value;
    };
 
+   void ApplySettingsToView();
    void ApplyDataDrivenMinSize();
    void UpdateLayoutPreservingState();
    // Event handlers
@@ -88,11 +90,10 @@ private:
    void OnExport(wxCommandEvent& event);
    void ExportMatrixAsText();
    void ExportViewAsPNG();
-   void LoadSettings();
-   void SaveSettings();
    void SetChoiceByValue(wxChoice* choice, int value);
 
    std::unique_ptr<SuperSpectrogramModel> mModel;
+   std::unique_ptr<SuperSpectrogramSettings> mSettings;
    wxChoice* mNoiseFloorChoice = nullptr;
    wxChoice* mHighestNoteChoice = nullptr;
    wxChoice* mColormapChoice = nullptr;

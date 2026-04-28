@@ -90,28 +90,23 @@ SuperSpectrogramPlotDialog::SuperSpectrogramPlotDialog(
    // 2) Create spectrogram panel ONCE
    mSuperSpectrogramPanel = std::make_unique<SuperSpectrogramPanel>(this);
 
-   LoadSettings();
+   mSettings = std::make_unique<SuperSpectrogramSettings>();
+   mSettings->Load();
 
-   mSuperSpectrogramPanel->SetShowNoteLines(
-      mShowNoteLinesCheck->GetValue());
+   // Apply settings to UI controls
+   SetChoiceByValue(mNoiseFloorChoice, mSettings->noiseFloor);
+   SetChoiceByValue(mHighestNoteChoice, mSettings->detailLevel);
+   SetChoiceByValue(mColormapChoice, mSettings->colormap);
+   SetChoiceByValue(mNoteNamingChoice, mSettings->noteNaming);
+   SetChoiceByValue(mTimeTickChoice, mSettings->timeTickMode);
 
-   mSuperSpectrogramPanel->SetColormap(
-      static_cast<SuperSpectrogramPanel::ColormapType>(
-         reinterpret_cast<intptr_t>(
-            mColormapChoice->GetClientData(
-               mColormapChoice->GetSelection()))));
+   mShowNoteLinesCheck->SetValue(mSettings->showNoteLines);
 
-   mSuperSpectrogramPanel->SetNoteNamingStyle(
-      static_cast<SuperSpectrogramPanel::NoteNamingStyle>(
-         reinterpret_cast<intptr_t>(
-            mNoteNamingChoice->GetClientData(
-               mNoteNamingChoice->GetSelection()))));
+   // Sync local state (temporary, will disappear in Step 3)
+   mNoiseFloor = mSettings->noiseFloor;
+   mDetailLevel = mSettings->detailLevel;
 
-   mSuperSpectrogramPanel->SetTimeTickMode(
-      static_cast<SuperSpectrogramPanel::TimeTickMode>(
-         reinterpret_cast<intptr_t>(
-            mTimeTickChoice->GetClientData(
-               mTimeTickChoice->GetSelection()))));
+   ApplySettingsToView();
 
    mainSizer->Add(mSuperSpectrogramPanel.get(), 1, wxEXPAND | wxALL, 5);
 
@@ -119,6 +114,27 @@ SuperSpectrogramPlotDialog::SuperSpectrogramPlotDialog(
 }
 
 SuperSpectrogramPlotDialog::~SuperSpectrogramPlotDialog() = default;
+
+void SuperSpectrogramPlotDialog::ApplySettingsToView()
+{
+   if (!mSuperSpectrogramPanel || !mSettings)
+      return;
+
+   mSuperSpectrogramPanel->SetColormap(
+      static_cast<SuperSpectrogramPanel::ColormapType>(
+         mSettings->colormap));
+
+   mSuperSpectrogramPanel->SetNoteNamingStyle(
+      static_cast<SuperSpectrogramPanel::NoteNamingStyle>(
+         mSettings->noteNaming));
+
+   mSuperSpectrogramPanel->SetShowNoteLines(
+      mSettings->showNoteLines);
+
+   mSuperSpectrogramPanel->SetTimeTickMode(
+      static_cast<SuperSpectrogramPanel::TimeTickMode>(
+         mSettings->timeTickMode));
+}
 
 //-----------------------------------------------------------------
 // View: Visibility and layout
@@ -390,8 +406,9 @@ void SuperSpectrogramPlotDialog::OnNoiseFloorChanged(wxCommandEvent&)
    if (mNoiseFloor == value)
       return;
 
-   mNoiseFloor = value;
-   SaveSettings();
+   mSettings->noiseFloor = value;
+   mSettings->Save();
+
    Recalc();
 }
 
@@ -408,8 +425,9 @@ void SuperSpectrogramPlotDialog::OnHighestNoteChanged(wxCommandEvent&)
    if (mDetailLevel == value)
       return;
 
-   mDetailLevel = value;
-   SaveSettings();
+   mSettings->detailLevel = value;
+   mSettings->Save();
+
    Recalc();
    UpdateLayoutPreservingState();
 }
@@ -420,11 +438,14 @@ void SuperSpectrogramPlotDialog::OnColormapChanged(wxCommandEvent&)
    if (sel == wxNOT_FOUND || !mSuperSpectrogramPanel)
       return;
 
-   auto type = static_cast<SuperSpectrogramPanel::ColormapType>(
+   int value = static_cast<int>(
       reinterpret_cast<intptr_t>(
          mColormapChoice->GetClientData(sel)));
 
-   SaveSettings();
+   mSettings->colormap = value;
+   mSettings->Save();
+
+   auto type = static_cast<SuperSpectrogramPanel::ColormapType>(value);
    mSuperSpectrogramPanel->SetColormap(type);
 }
 
@@ -437,11 +458,14 @@ void SuperSpectrogramPlotDialog::OnNoteNamingChanged(wxCommandEvent&)
    if (sel == wxNOT_FOUND)
       return;
 
-   auto style = static_cast<SuperSpectrogramPanel::NoteNamingStyle>(
+   int value = static_cast<int>(
       reinterpret_cast<intptr_t>(
          mNoteNamingChoice->GetClientData(sel)));
 
-   SaveSettings();
+   mSettings->noteNaming = value;
+   mSettings->Save();
+
+   auto style = static_cast<SuperSpectrogramPanel::NoteNamingStyle>(value);
    mSuperSpectrogramPanel->SetNoteNamingStyle(style);
 }
 
@@ -450,8 +474,11 @@ void SuperSpectrogramPlotDialog::OnShowNoteLinesChanged(wxCommandEvent& event)
    if (!mSuperSpectrogramPanel)
       return;
 
-   SaveSettings();
-   mSuperSpectrogramPanel->SetShowNoteLines(event.IsChecked());
+   int value = event.IsChecked();
+   mSettings->showNoteLines = value;
+   mSettings->Save();
+
+   mSuperSpectrogramPanel->SetShowNoteLines(value);
 }
 
 void SuperSpectrogramPlotDialog::OnTimeTickChanged(wxCommandEvent&)
@@ -463,10 +490,14 @@ void SuperSpectrogramPlotDialog::OnTimeTickChanged(wxCommandEvent&)
    if (sel == wxNOT_FOUND)
       return;
 
-   auto mode = static_cast<SuperSpectrogramPanel::TimeTickMode>(
+   int value = static_cast<int>(
       reinterpret_cast<intptr_t>(
          mTimeTickChoice->GetClientData(sel)));
 
+   mSettings->timeTickMode = value;
+   mSettings->Save();
+
+   auto mode = static_cast<SuperSpectrogramPanel::TimeTickMode>(value);
    mSuperSpectrogramPanel->SetTimeTickMode(mode);
 }
 
@@ -547,60 +578,6 @@ void SuperSpectrogramPlotDialog::ExportViewAsPNG()
    bmp.SaveFile(dlg.GetPath(), wxBITMAP_TYPE_PNG);
 }
 
-void SuperSpectrogramPlotDialog::LoadSettings()
-{
-   wxConfigBase* cfg = wxConfigBase::Get(false);
-   if (!cfg)
-      return;
-
-   cfg->SetPath(kConfigPath);
-
-   long value;
-
-   // -------------------------
-   // Noise floor
-   // -------------------------
-   if (cfg->Read("NoiseFloor", &value))
-      mNoiseFloor = static_cast<int>(value);
-
-   // -------------------------
-   // Highest note
-   // -------------------------
-   if (cfg->Read("HighestNote", &value))
-      mDetailLevel = static_cast<int>(value);
-
-   // -------------------------
-   // Colormap
-   // -------------------------
-   if (cfg->Read("Colormap", &value))
-      SetChoiceByValue(mColormapChoice, static_cast<int>(value));
-
-   // -------------------------
-   // Note naming
-   // -------------------------
-   if (cfg->Read("NoteNaming", &value))
-      SetChoiceByValue(mNoteNamingChoice, static_cast<int>(value));
-
-   // -------------------------
-   // Show note lines
-   // -------------------------
-   bool showNotes = true;
-   cfg->Read("ShowNoteLines", &showNotes);
-   mShowNoteLinesCheck->SetValue(showNotes);
-
-   // -------------------------
-   // Time Tick Mode
-   // -------------------------
-   if (cfg->Read("TimeTickMode", &value))
-      SetChoiceByValue(mTimeTickChoice, static_cast<int>(value));
-
-   // -------------------------
-   // Apply to UI-dependent state
-   // -------------------------
-   SetChoiceByValue(mNoiseFloorChoice, mNoiseFloor);
-   SetChoiceByValue(mHighestNoteChoice, mDetailLevel);
-}
-
 void SuperSpectrogramPlotDialog::SetChoiceByValue(wxChoice* choice, int value)
 {
    if (!choice)
@@ -615,56 +592,6 @@ void SuperSpectrogramPlotDialog::SetChoiceByValue(wxChoice* choice, int value)
          return;
       }
    }
-}
-
-void SuperSpectrogramPlotDialog::SaveSettings()
-{
-   wxConfigBase* cfg = wxConfigBase::Get(false);
-   if (!cfg)
-      return;
-
-   cfg->SetPath(kConfigPath);
-
-   cfg->Write("NoiseFloor", (long)mNoiseFloor);
-   cfg->Write("HighestNote", (long)mDetailLevel);
-
-   // Colormap
-   if (mColormapChoice) {
-      int sel = mColormapChoice->GetSelection();
-      if (sel != wxNOT_FOUND) {
-         int value = static_cast<int>(
-            reinterpret_cast<intptr_t>(
-               mColormapChoice->GetClientData(sel)));
-         cfg->Write("Colormap", (long)value);
-      }
-   }
-
-   // Note naming
-   if (mNoteNamingChoice) {
-      int sel = mNoteNamingChoice->GetSelection();
-      if (sel != wxNOT_FOUND) {
-         int value = static_cast<int>(
-            reinterpret_cast<intptr_t>(
-               mNoteNamingChoice->GetClientData(sel)));
-         cfg->Write("NoteNaming", (long)value);
-      }
-   }
-
-   // Show note lines
-   if (mShowNoteLinesCheck)
-      cfg->Write("ShowNoteLines", mShowNoteLinesCheck->GetValue());
-
-   //Time ticks selection
-   if (mTimeTickChoice) {
-      int sel = mTimeTickChoice->GetSelection();
-      if (sel != wxNOT_FOUND) {
-         int value = static_cast<int>(
-            reinterpret_cast<intptr_t>(
-               mTimeTickChoice->GetClientData(sel)));
-         cfg->Write("TimeTickMode", (long)value);
-      }
-   }
-   cfg->Flush();
 }
 
 //-----------------------------------------------------------------
@@ -728,6 +655,6 @@ namespace {
 void SuperSpectrogramPlotDialog::OnCloseWindow(wxCloseEvent& WXUNUSED(event))
 {
    gSpectrogramDialog = nullptr;
-   SaveSettings();
+   mSettings->Save();
    Destroy();
 }
