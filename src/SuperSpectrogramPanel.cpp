@@ -2,13 +2,13 @@
 
   Audacity: A Digital Audio Editor
 
-  SpectrogramPanel.cpp
+  SuperSpectrogramPanel.cpp
 
   Guilherme Pavelski
 
 *******************************************************************//**
 
-\class SpectrogramPanel
+\class SuperSpectrogramPanel
 \brief Responsible for the steps of computing an STFT.
 
 wxPanel responsible for rendering a spectrogram bitmap, handling
@@ -17,26 +17,26 @@ such as note lines and time ticks.
 
 *//*******************************************************************/
 
-#include "SpectrogramPanel.h"
+#include "SuperSpectrogramPanel.h"
 #include <wx/dcclient.h>
 #include <wx/dcmemory.h>
 #include <algorithm>
 #include <cmath>
 
-wxBEGIN_EVENT_TABLE(SpectrogramPanel, wxPanel)
-EVT_PAINT(SpectrogramPanel::OnPaint)
-EVT_SIZE(SpectrogramPanel::OnSize)
-EVT_LEFT_DOWN(SpectrogramPanel::OnMouse)
-EVT_LEFT_UP(SpectrogramPanel::OnMouse)
-EVT_MOTION(SpectrogramPanel::OnMouse)
-EVT_RIGHT_DOWN(SpectrogramPanel::OnRightClick)
-EVT_MOUSEWHEEL(SpectrogramPanel::OnWheel)
+wxBEGIN_EVENT_TABLE(SuperSpectrogramPanel, wxPanel)
+EVT_PAINT(SuperSpectrogramPanel::OnPaint)
+EVT_SIZE(SuperSpectrogramPanel::OnSize)
+EVT_LEFT_DOWN(SuperSpectrogramPanel::OnMouse)
+EVT_LEFT_UP(SuperSpectrogramPanel::OnMouse)
+EVT_MOTION(SuperSpectrogramPanel::OnMouse)
+EVT_RIGHT_DOWN(SuperSpectrogramPanel::OnRightClick)
+EVT_MOUSEWHEEL(SuperSpectrogramPanel::OnWheel)
 wxEND_EVENT_TABLE()
 
 //----------------------------------------------------------------------
 // Constructs the spectrogram panel and initializes rendering defaults
 //----------------------------------------------------------------------
-SpectrogramPanel::SpectrogramPanel(wxWindow* parent)
+SuperSpectrogramPanel::SuperSpectrogramPanel(wxWindow* parent)
    : wxPanel(parent), m_showNoteLines(false)
 {
    SetBackgroundStyle(wxBG_STYLE_PAINT);
@@ -45,7 +45,7 @@ SpectrogramPanel::SpectrogramPanel(wxWindow* parent)
    mNoteLabels = MakeNoteLabels(mNoteNamingStyle, mMinNote, mMaxNote);
 }
 
-void SpectrogramPanel::SetColormap(SpectrogramPanel::ColormapType type)
+void SuperSpectrogramPanel::SetColormap(SuperSpectrogramPanel::ColormapType type)
 {
    if (m_colormap == type)
       return;
@@ -62,7 +62,7 @@ void SpectrogramPanel::SetColormap(SpectrogramPanel::ColormapType type)
 //----------------------------------------------------------------------
 // Generates a 256-entry Jet-style colormap for value-to-color mapping
 //----------------------------------------------------------------------
-std::vector<wxColour> SpectrogramPanel::MakeJetColormap()
+std::vector<wxColour> SuperSpectrogramPanel::MakeJetColormap()
 {
    std::vector<wxColour> cmap(256);
    for (int i = 0; i < 256; ++i) {
@@ -79,7 +79,7 @@ std::vector<wxColour> SpectrogramPanel::MakeJetColormap()
    return cmap;
 }
 
-std::vector<wxColour> SpectrogramPanel::MakeGrayColormap()
+std::vector<wxColour> SuperSpectrogramPanel::MakeGrayColormap()
 {
    std::vector<wxColour> cmap(256);
    for (int i = 0; i < 256; ++i)
@@ -87,7 +87,7 @@ std::vector<wxColour> SpectrogramPanel::MakeGrayColormap()
    return cmap;
 }
 
-std::vector<wxColour> SpectrogramPanel::MakeViridisColormap()
+std::vector<wxColour> SuperSpectrogramPanel::MakeViridisColormap()
 {
    const std::vector<wxColour> anchors = {
       wxColour(68,  1,  84),   // dark purple
@@ -106,7 +106,7 @@ std::vector<wxColour> SpectrogramPanel::MakeViridisColormap()
 
 
 
-std::vector<wxColour> SpectrogramPanel::MakeHotColormap()
+std::vector<wxColour> SuperSpectrogramPanel::MakeHotColormap()
 {
    std::vector<wxColour> cmap(256);
 
@@ -123,7 +123,7 @@ std::vector<wxColour> SpectrogramPanel::MakeHotColormap()
    return cmap;
 }
 
-std::vector<wxColour> SpectrogramPanel::MakeInfernoColormap()
+std::vector<wxColour> SuperSpectrogramPanel::MakeInfernoColormap()
 {
    const std::vector<wxColour> anchors = {
       wxColour(0,   0,   4),
@@ -140,7 +140,7 @@ std::vector<wxColour> SpectrogramPanel::MakeInfernoColormap()
    return BuildColormap(anchors);
 }
 
-std::vector<wxColour> SpectrogramPanel::MakeMagmaColormap()
+std::vector<wxColour> SuperSpectrogramPanel::MakeMagmaColormap()
 {
    const std::vector<wxColour> anchors = {
       wxColour(0,   0,   4),
@@ -157,7 +157,7 @@ std::vector<wxColour> SpectrogramPanel::MakeMagmaColormap()
    return BuildColormap(anchors);
 }
 
-std::vector<wxColour> SpectrogramPanel::MakeCividisColormap()
+std::vector<wxColour> SuperSpectrogramPanel::MakeCividisColormap()
 {
    const std::vector<wxColour> anchors = {
       wxColour(0,  32, 76),
@@ -174,7 +174,7 @@ std::vector<wxColour> SpectrogramPanel::MakeCividisColormap()
    return BuildColormap(anchors);
 }
 
-std::vector<wxColour> SpectrogramPanel::MakeParulaColormap()
+std::vector<wxColour> SuperSpectrogramPanel::MakeParulaColormap()
 {
    const std::vector<wxColour> anchors = {
       wxColour(53, 42,135),
@@ -192,7 +192,7 @@ std::vector<wxColour> SpectrogramPanel::MakeParulaColormap()
    return BuildColormap(anchors);
 }
 
-wxColour SpectrogramPanel::Lerp(const wxColour& a,
+wxColour SuperSpectrogramPanel::Lerp(const wxColour& a,
    const wxColour& b,
    double t)
 {
@@ -203,7 +203,7 @@ wxColour SpectrogramPanel::Lerp(const wxColour& a,
    );
 }
 
-std::vector<wxColour> SpectrogramPanel::BuildColormap(
+std::vector<wxColour> SuperSpectrogramPanel::BuildColormap(
    const std::vector<wxColour>& anchors,
    size_t resolution)
 {
@@ -237,7 +237,7 @@ std::vector<wxColour> SpectrogramPanel::BuildColormap(
 // Sets the spectrogram data matrix and associated metadata, then
 // rebuilds the backing bitmap and resets the view extents
 //----------------------------------------------------------------------
-void SpectrogramPanel::SetData(const std::vector<std::vector<double>>& m,
+void SuperSpectrogramPanel::SetData(const std::vector<std::vector<double>>& m,
        double maxFreq,
        size_t numSamples
 )
@@ -250,7 +250,7 @@ void SpectrogramPanel::SetData(const std::vector<std::vector<double>>& m,
    ResetView();
 }
 
-std::vector<wxString> SpectrogramPanel::MakeNoteLabels(
+std::vector<wxString> SuperSpectrogramPanel::MakeNoteLabels(
    NoteNamingStyle style,
    int minNote,
    int maxNote)
@@ -292,7 +292,7 @@ std::vector<wxString> SpectrogramPanel::MakeNoteLabels(
    return labels;
 }
 
-void SpectrogramPanel::SetNoteNamingStyle(NoteNamingStyle style)
+void SuperSpectrogramPanel::SetNoteNamingStyle(NoteNamingStyle style)
 {
    if (mNoteNamingStyle == style)
       return;
@@ -308,7 +308,7 @@ void SpectrogramPanel::SetNoteNamingStyle(NoteNamingStyle style)
 //----------------------------------------------------------------------
 // Clears all spectrogram data and replaces it with a placeholder bitmap
 //----------------------------------------------------------------------
-void SpectrogramPanel::Clear()
+void SuperSpectrogramPanel::Clear()
 {
    // Clear the matrix
    m_matrix.clear();
@@ -327,7 +327,7 @@ void SpectrogramPanel::Clear()
 //----------------------------------------------------------------------
 // Handles paint events by rendering the current view to the panel
 //----------------------------------------------------------------------
-void SpectrogramPanel::OnPaint(wxPaintEvent&)
+void SuperSpectrogramPanel::OnPaint(wxPaintEvent&)
 {
    wxAutoBufferedPaintDC dc(this);
    Render(dc, GetClientSize());
@@ -336,7 +336,7 @@ void SpectrogramPanel::OnPaint(wxPaintEvent&)
 //----------------------------------------------------------------------
 // Handles resize events by triggering a repaint when data is present
 //----------------------------------------------------------------------
-void SpectrogramPanel::OnSize(wxSizeEvent& event)
+void SuperSpectrogramPanel::OnSize(wxSizeEvent& event)
 {
    if (!m_matrix.empty() && m_bitmap.IsOk()) {
       Refresh();
@@ -347,7 +347,7 @@ void SpectrogramPanel::OnSize(wxSizeEvent& event)
 //----------------------------------------------------------------------
 // Renders horizontal musical note reference lines and labels
 //----------------------------------------------------------------------
-void SpectrogramPanel::DrawNoteLines(wxDC& dc, const wxSize& size) const
+void SuperSpectrogramPanel::DrawNoteLines(wxDC& dc, const wxSize& size) const
 {
    if (m_matrix.empty()) return;
 
@@ -391,7 +391,7 @@ void SpectrogramPanel::DrawNoteLines(wxDC& dc, const wxSize& size) const
 // Converts a frequency value (Hz) to a Y coordinate in widget space,
 // accounting for the current vertical view range
 //----------------------------------------------------------------------
-double SpectrogramPanel::FreqToWidgetY(double freq, int widgetHeight) const
+double SuperSpectrogramPanel::FreqToWidgetY(double freq, int widgetHeight) const
 {
    const int rows = m_bitmap.GetHeight();
    const double fNyq = m_maxFreq;
@@ -417,7 +417,7 @@ double SpectrogramPanel::FreqToWidgetY(double freq, int widgetHeight) const
 //----------------------------------------------------------------------
 // Renders the spectrogram view (including overlays) into the target DC
 //----------------------------------------------------------------------
-void SpectrogramPanel::Render(wxDC& dc, const wxSize& target) const
+void SuperSpectrogramPanel::Render(wxDC& dc, const wxSize& target) const
 {
    dc.SetBackground(*wxBLACK_BRUSH);
    dc.Clear();
@@ -457,7 +457,7 @@ void SpectrogramPanel::Render(wxDC& dc, const wxSize& target) const
 // Renders the currently visible spectrogram region into a bitmap,
 // used primarily for exporting the view as an image
 //----------------------------------------------------------------------
-wxBitmap SpectrogramPanel::RenderCurrentViewToBitmap() const
+wxBitmap SuperSpectrogramPanel::RenderCurrentViewToBitmap() const
 {
    wxSize size = GetClientSize();
    wxBitmap bmp(size.GetWidth(), size.GetHeight(), 24);
@@ -473,7 +473,7 @@ wxBitmap SpectrogramPanel::RenderCurrentViewToBitmap() const
 // Builds the full-resolution backing bitmap from the spectrogram matrix,
 // performing value normalization and colormap mapping
 //----------------------------------------------------------------------
-void SpectrogramPanel::BuildBitmap()
+void SuperSpectrogramPanel::BuildBitmap()
 {
    if (m_matrix.empty() || m_matrix[0].empty()) {
       // Create a placeholder bitmap
@@ -538,7 +538,7 @@ void SpectrogramPanel::BuildBitmap()
 //----------------------------------------------------------------------
 // Handles mouse wheel input to perform zooming centered at the cursor
 //----------------------------------------------------------------------
-void SpectrogramPanel::OnWheel(wxMouseEvent& event)
+void SuperSpectrogramPanel::OnWheel(wxMouseEvent& event)
 {
    if (m_matrix.empty()) return;
 
@@ -574,7 +574,7 @@ void SpectrogramPanel::OnWheel(wxMouseEvent& event)
 //----------------------------------------------------------------------
 // Handles mouse press, release, and drag events to support panning
 //----------------------------------------------------------------------
-void SpectrogramPanel::OnMouse(wxMouseEvent& event)
+void SuperSpectrogramPanel::OnMouse(wxMouseEvent& event)
 {
    if (!m_bitmap.IsOk()) {
       event.Skip();
@@ -619,7 +619,7 @@ void SpectrogramPanel::OnMouse(wxMouseEvent& event)
 // Clamps the current view extents to valid spectrogram bounds and
 // enforces minimum visible ranges
 //----------------------------------------------------------------------
-void SpectrogramPanel::ClampViewRanges()
+void SuperSpectrogramPanel::ClampViewRanges()
 {
    if (m_matrix.empty()) return;
 
@@ -644,7 +644,7 @@ void SpectrogramPanel::ClampViewRanges()
 //----------------------------------------------------------------------
 // Resets the view extents to show the entire spectrogram
 //----------------------------------------------------------------------
-void SpectrogramPanel::ResetView()
+void SuperSpectrogramPanel::ResetView()
 {
    if (m_matrix.empty())
       return;
@@ -663,7 +663,7 @@ void SpectrogramPanel::ResetView()
 //----------------------------------------------------------------------
 // Handles right-click events by resetting the spectrogram view
 //----------------------------------------------------------------------
-void SpectrogramPanel::OnRightClick(wxMouseEvent& event)
+void SuperSpectrogramPanel::OnRightClick(wxMouseEvent& event)
 {
    ResetView();
    event.Skip();
@@ -673,7 +673,7 @@ void SpectrogramPanel::OnRightClick(wxMouseEvent& event)
 // Draws time tick labels along the bottom edge of the panel, selecting
 // an appropriate tick spacing based on zoom level
 //----------------------------------------------------------------------
-void SpectrogramPanel::DrawTimeTicks(wxDC& dc, const wxSize& size) const
+void SuperSpectrogramPanel::DrawTimeTicks(wxDC& dc, const wxSize& size) const
 {
    if (m_timeTickMode == TimeTickMode::None ||
       m_signalLength == 0 ||
@@ -789,7 +789,7 @@ void SpectrogramPanel::DrawTimeTicks(wxDC& dc, const wxSize& size) const
    }
 }
 
-void SpectrogramPanel::DrawTickLabel(
+void SuperSpectrogramPanel::DrawTickLabel(
    wxDC& dc,
    const wxSize& size,
    double fx,
@@ -810,7 +810,7 @@ void SpectrogramPanel::DrawTickLabel(
 }
 
 
-void SpectrogramPanel::SetShowNoteLines(bool show)
+void SuperSpectrogramPanel::SetShowNoteLines(bool show)
 {
    if (m_showNoteLines == show)
       return;
@@ -819,7 +819,7 @@ void SpectrogramPanel::SetShowNoteLines(bool show)
    Refresh();
 }
 
-void SpectrogramPanel::SetTimeTickMode(TimeTickMode mode)
+void SuperSpectrogramPanel::SetTimeTickMode(TimeTickMode mode)
 {
    if (m_timeTickMode == mode)
       return;

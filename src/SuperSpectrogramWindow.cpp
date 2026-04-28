@@ -12,7 +12,7 @@
 \brief Displays a detailed spectrogram of the waveform.
 * Responsibilities:
  *  - Acts as the top-level UI controller for the Super Spectrogram analyzer.
- *  - Owns and manages the SpectrogramPanel used to render the STFT matrix.
+ *  - Owns and manages the SuperSpectrogramPanel used to render the STFT matrix.
  *  - Coordinates audio extraction, STFT computation, and visualization updates.
  *  - Translates user interactions (noise floor, highest note, export actions)
  *    into recalculation or rendering changes.
@@ -29,7 +29,7 @@ This class actually does the graph display.
 *//*******************************************************************/
 
 #include "SuperSpectrogramWindow.h"
-#include "SpectrogramPanel.h"
+#include "SuperSpectrogramPanel.h"
 #include "STFTProcessor.h"
 #include <fstream>
 #include <wx/config.h>
@@ -80,32 +80,32 @@ SuperSpectrogramPlotDialog::SuperSpectrogramPlotDialog(
    CreateControls(mainSizer);
 
    // 2) Create spectrogram panel ONCE
-   mSpectrogramPanel = std::make_unique<SpectrogramPanel>(this);
+   mSuperSpectrogramPanel = std::make_unique<SuperSpectrogramPanel>(this);
 
    LoadSettings();
 
-   mSpectrogramPanel->SetShowNoteLines(
+   mSuperSpectrogramPanel->SetShowNoteLines(
       mShowNoteLinesCheck->GetValue());
 
-   mSpectrogramPanel->SetColormap(
-      static_cast<SpectrogramPanel::ColormapType>(
+   mSuperSpectrogramPanel->SetColormap(
+      static_cast<SuperSpectrogramPanel::ColormapType>(
          reinterpret_cast<intptr_t>(
             mColormapChoice->GetClientData(
                mColormapChoice->GetSelection()))));
 
-   mSpectrogramPanel->SetNoteNamingStyle(
-      static_cast<SpectrogramPanel::NoteNamingStyle>(
+   mSuperSpectrogramPanel->SetNoteNamingStyle(
+      static_cast<SuperSpectrogramPanel::NoteNamingStyle>(
          reinterpret_cast<intptr_t>(
             mNoteNamingChoice->GetClientData(
                mNoteNamingChoice->GetSelection()))));
 
-   mSpectrogramPanel->SetTimeTickMode(
-      static_cast<SpectrogramPanel::TimeTickMode>(
+   mSuperSpectrogramPanel->SetTimeTickMode(
+      static_cast<SuperSpectrogramPanel::TimeTickMode>(
          reinterpret_cast<intptr_t>(
             mTimeTickChoice->GetClientData(
                mTimeTickChoice->GetSelection()))));
 
-   mainSizer->Add(mSpectrogramPanel.get(), 1, wxEXPAND | wxALL, 5);
+   mainSizer->Add(mSuperSpectrogramPanel.get(), 1, wxEXPAND | wxALL, 5);
 
    SetSizer(mainSizer);
 }
@@ -133,8 +133,8 @@ void SuperSpectrogramPlotDialog::ApplyDataDrivenMinSize()
    constexpr int MAX_VISIBLE_COLUMNS = 800;
    constexpr int PIXELS_PER_COLUMN = 1;
 
-   int columns = mSpectrogramPanel
-      ? mSpectrogramPanel->GetColumnCount()
+   int columns = mSuperSpectrogramPanel
+      ? mSuperSpectrogramPanel->GetColumnCount()
       : 0;
 
    if (columns == 0)
@@ -212,20 +212,20 @@ void SuperSpectrogramPlotDialog::Recalc()
 void SuperSpectrogramPlotDialog::PlotSTFTMatrix(
    const std::vector<std::vector<double>>& matrix)
 {
-   if (!mSpectrogramPanel)
+   if (!mSuperSpectrogramPanel)
       return;
 
    mMatrix = matrix;
    mMaxFreq = mAnalyst->GetTargetRate() / 2.0;
    mNumSamples = mAnalyst->GetSignalLength();
 
-   mSpectrogramPanel->SetData(
+   mSuperSpectrogramPanel->SetData(
       mMatrix,
       mMaxFreq,
       mNumSamples
    );
 
-   mSpectrogramPanel->ResetView();
+   mSuperSpectrogramPanel->ResetView();
 }
 
 //-----------------------------------------------------------------
@@ -407,57 +407,57 @@ void SuperSpectrogramPlotDialog::OnHighestNoteChanged(wxCommandEvent&)
 void SuperSpectrogramPlotDialog::OnColormapChanged(wxCommandEvent&)
 {
    int sel = mColormapChoice->GetSelection();
-   if (sel == wxNOT_FOUND || !mSpectrogramPanel)
+   if (sel == wxNOT_FOUND || !mSuperSpectrogramPanel)
       return;
 
-   auto type = static_cast<SpectrogramPanel::ColormapType>(
+   auto type = static_cast<SuperSpectrogramPanel::ColormapType>(
       reinterpret_cast<intptr_t>(
          mColormapChoice->GetClientData(sel)));
 
    SaveSettings();
-   mSpectrogramPanel->SetColormap(type);
+   mSuperSpectrogramPanel->SetColormap(type);
 }
 
 void SuperSpectrogramPlotDialog::OnNoteNamingChanged(wxCommandEvent&)
 {
-   if (!mSpectrogramPanel || !mNoteNamingChoice)
+   if (!mSuperSpectrogramPanel || !mNoteNamingChoice)
       return;
 
    int sel = mNoteNamingChoice->GetSelection();
    if (sel == wxNOT_FOUND)
       return;
 
-   auto style = static_cast<SpectrogramPanel::NoteNamingStyle>(
+   auto style = static_cast<SuperSpectrogramPanel::NoteNamingStyle>(
       reinterpret_cast<intptr_t>(
          mNoteNamingChoice->GetClientData(sel)));
 
    SaveSettings();
-   mSpectrogramPanel->SetNoteNamingStyle(style);
+   mSuperSpectrogramPanel->SetNoteNamingStyle(style);
 }
 
 void SuperSpectrogramPlotDialog::OnShowNoteLinesChanged(wxCommandEvent& event)
 {
-   if (!mSpectrogramPanel)
+   if (!mSuperSpectrogramPanel)
       return;
 
    SaveSettings();
-   mSpectrogramPanel->SetShowNoteLines(event.IsChecked());
+   mSuperSpectrogramPanel->SetShowNoteLines(event.IsChecked());
 }
 
 void SuperSpectrogramPlotDialog::OnTimeTickChanged(wxCommandEvent&)
 {
-   if (!mSpectrogramPanel || !mTimeTickChoice)
+   if (!mSuperSpectrogramPanel || !mTimeTickChoice)
       return;
 
    int sel = mTimeTickChoice->GetSelection();
    if (sel == wxNOT_FOUND)
       return;
 
-   auto mode = static_cast<SpectrogramPanel::TimeTickMode>(
+   auto mode = static_cast<SuperSpectrogramPanel::TimeTickMode>(
       reinterpret_cast<intptr_t>(
          mTimeTickChoice->GetClientData(sel)));
 
-   mSpectrogramPanel->SetTimeTickMode(mode);
+   mSuperSpectrogramPanel->SetTimeTickMode(mode);
 }
 
 //-----------------------------------------------------------------
@@ -465,7 +465,7 @@ void SuperSpectrogramPlotDialog::OnTimeTickChanged(wxCommandEvent&)
 //-----------------------------------------------------------------
 void SuperSpectrogramPlotDialog::OnExport(wxCommandEvent&)
 {
-   if (!mSpectrogramPanel || mMatrix.empty())
+   if (!mSuperSpectrogramPanel || mMatrix.empty())
       return;
 
    wxArrayString choices;
@@ -530,7 +530,7 @@ void SuperSpectrogramPlotDialog::ExportViewAsPNG()
    if (dlg.ShowModal() != wxID_OK)
       return;
 
-   wxBitmap bmp = mSpectrogramPanel->RenderCurrentViewToBitmap();
+   wxBitmap bmp = mSuperSpectrogramPanel->RenderCurrentViewToBitmap();
    if (!bmp.IsOk())
       return;
 

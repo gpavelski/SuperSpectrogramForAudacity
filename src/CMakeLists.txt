@@ -191,8 +191,8 @@ set( SOURCES
       SpectralDataDialog.cpp
       SpectralDataManager.h
       SpectralDataManager.cpp
-      SpectrogramPanel.cpp
-      SpectrogramPanel.h
+      SuperSpectrogramPanel.cpp
+      SuperSpectrogramPanel.h
       SseMathFuncs.cpp
       SseMathFuncs.h
       TagsEditor.cpp

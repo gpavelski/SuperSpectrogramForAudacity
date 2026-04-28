@@ -12,7 +12,7 @@
 #define __AUDACITY_SUPER_SPECTROGRAM_WINDOW__
 
 #include "PlotSuperSpectrogramBase.h"
-#include "SpectrogramPanel.h"
+#include "SuperSpectrogramPanel.h"
 #include <vector>
 #include <memory>
 #include <wx/font.h>
@@ -20,10 +20,10 @@
 #include "wxPanelWrapper.h"
 
 class AudacityProject;
-class SpectrogramPanel;
+class SuperSpectrogramPanel;
 
 //=================================================================
-// SuperSpectrogramPlotDialog: hosts the SpectrogramPanel
+// SuperSpectrogramPlotDialog: hosts the SuperSpectrogramPanel
 //=================================================================
 class SuperSpectrogramPlotDialog final :
    public PlotSuperSpectrogramBase,   // used for spectrum data computation
@@ -125,42 +125,42 @@ private:
    const int kDefaultHighestNote = 7;
 
    inline static const std::vector<ChoiceOption> kColormapOptions = {
-   { "Jet",     static_cast<int>(SpectrogramPanel::ColormapType::Jet) },
-   { "Gray",    static_cast<int>(SpectrogramPanel::ColormapType::Gray) },
-   { "Hot",     static_cast<int>(SpectrogramPanel::ColormapType::Hot) },
-   { "Viridis", static_cast<int>(SpectrogramPanel::ColormapType::Viridis) },
-   { "Inferno",  static_cast<int>(SpectrogramPanel::ColormapType::Inferno) },
-   { "Magma",  static_cast<int>(SpectrogramPanel::ColormapType::Magma) },
-   { "Cividis",  static_cast<int>(SpectrogramPanel::ColormapType::Cividis) },
-   { "Parula",  static_cast<int>(SpectrogramPanel::ColormapType::Parula) }
+   { "Jet",     static_cast<int>(SuperSpectrogramPanel::ColormapType::Jet) },
+   { "Gray",    static_cast<int>(SuperSpectrogramPanel::ColormapType::Gray) },
+   { "Hot",     static_cast<int>(SuperSpectrogramPanel::ColormapType::Hot) },
+   { "Viridis", static_cast<int>(SuperSpectrogramPanel::ColormapType::Viridis) },
+   { "Inferno",  static_cast<int>(SuperSpectrogramPanel::ColormapType::Inferno) },
+   { "Magma",  static_cast<int>(SuperSpectrogramPanel::ColormapType::Magma) },
+   { "Cividis",  static_cast<int>(SuperSpectrogramPanel::ColormapType::Cividis) },
+   { "Parula",  static_cast<int>(SuperSpectrogramPanel::ColormapType::Parula) }
    };
 
    inline static const std::vector<ChoiceOption> kNoteNamingOptions = {
-   { "Sharps (C#)", static_cast<int>(SpectrogramPanel::NoteNamingStyle::Sharps) },
-   { "Flats (Db)",  static_cast<int>(SpectrogramPanel::NoteNamingStyle::Flats) },
-   { "Mixed",       static_cast<int>(SpectrogramPanel::NoteNamingStyle::Mixed) }
+   { "Sharps (C#)", static_cast<int>(SuperSpectrogramPanel::NoteNamingStyle::Sharps) },
+   { "Flats (Db)",  static_cast<int>(SuperSpectrogramPanel::NoteNamingStyle::Flats) },
+   { "Mixed",       static_cast<int>(SuperSpectrogramPanel::NoteNamingStyle::Mixed) }
    };
 
    static constexpr int kDefaultColormap =
-      static_cast<int>(SpectrogramPanel::ColormapType::Jet);
+      static_cast<int>(SuperSpectrogramPanel::ColormapType::Jet);
 
    static constexpr int kDefaultNoteNaming =
-      static_cast<int>(SpectrogramPanel::NoteNamingStyle::Mixed);
+      static_cast<int>(SuperSpectrogramPanel::NoteNamingStyle::Mixed);
 
    inline static const std::vector<ChoiceOption> kTimeTickOptions = {
-   { "Seconds", static_cast<int>(SpectrogramPanel::TimeTickMode::Seconds) },
-   { "Samples", static_cast<int>(SpectrogramPanel::TimeTickMode::Samples) },
-   { "None",    static_cast<int>(SpectrogramPanel::TimeTickMode::None) }
+   { "Seconds", static_cast<int>(SuperSpectrogramPanel::TimeTickMode::Seconds) },
+   { "Samples", static_cast<int>(SuperSpectrogramPanel::TimeTickMode::Samples) },
+   { "None",    static_cast<int>(SuperSpectrogramPanel::TimeTickMode::None) }
    };
 
    static constexpr int kDefaultTimeTick =
-      static_cast<int>(SpectrogramPanel::TimeTickMode::Seconds);
+      static_cast<int>(SuperSpectrogramPanel::TimeTickMode::Seconds);
 
    // Font for optional overlays (timestamps, peak labels, etc.)
    wxFont mFreqFont;
 
    // The panel that draws the spectrogram
-   std::unique_ptr<SpectrogramPanel> mSpectrogramPanel;
+   std::unique_ptr<SuperSpectrogramPanel> mSuperSpectrogramPanel;
 
    // Current STFT / spectrogram data (optional cache)
    std::vector<std::vector<double>> mMatrix;

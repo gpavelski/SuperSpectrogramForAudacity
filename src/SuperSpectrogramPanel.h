@@ -2,7 +2,7 @@
 
   Audacity: A Digital Audio Editor
 
-  SpectrogramPanel.h
+  SuperSpectrogramPanel.h
 
   Guilherme Pavelski
 
@@ -14,13 +14,13 @@
 #include <vector>
 #include <limits>
 
-class SpectrogramPanel : public wxPanel
+class SuperSpectrogramPanel : public wxPanel
 {
 public:
    // --------------------------
    // Constructor
    // --------------------------
-   explicit SpectrogramPanel(wxWindow* parent);
+   explicit SuperSpectrogramPanel(wxWindow* parent);
 
    // --------------------------
    // Public API
