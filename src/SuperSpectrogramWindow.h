@@ -16,10 +16,7 @@
 #include <wx/font.h>
 #include <wx/choice.h>
 #include "PlotSuperSpectrogramBase.h"
-#include "SuperSpectrogramController.h"
-#include "SuperSpectrogramModel.h"
 #include "SuperSpectrogramPanel.h"
-#include "SuperSpectrogramSettings.h"
 #include "wxPanelWrapper.h"
 
 class AudacityProject;
@@ -45,8 +42,32 @@ public:
 
    bool IsAudioSelectionValid();
 
+   SuperSpectrogramPanel& GetPanel();
+
+   void ApplySettings(
+      int noiseFloor,
+      int detailLevel,
+      int colormap,
+      int noteNaming,
+      bool showNoteLines,
+      int timeTickMode);
+
    // Feed a 2D STFT / spectrogram matrix to the panel
-   void PlotSTFTMatrix(const std::vector<std::vector<double>>& matrix);
+   void PlotSTFTMatrix(
+      const std::vector<std::vector<double>>& matrix,
+      double maxFreq,
+      size_t numSamples);
+
+  // View -> Controller event interface
+   std::function<void(int)> NotifyNoiseFloorChanged;
+   std::function<void(int)> NotifyHighestNoteChanged;
+   std::function<void(int)> NotifyColormapChanged;
+   std::function<void(int)> NotifyNoteNamingChanged;
+   std::function<void(bool)> NotifyShowNoteLinesChanged;
+   std::function<void(int)> NotifyTimeTickChanged;
+   std::function<void()> OnRecomputeRequested;
+   std::function<void()> NotifyApplySettingsToView;
+   std::function<void(wxWindow*)> NotifyExportRequested;
 
 private:
 
@@ -65,7 +86,6 @@ private:
       int value;
    };
 
-   void ApplySettingsToView();
    void ApplyDataDrivenMinSize();
    void UpdateLayoutPreservingState();
    // Event handlers
@@ -86,13 +106,7 @@ private:
    void OnTimeTickChanged(wxCommandEvent&);
 
    void OnExport(wxCommandEvent& event);
-   void ExportMatrixAsText();
-   void ExportViewAsPNG();
    void SetChoiceByValue(wxChoice* choice, int value);
-
-   std::unique_ptr<SuperSpectrogramController> mController;
-   std::unique_ptr<SuperSpectrogramModel> mModel;
-   std::unique_ptr<SuperSpectrogramSettings> mSettings;
 
    wxChoice* mNoiseFloorChoice = nullptr;
    wxChoice* mHighestNoteChoice = nullptr;
@@ -101,11 +115,6 @@ private:
    wxCheckBox* mShowNoteLinesCheck = nullptr;
    wxChoice* mTimeTickChoice = nullptr;
    wxButton* mExportButton = nullptr;
-
-   size_t mDetailLevel = 7;
-   size_t mNumSamples = 0;
-   double mMaxFreq = 1.0;
-   size_t mNoiseFloor = -70;
 
    const std::vector<ChoiceOption> kNoiseFloorOptions{
       { "-120 dB", -120 },
@@ -164,9 +173,6 @@ private:
 
    // The panel that draws the spectrogram
    std::unique_ptr<SuperSpectrogramPanel> mSuperSpectrogramPanel;
-
-   // Current STFT / spectrogram data (optional cache)
-   std::vector<std::vector<double>> mMatrix;
 
    DECLARE_EVENT_TABLE()
 };
