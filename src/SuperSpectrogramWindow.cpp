@@ -76,6 +76,14 @@ SuperSpectrogramPlotDialog::SuperSpectrogramPlotDialog(
 
    auto* mainSizer = new wxBoxSizer(wxVERTICAL);
 
+   mModel = std::make_unique<SuperSpectrogramModel>();
+
+   SuperSpectrogramModel::Parameters params;
+   params.noiseFloor = mNoiseFloor;
+   params.detailLevel = mDetailLevel;
+
+   mModel->SetParameters(params);
+
    // 1) Create toolbar (export + noise floor)
    CreateControls(mainSizer);
 
@@ -194,16 +202,18 @@ bool SuperSpectrogramPlotDialog::IsAudioSelectionValid()
 //-----------------------------------------------------------------
 void SuperSpectrogramPlotDialog::Recalc()
 {
-   if (!mData)
+   if (!mData || !mModel)
       return;
 
-   mAnalyst->Calculate(mData.get(),
-      mDataLen,
-      mDetailLevel,
-      mRate,
-      mNoiseFloor);
+   SuperSpectrogramModel::Parameters params;
+   params.noiseFloor = mNoiseFloor;
+   params.detailLevel = mDetailLevel;
 
-   PlotSTFTMatrix(mAnalyst->GetMatrix());
+   mModel->SetParameters(params);
+
+   mModel->Compute(mData.get(), mDataLen, mRate);
+
+   PlotSTFTMatrix(mModel->GetMatrix());
 }
 
 //-----------------------------------------------------------------
@@ -212,12 +222,12 @@ void SuperSpectrogramPlotDialog::Recalc()
 void SuperSpectrogramPlotDialog::PlotSTFTMatrix(
    const std::vector<std::vector<double>>& matrix)
 {
-   if (!mSuperSpectrogramPanel)
+   if (!mSuperSpectrogramPanel || !mModel)
       return;
 
    mMatrix = matrix;
-   mMaxFreq = mAnalyst->GetTargetRate() / 2.0;
-   mNumSamples = mAnalyst->GetSignalLength();
+   mMaxFreq = mModel->GetMaxFreq();
+   mNumSamples = mModel->GetNumSamples();
 
    mSuperSpectrogramPanel->SetData(
       mMatrix,

@@ -13,6 +13,7 @@
 
 #include "PlotSuperSpectrogramBase.h"
 #include "SuperSpectrogramPanel.h"
+#include "SuperSpectrogramModel.h"
 #include <vector>
 #include <memory>
 #include <wx/font.h>
@@ -91,6 +92,7 @@ private:
    void SaveSettings();
    void SetChoiceByValue(wxChoice* choice, int value);
 
+   std::unique_ptr<SuperSpectrogramModel> mModel;
    wxChoice* mNoiseFloorChoice = nullptr;
    wxChoice* mHighestNoteChoice = nullptr;
    wxChoice* mColormapChoice = nullptr;
