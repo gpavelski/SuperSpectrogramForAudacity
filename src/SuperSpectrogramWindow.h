@@ -16,8 +16,9 @@
 #include <wx/font.h>
 #include <wx/choice.h>
 #include "PlotSuperSpectrogramBase.h"
-#include "SuperSpectrogramPanel.h"
+#include "SuperSpectrogramController.h"
 #include "SuperSpectrogramModel.h"
+#include "SuperSpectrogramPanel.h"
 #include "SuperSpectrogramSettings.h"
 #include "wxPanelWrapper.h"
 
@@ -46,9 +47,6 @@ public:
 
    // Feed a 2D STFT / spectrogram matrix to the panel
    void PlotSTFTMatrix(const std::vector<std::vector<double>>& matrix);
-
-   // Recalculate the spectrogram from the current selection
-   void Recalc();
 
 private:
 
@@ -92,8 +90,10 @@ private:
    void ExportViewAsPNG();
    void SetChoiceByValue(wxChoice* choice, int value);
 
+   std::unique_ptr<SuperSpectrogramController> mController;
    std::unique_ptr<SuperSpectrogramModel> mModel;
    std::unique_ptr<SuperSpectrogramSettings> mSettings;
+
    wxChoice* mNoiseFloorChoice = nullptr;
    wxChoice* mHighestNoteChoice = nullptr;
    wxChoice* mColormapChoice = nullptr;

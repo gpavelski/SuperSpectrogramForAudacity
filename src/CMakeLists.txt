@@ -191,6 +191,8 @@ set( SOURCES
       SpectralDataDialog.cpp
       SpectralDataManager.h
       SpectralDataManager.cpp
+      SuperSpectrogramController.cpp
+      SuperSpectrogramController.h
       SuperSpectrogramModel.cpp
       SuperSpectrogramModel.h
       SuperSpectrogramPanel.cpp

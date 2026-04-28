@@ -1,3 +1,6 @@
+#ifndef __SUPER_SPECTROGRAM_MODEL__
+#define __SUPER_SPECTROGRAM_MODEL__
+
 #include <memory>
 #include "SuperSpectrogramAnalyst.h"
 
@@ -31,3 +34,5 @@ private:
 
    std::unique_ptr<SuperSpectrogramAnalyst> mAnalyst;
 };
+
+#endif

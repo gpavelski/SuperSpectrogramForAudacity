@@ -88,10 +88,17 @@ SuperSpectrogramPlotDialog::SuperSpectrogramPlotDialog(
    CreateControls(mainSizer);
 
    // 2) Create spectrogram panel ONCE
-   mSuperSpectrogramPanel = std::make_unique<SuperSpectrogramPanel>(this);
+   mSuperSpectrogramPanel =
+      std::make_unique<SuperSpectrogramPanel>(this);
 
    mSettings = std::make_unique<SuperSpectrogramSettings>();
    mSettings->Load();
+
+   mController = std::make_unique<SuperSpectrogramController>(
+      *mModel,
+      *mSettings,
+      *mSuperSpectrogramPanel);
+   mController->Initialize();
 
    // Apply settings to UI controls
    SetChoiceByValue(mNoiseFloorChoice, mSettings->noiseFloor);
@@ -142,7 +149,7 @@ void SuperSpectrogramPlotDialog::ApplySettingsToView()
 bool SuperSpectrogramPlotDialog::Show(bool show)
 {
    if (show && !IsShown()) {
-      Recalc();
+      mController->Recompute(mData.get(), mDataLen, mRate);
       ApplyDataDrivenMinSize();
       Layout();
       Fit();
@@ -211,25 +218,6 @@ void SuperSpectrogramPlotDialog::UpdateLayoutPreservingState()
 bool SuperSpectrogramPlotDialog::IsAudioSelectionValid()
 {
    return GetAudio();
-}
-
-//-----------------------------------------------------------------
-// Model: Spectrogram computation
-//-----------------------------------------------------------------
-void SuperSpectrogramPlotDialog::Recalc()
-{
-   if (!mData || !mModel)
-      return;
-
-   SuperSpectrogramModel::Parameters params;
-   params.noiseFloor = mNoiseFloor;
-   params.detailLevel = mDetailLevel;
-
-   mModel->SetParameters(params);
-
-   mModel->Compute(mData.get(), mDataLen, mRate);
-
-   PlotSTFTMatrix(mModel->GetMatrix());
 }
 
 //-----------------------------------------------------------------
@@ -403,13 +391,8 @@ void SuperSpectrogramPlotDialog::OnNoiseFloorChanged(wxCommandEvent&)
       reinterpret_cast<intptr_t>(
          mNoiseFloorChoice->GetClientData(sel)));
 
-   if (mNoiseFloor == value)
-      return;
-
-   mSettings->noiseFloor = value;
-   mSettings->Save();
-
-   Recalc();
+   mController->OnNoiseFloorChanged(value);
+   mController->Recompute(mData.get(), mDataLen, mRate);
 }
 
 void SuperSpectrogramPlotDialog::OnHighestNoteChanged(wxCommandEvent&)
@@ -422,13 +405,9 @@ void SuperSpectrogramPlotDialog::OnHighestNoteChanged(wxCommandEvent&)
       reinterpret_cast<intptr_t>(
          mHighestNoteChoice->GetClientData(sel)));
 
-   if (mDetailLevel == value)
-      return;
+   mController->OnDetailLevelChanged(value);
+   mController->Recompute(mData.get(), mDataLen, mRate);
 
-   mSettings->detailLevel = value;
-   mSettings->Save();
-
-   Recalc();
    UpdateLayoutPreservingState();
 }
 
@@ -442,9 +421,7 @@ void SuperSpectrogramPlotDialog::OnColormapChanged(wxCommandEvent&)
       reinterpret_cast<intptr_t>(
          mColormapChoice->GetClientData(sel)));
 
-   mSettings->colormap = value;
-   mSettings->Save();
-
+   mController->OnColormapChanged(value);
    auto type = static_cast<SuperSpectrogramPanel::ColormapType>(value);
    mSuperSpectrogramPanel->SetColormap(type);
 }
@@ -462,8 +439,7 @@ void SuperSpectrogramPlotDialog::OnNoteNamingChanged(wxCommandEvent&)
       reinterpret_cast<intptr_t>(
          mNoteNamingChoice->GetClientData(sel)));
 
-   mSettings->noteNaming = value;
-   mSettings->Save();
+   mController->OnNoteNamingChanged(value);
 
    auto style = static_cast<SuperSpectrogramPanel::NoteNamingStyle>(value);
    mSuperSpectrogramPanel->SetNoteNamingStyle(style);
@@ -474,9 +450,8 @@ void SuperSpectrogramPlotDialog::OnShowNoteLinesChanged(wxCommandEvent& event)
    if (!mSuperSpectrogramPanel)
       return;
 
-   int value = event.IsChecked();
-   mSettings->showNoteLines = value;
-   mSettings->Save();
+   bool value = event.IsChecked();
+   mController->OnShowNoteLinesChanged(value);
 
    mSuperSpectrogramPanel->SetShowNoteLines(value);
 }
@@ -494,8 +469,7 @@ void SuperSpectrogramPlotDialog::OnTimeTickChanged(wxCommandEvent&)
       reinterpret_cast<intptr_t>(
          mTimeTickChoice->GetClientData(sel)));
 
-   mSettings->timeTickMode = value;
-   mSettings->Save();
+   mController->OnTimeTickModeChanged(value);
 
    auto mode = static_cast<SuperSpectrogramPanel::TimeTickMode>(value);
    mSuperSpectrogramPanel->SetTimeTickMode(mode);
