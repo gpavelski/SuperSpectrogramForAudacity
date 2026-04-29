@@ -15,7 +15,6 @@
 #include <memory>
 #include <wx/font.h>
 #include <wx/choice.h>
-#include "PlotSuperSpectrogramBase.h"
 #include "SuperSpectrogramPanel.h"
 #include "wxPanelWrapper.h"
 
@@ -26,21 +25,19 @@ class SuperSpectrogramPanel;
 // SuperSpectrogramPlotDialog: hosts the SuperSpectrogramPanel
 //=================================================================
 class SuperSpectrogramPlotDialog final :
-   public PlotSuperSpectrogramBase,   // used for spectrum data computation
    public wxDialogWrapper
 {
 public:
    // Constructor / Destructor
-   SuperSpectrogramPlotDialog(wxWindow* parent, wxWindowID id,
-      AudacityProject& project,
+   SuperSpectrogramPlotDialog(
+      wxWindow* parent,
+      wxWindowID id,
       const TranslatableString& title,
       const wxPoint& pos = wxDefaultPosition);
    virtual ~SuperSpectrogramPlotDialog();
 
    // Override Show() to display dialog
    bool Show(bool show = true) override;
-
-   bool IsAudioSelectionValid();
 
    SuperSpectrogramPanel& GetPanel();
 
@@ -116,6 +113,7 @@ private:
    wxChoice* mTimeTickChoice = nullptr;
    wxButton* mExportButton = nullptr;
 
+   bool mInitialShowNoteLines = true;
    const std::vector<ChoiceOption> kNoiseFloorOptions{
       { "-120 dB", -120 },
       { "-100 dB", -100 },

@@ -1,3 +1,13 @@
+/**********************************************************************
+
+  Audacity: A Digital Audio Editor
+
+  SuperSpectrogramSettings.h
+
+  Guilherme Pavelski
+
+**********************************************************************/
+
 #ifndef __SUPER_SPECTROGRAM_SETTINGS__
 #define __SUPER_SPECTROGRAM_SETTINGS__
 

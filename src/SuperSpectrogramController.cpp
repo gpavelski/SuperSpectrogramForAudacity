@@ -1,12 +1,24 @@
+/**********************************************************************
+
+  Audacity: A Digital Audio Editor
+
+  SuperSpectrogramController.cpp
+
+  Guilherme Pavelski
+
+**********************************************************************/
+
 #include "SuperSpectrogramController.h"
 #include <fstream>
 
 SuperSpectrogramController::SuperSpectrogramController(
+   SuperSpectrogramAudioExtractor& extractor,
    SuperSpectrogramModel& model,
    SuperSpectrogramSettings& settings,
    SuperSpectrogramPanel& panel,
    SuperSpectrogramPlotDialog& view)
-   : mModel(model)
+   : mExtractor(extractor)
+   , mModel(model)
    , mSettings(settings)
    , mPanel(panel)
    , mView(view)
@@ -16,14 +28,37 @@ SuperSpectrogramController::SuperSpectrogramController(
 //------------------------------------------------------------
 // Initialization
 //------------------------------------------------------------
-void SuperSpectrogramController::Initialize()
+bool SuperSpectrogramController::Initialize()
 {
    mSettings.Load();
 
    UpdateModelParameters();
    ApplySettingsToView();
 
+   LoadAudioFromProject();
+
+   if (!mCurrentData || mCurrentLen == 0)
+      return false;
+
+   PushSettingsToView();
    Recompute(mCurrentData, mCurrentLen, mCurrentRate);
+
+   return true;
+}
+
+void SuperSpectrogramController::LoadAudioFromProject()
+{
+   auto audio = mExtractor.Extract();
+
+   if (!audio)
+      return;
+
+   // Take ownership of the buffer
+   mOwnedData = std::move(audio->data);
+
+   mCurrentData = mOwnedData.get();
+   mCurrentLen = audio->length;
+   mCurrentRate = audio->rate;
 }
 
 //------------------------------------------------------------
@@ -67,6 +102,7 @@ void SuperSpectrogramController::PushSettingsToView()
       mSettings.timeTickMode
     );
 }
+
 //------------------------------------------------------------
 // Recompute (core orchestration)
 //------------------------------------------------------------
@@ -263,9 +299,4 @@ void SuperSpectrogramController::BindView()
    {
          OnExportRequested(parent);
    };
-
-   if (mCurrentData && mCurrentLen > 0)
-   {
-      Recompute(mCurrentData, mCurrentLen, mCurrentRate);
-   }
 }

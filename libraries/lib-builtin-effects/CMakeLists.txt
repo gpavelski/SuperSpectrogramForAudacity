@@ -61,8 +61,6 @@ set( SOURCES
    PhaserBase.h
    PlotSpectrumBase.cpp
    PlotSpectrumBase.h
-   PlotSuperSpectrogramBase.cpp
-   PlotSuperSpectrogramBase.h
    Repair.cpp
    Repair.h
    RepeatBase.cpp

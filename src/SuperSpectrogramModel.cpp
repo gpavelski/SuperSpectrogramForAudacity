@@ -1,3 +1,13 @@
+/**********************************************************************
+
+  Audacity: A Digital Audio Editor
+
+  SuperSpectrogramModel.cpp
+
+  Guilherme Pavelski
+
+**********************************************************************/
+
 #include "SuperSpectrogramModel.h"
 #include "STFTProcessor.h"
 

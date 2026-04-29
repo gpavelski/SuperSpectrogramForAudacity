@@ -1,3 +1,13 @@
+/**********************************************************************
+
+  Audacity: A Digital Audio Editor
+
+  SuperSpectrogramSettings.cpp
+
+  Guilherme Pavelski
+
+**********************************************************************/
+
 #include "SuperSpectrogramSettings.h"
 #include <wx/config.h>
 

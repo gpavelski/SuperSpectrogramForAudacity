@@ -58,11 +58,9 @@ END_EVENT_TABLE()
 SuperSpectrogramPlotDialog::SuperSpectrogramPlotDialog(
    wxWindow* parent,
    wxWindowID id,
-   AudacityProject& project,
    const TranslatableString& title,
    const wxPoint& pos)
-   : PlotSuperSpectrogramBase{ project }
-   , wxDialogWrapper(
+   : wxDialogWrapper(
       parent,
       id,
       title,
@@ -123,6 +121,7 @@ void SuperSpectrogramPlotDialog::ApplySettings(
    SetChoiceByValue(mNoteNamingChoice, noteNaming);
    SetChoiceByValue(mTimeTickChoice, timeTickMode);
    mShowNoteLinesCheck->SetValue(showNoteLines);
+   mInitialShowNoteLines = showNoteLines;
 }
 
 void SuperSpectrogramPlotDialog::ApplyDataDrivenMinSize()
@@ -176,14 +175,6 @@ void SuperSpectrogramPlotDialog::UpdateLayoutPreservingState()
       // Explicitly re-maximize to guard against platform quirks
       Maximize(true);
    }
-}
-
-//-----------------------------------------------------------------
-// Model: Audio validity & spectrogram data
-//-----------------------------------------------------------------
-bool SuperSpectrogramPlotDialog::IsAudioSelectionValid()
-{
-   return GetAudio();
 }
 
 //-----------------------------------------------------------------
@@ -275,7 +266,7 @@ void SuperSpectrogramPlotDialog::CreateControls(wxSizer* parentSizer)
       ID_ShowNoteLinesCheck,
       _("Show notes"));
 
-   mShowNoteLinesCheck->SetValue(true);
+   mShowNoteLinesCheck->SetValue(mInitialShowNoteLines);
 
    toolbarSizer->Add(
       mShowNoteLinesCheck,
@@ -416,7 +407,7 @@ void SuperSpectrogramPlotDialog::OnShowNoteLinesChanged(wxCommandEvent& event)
    bool value = event.IsChecked();
 
    if (NotifyShowNoteLinesChanged)
-      NotifyNoteNamingChanged(value);
+      NotifyShowNoteLinesChanged(value);
 
    mSuperSpectrogramPanel->SetShowNoteLines(value);
 }
@@ -488,6 +479,7 @@ namespace {
    }
 
    static std::unique_ptr<SuperSpectrogramController> gController;
+   static std::unique_ptr<SuperSpectrogramAudioExtractor> gAudioExtractor;
    static std::unique_ptr<SuperSpectrogramModel> gModel;
    static std::unique_ptr<SuperSpectrogramSettings> gSettings;
 
@@ -505,18 +497,19 @@ namespace {
       gSpectrogramDialog = new SuperSpectrogramPlotDialog(
          &GetProjectFrame(project),
          wxID_ANY,
-         project,
          SuperSpectrogramTitle,
          wxPoint{ 150, 150 }
       );
 
       // create dependencies
+      gAudioExtractor = std::make_unique<SuperSpectrogramAudioExtractor>(project);
       gModel = std::make_unique<SuperSpectrogramModel>();
       gSettings = std::make_unique<SuperSpectrogramSettings>();
 
       gSettings->Load();
 
       gController = std::make_unique<SuperSpectrogramController>(
+         *gAudioExtractor,
          *gModel,
          *gSettings,
          gSpectrogramDialog->GetPanel(),
@@ -524,15 +517,18 @@ namespace {
       );
 
       gController->BindView();
-      gController->Initialize();
-
-      if (!gSpectrogramDialog->IsAudioSelectionValid())
+      if (!gController->Initialize())
       {
          gSpectrogramDialog->Destroy();
          gSpectrogramDialog = nullptr;
+         gController.reset();
+         gAudioExtractor.reset();
+         gModel.reset();
+         gSettings.reset();
          return;
       }
 
+      gSpectrogramDialog->Show(true);
       gSpectrogramDialog->Show(true);
    }
 

@@ -1,27 +1,40 @@
+/**********************************************************************
+
+  Audacity: A Digital Audio Editor
+
+  SuperSpectrogramController.h
+
+  Guilherme Pavelski
+
+**********************************************************************/
+
 #ifndef __SUPER_SPECTROGRAM_CONTROLLER__
 #define __SUPER_SPECTROGRAM_CONTROLLER__
 
 #include <memory>
+#include "SuperSpectrogramAudioExtractor.h"
 #include "SuperSpectrogramModel.h"
-#include "SuperSpectrogramSettings.h"
 #include "SuperSpectrogramPanel.h"
+#include "SuperSpectrogramSettings.h"
 #include "SuperSpectrogramWindow.h"
 
 class SuperSpectrogramModel;
 class SuperSpectrogramSettings;
 class SuperSpectrogramPanel;
-class SuperSpectrogramPlotDialog; // forward
+class SuperSpectrogramPlotDialog;
 
 class SuperSpectrogramController
 {
 public:
    SuperSpectrogramController(
+      SuperSpectrogramAudioExtractor& extractor,
       SuperSpectrogramModel& model,
       SuperSpectrogramSettings& settings,
       SuperSpectrogramPanel& panel,
       SuperSpectrogramPlotDialog& view);
 
-   void Initialize();
+   bool Initialize();
+   void LoadAudioFromProject();
    void BindView();
 
    // Event handlers (called by dialog)
@@ -45,11 +58,13 @@ private:
    void ExportMatrixAsText(wxWindow* parent);
    void ExportViewAsPNG(wxWindow* parent);
 
+   SuperSpectrogramAudioExtractor& mExtractor;
    SuperSpectrogramModel& mModel;
    SuperSpectrogramSettings& mSettings;
    SuperSpectrogramPanel& mPanel;
    SuperSpectrogramPlotDialog& mView;
 
+   ArrayOf<float> mOwnedData;
    const float* mCurrentData = nullptr;
    size_t mCurrentLen = 0;
    double mCurrentRate = 0.0;
