@@ -16,10 +16,12 @@
 #include <wx/font.h>
 #include <wx/choice.h>
 #include "SuperSpectrogramPanel.h"
+#include "SuperSpectrogramConfig.h"
 #include "wxPanelWrapper.h"
 
 class AudacityProject;
 class SuperSpectrogramPanel;
+class SuperSpectrogramConfig;
 
 //=================================================================
 // SuperSpectrogramView: hosts the SuperSpectrogramPanel
@@ -39,29 +41,34 @@ public:
    // Override Show() to display dialog
    bool Show(bool show = true) override;
 
-   SuperSpectrogramPanel& GetPanel();
-
    void ApplySettings(
       int noiseFloor,
       int detailLevel,
-      int colormap,
-      int noteNaming,
+      SuperSpectrogramConfig::Colormap colormap,
+      SuperSpectrogramConfig::NoteNaming noteNaming,
       bool showNoteLines,
-      int timeTickMode);
+      SuperSpectrogramConfig::TimeTickMode timeTickMode
+   );
 
-   // Feed a 2D STFT / spectrogram matrix to the panel
-   void PlotSTFTMatrix(
+   void SetSpectrogramData(
       const std::vector<std::vector<double>>& matrix,
       double maxFreq,
-      size_t numSamples);
+      size_t numSamples
+   );
 
-  // View -> Controller event interface
+   void ApplyConfig(
+      const SuperSpectrogramConfig& config
+   );
+
+   wxBitmap RenderToBitmap() const;
+
+   // Controller bindings
    std::function<void(int)> NotifyNoiseFloorChanged;
    std::function<void(int)> NotifyHighestNoteChanged;
-   std::function<void(int)> NotifyColormapChanged;
-   std::function<void(int)> NotifyNoteNamingChanged;
+   std::function<void(SuperSpectrogramConfig::Colormap)> NotifyColormapChanged;
+   std::function<void(SuperSpectrogramConfig::NoteNaming)> NotifyNoteNamingChanged;
    std::function<void(bool)> NotifyShowNoteLinesChanged;
-   std::function<void(int)> NotifyTimeTickChanged;
+   std::function<void(SuperSpectrogramConfig::TimeTickMode)> NotifyTimeTickChanged;
    std::function<void()> OnRecomputeRequested;
    std::function<void()> NotifyApplySettingsToView;
    std::function<void(wxWindow*)> NotifyExportRequested;
@@ -135,42 +142,48 @@ private:
    const int kDefaultHighestNote = 7;
 
    inline static const std::vector<ChoiceOption> kColormapOptions = {
-   { "Jet",     static_cast<int>(SuperSpectrogramPanel::ColormapType::Jet) },
-   { "Gray",    static_cast<int>(SuperSpectrogramPanel::ColormapType::Gray) },
-   { "Hot",     static_cast<int>(SuperSpectrogramPanel::ColormapType::Hot) },
-   { "Viridis", static_cast<int>(SuperSpectrogramPanel::ColormapType::Viridis) },
-   { "Inferno",  static_cast<int>(SuperSpectrogramPanel::ColormapType::Inferno) },
-   { "Magma",  static_cast<int>(SuperSpectrogramPanel::ColormapType::Magma) },
-   { "Cividis",  static_cast<int>(SuperSpectrogramPanel::ColormapType::Cividis) },
-   { "Parula",  static_cast<int>(SuperSpectrogramPanel::ColormapType::Parula) }
+   { "Jet",     static_cast<int>(SuperSpectrogramConfig::Colormap::Jet) },
+   { "Gray",    static_cast<int>(SuperSpectrogramConfig::Colormap::Gray) },
+   { "Hot",     static_cast<int>(SuperSpectrogramConfig::Colormap::Hot) },
+   { "Viridis", static_cast<int>(SuperSpectrogramConfig::Colormap::Viridis) },
+   { "Inferno",  static_cast<int>(SuperSpectrogramConfig::Colormap::Inferno) },
+   { "Magma",  static_cast<int>(SuperSpectrogramConfig::Colormap::Magma) },
+   { "Cividis",  static_cast<int>(SuperSpectrogramConfig::Colormap::Cividis) },
+   { "Parula",  static_cast<int>(SuperSpectrogramConfig::Colormap::Parula) }
    };
 
    inline static const std::vector<ChoiceOption> kNoteNamingOptions = {
-   { "Sharps (C#)", static_cast<int>(SuperSpectrogramPanel::NoteNamingStyle::Sharps) },
-   { "Flats (Db)",  static_cast<int>(SuperSpectrogramPanel::NoteNamingStyle::Flats) },
-   { "Mixed",       static_cast<int>(SuperSpectrogramPanel::NoteNamingStyle::Mixed) }
+   { "Sharps (C#)", static_cast<int>(SuperSpectrogramConfig::NoteNaming::Sharps) },
+   { "Flats (Db)",  static_cast<int>(SuperSpectrogramConfig::NoteNaming::Flats) },
+   { "Mixed",       static_cast<int>(SuperSpectrogramConfig::NoteNaming::Mixed) }
    };
 
    static constexpr int kDefaultColormap =
-      static_cast<int>(SuperSpectrogramPanel::ColormapType::Jet);
+      static_cast<int>(SuperSpectrogramConfig::Colormap::Jet);
 
    static constexpr int kDefaultNoteNaming =
-      static_cast<int>(SuperSpectrogramPanel::NoteNamingStyle::Mixed);
+      static_cast<int>(SuperSpectrogramConfig::NoteNaming::Mixed);
 
    inline static const std::vector<ChoiceOption> kTimeTickOptions = {
-   { "Seconds", static_cast<int>(SuperSpectrogramPanel::TimeTickMode::Seconds) },
-   { "Samples", static_cast<int>(SuperSpectrogramPanel::TimeTickMode::Samples) },
-   { "None",    static_cast<int>(SuperSpectrogramPanel::TimeTickMode::None) }
+   { "Seconds", static_cast<int>(SuperSpectrogramConfig::TimeTickMode::Seconds) },
+   { "Samples", static_cast<int>(SuperSpectrogramConfig::TimeTickMode::Samples) },
+   { "None",    static_cast<int>(SuperSpectrogramConfig::TimeTickMode::None) }
    };
 
    static constexpr int kDefaultTimeTick =
-      static_cast<int>(SuperSpectrogramPanel::TimeTickMode::Seconds);
+      static_cast<int>(SuperSpectrogramConfig::TimeTickMode::Seconds);
 
    // Font for optional overlays (timestamps, peak labels, etc.)
    wxFont mFreqFont;
 
    // The panel that draws the spectrogram
-   std::unique_ptr<SuperSpectrogramPanel> mSuperSpectrogramPanel;
+   std::unique_ptr<SuperSpectrogramPanel> mPanel;
+
+   std::vector<std::vector<double>> mMatrix;
+   double mMaxFreq = 0.0;
+   size_t mNumSamples = 0;
+
+   void ApplyToPanel();
 
    DECLARE_EVENT_TABLE()
 };

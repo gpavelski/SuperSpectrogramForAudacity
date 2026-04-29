@@ -14,13 +14,11 @@
 #include <memory>
 #include "SuperSpectrogramAudioExtractor.h"
 #include "SuperSpectrogramModel.h"
-#include "SuperSpectrogramPanel.h"
-#include "SuperSpectrogramSettings.h"
+#include "SuperSpectrogramConfig.h"
 #include "SuperSpectrogramWindow.h"
 
+class SuperSpectrogramConfig;
 class SuperSpectrogramModel;
-class SuperSpectrogramSettings;
-class SuperSpectrogramPanel;
 class SuperSpectrogramView;
 
 class SuperSpectrogramController
@@ -28,9 +26,8 @@ class SuperSpectrogramController
 public:
    SuperSpectrogramController(
       SuperSpectrogramAudioExtractor& extractor,
+      SuperSpectrogramConfig& config,
       SuperSpectrogramModel& model,
-      SuperSpectrogramSettings& settings,
-      SuperSpectrogramPanel& panel,
       SuperSpectrogramView& view);
 
    bool Initialize();
@@ -40,10 +37,10 @@ public:
    // Event handlers (called by dialog)
    void OnNoiseFloorChanged(int value);
    void OnDetailLevelChanged(int value);
-   void OnColormapChanged(int value);
-   void OnNoteNamingChanged(int value);
+   void OnColormapChanged(SuperSpectrogramConfig::Colormap value);
+   void OnNoteNamingChanged(SuperSpectrogramConfig::NoteNaming value);
    void OnShowNoteLinesChanged(bool value);
-   void OnTimeTickModeChanged(int value);
+   void OnTimeTickModeChanged(SuperSpectrogramConfig::TimeTickMode value);
    void OnExportRequested(wxWindow* parent);
 
    // External trigger (dialog Show)
@@ -52,16 +49,14 @@ public:
    void SetAudioData(const float* data, size_t len, double rate);
 
 private:
-   void ApplySettingsToView();
    void UpdateModelParameters();
    void PushSettingsToView();
    void ExportMatrixAsText(wxWindow* parent);
    void ExportViewAsPNG(wxWindow* parent);
 
    SuperSpectrogramAudioExtractor& mExtractor;
+   SuperSpectrogramConfig& mConfig;
    SuperSpectrogramModel& mModel;
-   SuperSpectrogramSettings& mSettings;
-   SuperSpectrogramPanel& mPanel;
    SuperSpectrogramView& mView;
 
    ArrayOf<float> mOwnedData;

@@ -45,7 +45,7 @@ SuperSpectrogramPanel::SuperSpectrogramPanel(wxWindow* parent)
    mNoteLabels = MakeNoteLabels(mNoteNamingStyle, mMinNote, mMaxNote);
 }
 
-void SuperSpectrogramPanel::SetColormap(SuperSpectrogramPanel::ColormapType type)
+void SuperSpectrogramPanel::SetColormap(SuperSpectrogramConfig::Colormap type)
 {
    if (m_colormap == type)
       return;
@@ -251,7 +251,7 @@ void SuperSpectrogramPanel::SetData(const std::vector<std::vector<double>>& m,
 }
 
 std::vector<wxString> SuperSpectrogramPanel::MakeNoteLabels(
-   NoteNamingStyle style,
+   SuperSpectrogramConfig::NoteNaming style,
    int minNote,
    int maxNote)
 {
@@ -271,9 +271,9 @@ std::vector<wxString> SuperSpectrogramPanel::MakeNoteLabels(
 
    switch (style)
    {
-   case NoteNamingStyle::Sharps: names = &sharpNames; break;
-   case NoteNamingStyle::Flats:  names = &flatNames;  break;
-   case NoteNamingStyle::Mixed:  names = &mixedNames; break;
+   case SuperSpectrogramConfig::NoteNaming::Sharps: names = &sharpNames; break;
+   case SuperSpectrogramConfig::NoteNaming::Flats:  names = &flatNames;  break;
+   case SuperSpectrogramConfig::NoteNaming::Mixed:  names = &mixedNames; break;
    }
 
    std::vector<wxString> labels;
@@ -292,7 +292,7 @@ std::vector<wxString> SuperSpectrogramPanel::MakeNoteLabels(
    return labels;
 }
 
-void SuperSpectrogramPanel::SetNoteNamingStyle(NoteNamingStyle style)
+void SuperSpectrogramPanel::SetNoteNamingStyle(SuperSpectrogramConfig::NoteNaming style)
 {
    if (mNoteNamingStyle == style)
       return;
@@ -675,7 +675,7 @@ void SuperSpectrogramPanel::OnRightClick(wxMouseEvent& event)
 //----------------------------------------------------------------------
 void SuperSpectrogramPanel::DrawTimeTicks(wxDC& dc, const wxSize& size) const
 {
-   if (m_timeTickMode == TimeTickMode::None ||
+   if (m_timeTickMode == SuperSpectrogramConfig::TimeTickMode::None ||
       m_signalLength == 0 ||
       m_matrix.empty())
       return;
@@ -695,7 +695,7 @@ void SuperSpectrogramPanel::DrawTimeTicks(wxDC& dc, const wxSize& size) const
    // --------------------------------------
    // Mode: SECONDS
    // --------------------------------------
-   if (m_timeTickMode == TimeTickMode::Seconds)
+   if (m_timeTickMode == SuperSpectrogramConfig::TimeTickMode::Seconds)
    {
       const double totalDuration =
          static_cast<double>(m_signalLength) / (2 * m_maxFreq);
@@ -747,7 +747,7 @@ void SuperSpectrogramPanel::DrawTimeTicks(wxDC& dc, const wxSize& size) const
    // --------------------------------------
    // Mode: SAMPLES
    // --------------------------------------
-   else if (m_timeTickMode == TimeTickMode::Samples)
+   else if (m_timeTickMode == SuperSpectrogramConfig::TimeTickMode::Samples)
    {
       // Map frame -> sample
       const double samplesPerFrame =
@@ -819,7 +819,7 @@ void SuperSpectrogramPanel::SetShowNoteLines(bool show)
    Refresh();
 }
 
-void SuperSpectrogramPanel::SetTimeTickMode(TimeTickMode mode)
+void SuperSpectrogramPanel::SetTimeTickMode(SuperSpectrogramConfig::TimeTickMode mode)
 {
    if (m_timeTickMode == mode)
       return;

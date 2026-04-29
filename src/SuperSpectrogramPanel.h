@@ -13,6 +13,7 @@
 #include <wx/dcbuffer.h>
 #include <vector>
 #include <limits>
+#include "SuperSpectrogramConfig.h"
 
 class SuperSpectrogramPanel : public wxPanel
 {
@@ -44,26 +45,7 @@ public:
    wxBitmap RenderCurrentViewToBitmap() const;
    void Render(wxDC& dc, const wxSize& target) const;
 
-   enum class ColormapType
-   {
-      Jet,
-      Gray,
-      Hot,
-      Viridis,
-      Inferno,
-      Magma,
-      Cividis,
-      Parula
-   };
-
-   enum class NoteNamingStyle
-   {
-      Sharps,
-      Flats,
-      Mixed
-   };
-
-   void SetColormap(ColormapType type);
+   void SetColormap(SuperSpectrogramConfig::Colormap type);
 
    static wxColour Lerp(const wxColour& a,
       const wxColour& b,
@@ -75,18 +57,11 @@ public:
       size_t resolution = 256
    );
 
-   void SetNoteNamingStyle(NoteNamingStyle style);
+   void SetNoteNamingStyle(SuperSpectrogramConfig::NoteNaming style);
    void SetShowNoteLines(bool show);
 
-   enum class TimeTickMode
-   {
-      None,
-      Seconds,
-      Samples
-   };
-
-   void SetTimeTickMode(TimeTickMode mode);
-   TimeTickMode GetTimeTickMode() const { return m_timeTickMode; }
+   void SetTimeTickMode(SuperSpectrogramConfig::TimeTickMode mode);
+   SuperSpectrogramConfig::TimeTickMode GetTimeTickMode() const { return m_timeTickMode; }
 
 private:
    // --------------------------
@@ -152,25 +127,25 @@ private:
    size_t m_signalLength = 0;       // length of the resampled signal
 
    // Colormap
-   ColormapType m_colormap = ColormapType::Jet;
+   SuperSpectrogramConfig::Colormap m_colormap = SuperSpectrogramConfig::Colormap::Jet;
    std::vector<wxColour> m_cmap;
 
-   std::vector<wxColour> BuildColormap(ColormapType type)
+   std::vector<wxColour> BuildColormap(SuperSpectrogramConfig::Colormap type)
    {
       switch (type) {
-         case ColormapType::Jet:     return MakeJetColormap();
-         case ColormapType::Gray:    return MakeGrayColormap();
-         case ColormapType::Hot:     return MakeHotColormap();
-         case ColormapType::Viridis: return MakeViridisColormap();
-         case ColormapType::Inferno: return MakeInfernoColormap();
-         case ColormapType::Magma: return MakeMagmaColormap();
-         case ColormapType::Cividis: return MakeCividisColormap();
-         case ColormapType::Parula: return MakeParulaColormap();
+         case SuperSpectrogramConfig::Colormap::Jet:     return MakeJetColormap();
+         case SuperSpectrogramConfig::Colormap::Gray:    return MakeGrayColormap();
+         case SuperSpectrogramConfig::Colormap::Hot:     return MakeHotColormap();
+         case SuperSpectrogramConfig::Colormap::Viridis: return MakeViridisColormap();
+         case SuperSpectrogramConfig::Colormap::Inferno: return MakeInfernoColormap();
+         case SuperSpectrogramConfig::Colormap::Magma:   return MakeMagmaColormap();
+         case SuperSpectrogramConfig::Colormap::Cividis: return MakeCividisColormap();
+         case SuperSpectrogramConfig::Colormap::Parula:   return MakeParulaColormap();
       }
       return MakeJetColormap();
    }
 
-   TimeTickMode m_timeTickMode{ TimeTickMode::Seconds };
+   SuperSpectrogramConfig::TimeTickMode m_timeTickMode{ SuperSpectrogramConfig::TimeTickMode::Seconds };
    // --------------------------
    // Musical note reference
    // --------------------------
@@ -190,11 +165,11 @@ private:
          "F#", "G", "Ab", "A", "Bb", "B"
    };
 
-  std::vector<wxString> MakeNoteLabels(NoteNamingStyle style,
+  std::vector<wxString> MakeNoteLabels(SuperSpectrogramConfig::NoteNaming style,
      int minNote,
      int maxNote);
 
-  NoteNamingStyle mNoteNamingStyle{ NoteNamingStyle::Mixed };
+  SuperSpectrogramConfig::NoteNaming mNoteNamingStyle{ SuperSpectrogramConfig::NoteNaming::Mixed };
   std::vector<wxString> mNoteLabels;
 
   int mMinNote = 0;

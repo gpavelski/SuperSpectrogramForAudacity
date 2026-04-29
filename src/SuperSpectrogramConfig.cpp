@@ -2,18 +2,18 @@
 
   Audacity: A Digital Audio Editor
 
-  SuperSpectrogramSettings.cpp
+  SuperSpectrogramConfig.cpp
 
   Guilherme Pavelski
 
 **********************************************************************/
 
-#include "SuperSpectrogramSettings.h"
+#include "SuperSpectrogramConfig.h"
 #include <wx/config.h>
 
-const wxString SuperSpectrogramSettings::kConfigPath = "/SuperSpectrogram";
+const wxString SuperSpectrogramConfig::kConfigPath = "/SuperSpectrogram";
 
-void SuperSpectrogramSettings::Load()
+void SuperSpectrogramConfig::Load()
 {
    wxConfigBase* cfg = wxConfigBase::Get(false);
    if (!cfg)
@@ -30,18 +30,18 @@ void SuperSpectrogramSettings::Load()
       detailLevel = static_cast<int>(value);
 
    if (cfg->Read("Colormap", &value))
-      colormap = static_cast<int>(value);
+      colormap = static_cast<SuperSpectrogramConfig::Colormap>(value);
 
    if (cfg->Read("NoteNaming", &value))
-      noteNaming = static_cast<int>(value);
+      noteNaming = static_cast<SuperSpectrogramConfig::NoteNaming>(value);
 
    cfg->Read("ShowNoteLines", &showNoteLines);
 
    if (cfg->Read("TimeTickMode", &value))
-      timeTickMode = static_cast<int>(value);
+      timeTickMode = static_cast<SuperSpectrogramConfig::TimeTickMode>(value);
 }
 
-void SuperSpectrogramSettings::Save() const
+void SuperSpectrogramConfig::Save() const
 {
    wxConfigBase* cfg = wxConfigBase::Get(false);
    if (!cfg)

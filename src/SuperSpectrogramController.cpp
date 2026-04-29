@@ -13,14 +13,12 @@
 
 SuperSpectrogramController::SuperSpectrogramController(
    SuperSpectrogramAudioExtractor& extractor,
+   SuperSpectrogramConfig& config,
    SuperSpectrogramModel& model,
-   SuperSpectrogramSettings& settings,
-   SuperSpectrogramPanel& panel,
    SuperSpectrogramView& view)
    : mExtractor(extractor)
+   , mConfig(config)
    , mModel(model)
-   , mSettings(settings)
-   , mPanel(panel)
    , mView(view)
 {
 }
@@ -30,10 +28,10 @@ SuperSpectrogramController::SuperSpectrogramController(
 //------------------------------------------------------------
 bool SuperSpectrogramController::Initialize()
 {
-   mSettings.Load();
+   mConfig.Load();
 
    UpdateModelParameters();
-   ApplySettingsToView();
+   mView.ApplyConfig(mConfig);
 
    LoadAudioFromProject();
 
@@ -67,39 +65,21 @@ void SuperSpectrogramController::LoadAudioFromProject()
 void SuperSpectrogramController::UpdateModelParameters()
 {
    SuperSpectrogramModel::Parameters p;
-   p.noiseFloor = mSettings.noiseFloor;
-   p.detailLevel = mSettings.detailLevel;
+   p.noiseFloor = mConfig.noiseFloor;
+   p.detailLevel = mConfig.detailLevel;
 
    mModel.SetParameters(p);
-}
-
-void SuperSpectrogramController::ApplySettingsToView()
-{
-   mPanel.SetColormap(
-      static_cast<SuperSpectrogramPanel::ColormapType>(
-         mSettings.colormap));
-
-   mPanel.SetNoteNamingStyle(
-      static_cast<SuperSpectrogramPanel::NoteNamingStyle>(
-         mSettings.noteNaming));
-
-   mPanel.SetShowNoteLines(
-      mSettings.showNoteLines);
-
-   mPanel.SetTimeTickMode(
-      static_cast<SuperSpectrogramPanel::TimeTickMode>(
-         mSettings.timeTickMode));
 }
 
 void SuperSpectrogramController::PushSettingsToView()
 {
     mView.ApplySettings(
-      mSettings.noiseFloor,
-      mSettings.detailLevel,
-      mSettings.colormap,
-      mSettings.noteNaming,
-      mSettings.showNoteLines,
-      mSettings.timeTickMode
+      mConfig.noiseFloor,
+      mConfig.detailLevel,
+      mConfig.colormap,
+      mConfig.noteNaming,
+      mConfig.showNoteLines,
+      mConfig.timeTickMode
     );
 }
 
@@ -122,8 +102,7 @@ void SuperSpectrogramController::Recompute(
    auto maxFreq = mModel.GetMaxFreq();
    auto numSamples = mModel.GetNumSamples();
 
-   mView.PlotSTFTMatrix(matrix, maxFreq, numSamples);
-   mPanel.ResetView();
+   mView.SetSpectrogramData(matrix, maxFreq, numSamples);
 }
 
 //------------------------------------------------------------
@@ -131,55 +110,56 @@ void SuperSpectrogramController::Recompute(
 //------------------------------------------------------------
 void SuperSpectrogramController::OnNoiseFloorChanged(int value)
 {
-   if (mSettings.noiseFloor == value)
+   if (mConfig.noiseFloor == value)
       return;
 
-   mSettings.noiseFloor = value;
-   mSettings.Save();
+   mConfig.noiseFloor = value;
+   mConfig.Save();
 }
 
 void SuperSpectrogramController::OnDetailLevelChanged(int value)
 {
-   if (mSettings.detailLevel == value)
+   if (mConfig.detailLevel == value)
       return;
 
-   mSettings.detailLevel = value;
-   mSettings.Save();
+   mConfig.detailLevel = value;
+   mConfig.Save();
 }
 
-void SuperSpectrogramController::OnColormapChanged(int value)
+void SuperSpectrogramController::OnColormapChanged(SuperSpectrogramConfig::Colormap value)
 {
-   mSettings.colormap = value;
-   mSettings.Save();
+   if (mConfig.colormap == value)
+      return;
 
-   mPanel.SetColormap(
-      static_cast<SuperSpectrogramPanel::ColormapType>(value));
+   mConfig.colormap = value;
+   mConfig.Save();
 }
 
-void SuperSpectrogramController::OnNoteNamingChanged(int value)
+void SuperSpectrogramController::OnNoteNamingChanged(SuperSpectrogramConfig::NoteNaming value)
 {
-   mSettings.noteNaming = value;
-   mSettings.Save();
+   if (mConfig.noteNaming == value)
+      return;
 
-   mPanel.SetNoteNamingStyle(
-      static_cast<SuperSpectrogramPanel::NoteNamingStyle>(value));
+   mConfig.noteNaming = value;
+   mConfig.Save();
 }
 
 void SuperSpectrogramController::OnShowNoteLinesChanged(bool value)
 {
-   mSettings.showNoteLines = value;
-   mSettings.Save();
+   if (mConfig.showNoteLines == value)
+      return;
 
-   mPanel.SetShowNoteLines(value);
+   mConfig.showNoteLines = value;
+   mConfig.Save();
 }
 
-void SuperSpectrogramController::OnTimeTickModeChanged(int value)
+void SuperSpectrogramController::OnTimeTickModeChanged(SuperSpectrogramConfig::TimeTickMode value)
 {
-   mSettings.timeTickMode = value;
-   mSettings.Save();
+   if (mConfig.timeTickMode == value)
+      return;
 
-   mPanel.SetTimeTickMode(
-      static_cast<SuperSpectrogramPanel::TimeTickMode>(value));
+   mConfig.timeTickMode = value;
+   mConfig.Save();
 }
 
 void SuperSpectrogramController::OnExportRequested(wxWindow* parent)
@@ -251,7 +231,7 @@ void SuperSpectrogramController::ExportViewAsPNG(wxWindow* parent)
    if (dlg.ShowModal() != wxID_OK)
       return;
 
-   wxBitmap bmp = mPanel.RenderCurrentViewToBitmap();
+   wxBitmap bmp = mView.RenderToBitmap();
    if (!bmp.IsOk())
       return;
 
@@ -275,11 +255,11 @@ void SuperSpectrogramController::BindView()
       OnDetailLevelChanged(value);
    };
 
-   mView.NotifyColormapChanged = [this](int value) {
+   mView.NotifyColormapChanged = [this](SuperSpectrogramConfig::Colormap value) {
       OnColormapChanged(value);
    };
 
-   mView.NotifyNoteNamingChanged = [this](int value) {
+   mView.NotifyNoteNamingChanged = [this](SuperSpectrogramConfig::NoteNaming value) {
       OnNoteNamingChanged(value);
    };
 
@@ -287,7 +267,7 @@ void SuperSpectrogramController::BindView()
       OnShowNoteLinesChanged(value);
    };
 
-   mView.NotifyTimeTickChanged = [this](int value) {
+   mView.NotifyTimeTickChanged = [this](SuperSpectrogramConfig::TimeTickMode value) {
       OnTimeTickModeChanged(value);
    };
 
