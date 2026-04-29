@@ -22,19 +22,19 @@ class AudacityProject;
 class SuperSpectrogramPanel;
 
 //=================================================================
-// SuperSpectrogramPlotDialog: hosts the SuperSpectrogramPanel
+// SuperSpectrogramView: hosts the SuperSpectrogramPanel
 //=================================================================
-class SuperSpectrogramPlotDialog final :
+class SuperSpectrogramView final :
    public wxDialogWrapper
 {
 public:
    // Constructor / Destructor
-   SuperSpectrogramPlotDialog(
+   SuperSpectrogramView(
       wxWindow* parent,
       wxWindowID id,
       const TranslatableString& title,
       const wxPoint& pos = wxDefaultPosition);
-   virtual ~SuperSpectrogramPlotDialog();
+   virtual ~SuperSpectrogramView();
 
    // Override Show() to display dialog
    bool Show(bool show = true) override;

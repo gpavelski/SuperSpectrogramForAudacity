@@ -8,7 +8,7 @@
 
 *******************************************************************//**
 
-\class SuperSpectrogramPlotDialog
+\class SuperSpectrogramView
 \brief Displays a detailed spectrogram of the waveform.
 * Responsibilities:
  *  - Acts as the top-level UI controller for the Super Spectrogram analyzer.
@@ -22,7 +22,7 @@
 *//****************************************************************//**
 
 \class SuperSpectrogramPlot
-\brief Works with SuperSpectrogramPlotDialog to display a more detailed
+\brief Works with SuperSpectrogramView to display a more detailed
 spectrum plot of the waveform.
 This class actually does the graph display.
 
@@ -41,21 +41,21 @@ static const wxString kConfigPath = "/SuperSpectrogram";
 //-----------------------------------------------------------------
 // Event table for the dialog
 //-----------------------------------------------------------------
-BEGIN_EVENT_TABLE(SuperSpectrogramPlotDialog, wxDialogWrapper)
-   EVT_CLOSE(SuperSpectrogramPlotDialog::OnCloseWindow)
-   EVT_CHOICE(ID_NoiseFloorChoice, SuperSpectrogramPlotDialog::OnNoiseFloorChanged)
-   EVT_CHOICE(ID_HighestNoteChoice, SuperSpectrogramPlotDialog::OnHighestNoteChanged)
-   EVT_CHOICE(ID_ColormapChoice, SuperSpectrogramPlotDialog::OnColormapChanged)
-   EVT_CHOICE(ID_NoteNamingChoice, SuperSpectrogramPlotDialog::OnNoteNamingChanged)
-   EVT_CHECKBOX(ID_ShowNoteLinesCheck, SuperSpectrogramPlotDialog::OnShowNoteLinesChanged)
-   EVT_CHOICE(ID_TimeTickChoice, SuperSpectrogramPlotDialog::OnTimeTickChanged)
-   EVT_BUTTON(wxID_SAVE, SuperSpectrogramPlotDialog::OnExport)
+BEGIN_EVENT_TABLE(SuperSpectrogramView, wxDialogWrapper)
+   EVT_CLOSE(SuperSpectrogramView::OnCloseWindow)
+   EVT_CHOICE(ID_NoiseFloorChoice, SuperSpectrogramView::OnNoiseFloorChanged)
+   EVT_CHOICE(ID_HighestNoteChoice, SuperSpectrogramView::OnHighestNoteChanged)
+   EVT_CHOICE(ID_ColormapChoice, SuperSpectrogramView::OnColormapChanged)
+   EVT_CHOICE(ID_NoteNamingChoice, SuperSpectrogramView::OnNoteNamingChanged)
+   EVT_CHECKBOX(ID_ShowNoteLinesCheck, SuperSpectrogramView::OnShowNoteLinesChanged)
+   EVT_CHOICE(ID_TimeTickChoice, SuperSpectrogramView::OnTimeTickChanged)
+   EVT_BUTTON(wxID_SAVE, SuperSpectrogramView::OnExport)
 END_EVENT_TABLE()
 
 //-----------------------------------------------------------------
 // View: Dialog construction & teardown
 //-----------------------------------------------------------------
-SuperSpectrogramPlotDialog::SuperSpectrogramPlotDialog(
+SuperSpectrogramView::SuperSpectrogramView(
    wxWindow* parent,
    wxWindowID id,
    const TranslatableString& title,
@@ -88,12 +88,12 @@ SuperSpectrogramPlotDialog::SuperSpectrogramPlotDialog(
    SetSizer(mainSizer);
 }
 
-SuperSpectrogramPlotDialog::~SuperSpectrogramPlotDialog() = default;
+SuperSpectrogramView::~SuperSpectrogramView() = default;
 
 //-----------------------------------------------------------------
 // View: Visibility and layout
 //-----------------------------------------------------------------
-bool SuperSpectrogramPlotDialog::Show(bool show)
+bool SuperSpectrogramView::Show(bool show)
 {
    if (show && !IsShown()) {
       if (OnRecomputeRequested)
@@ -107,7 +107,7 @@ bool SuperSpectrogramPlotDialog::Show(bool show)
    return wxDialogWrapper::Show(show);
 }
 
-void SuperSpectrogramPlotDialog::ApplySettings(
+void SuperSpectrogramView::ApplySettings(
    int noiseFloor,
    int detailLevel,
    int colormap,
@@ -124,7 +124,7 @@ void SuperSpectrogramPlotDialog::ApplySettings(
    mInitialShowNoteLines = showNoteLines;
 }
 
-void SuperSpectrogramPlotDialog::ApplyDataDrivenMinSize()
+void SuperSpectrogramView::ApplyDataDrivenMinSize()
 {
    constexpr int MAX_VISIBLE_COLUMNS = 800;
    constexpr int PIXELS_PER_COLUMN = 1;
@@ -160,7 +160,7 @@ void SuperSpectrogramPlotDialog::ApplyDataDrivenMinSize()
    SetMinSize(wxSize(minWidth, minHeight));
 }
 
-void SuperSpectrogramPlotDialog::UpdateLayoutPreservingState()
+void SuperSpectrogramView::UpdateLayoutPreservingState()
 {
    const bool wasMaximized = IsMaximized();
 
@@ -180,7 +180,7 @@ void SuperSpectrogramPlotDialog::UpdateLayoutPreservingState()
 //-----------------------------------------------------------------
 // Model: Data -> View Binding
 //-----------------------------------------------------------------
-void SuperSpectrogramPlotDialog::PlotSTFTMatrix(
+void SuperSpectrogramView::PlotSTFTMatrix(
    const std::vector<std::vector<double>>& matrix,
    double maxFreq,
    size_t numSamples)
@@ -197,7 +197,7 @@ void SuperSpectrogramPlotDialog::PlotSTFTMatrix(
 //-----------------------------------------------------------------
 // Controller: UI controls & bindings
 //-----------------------------------------------------------------
-void SuperSpectrogramPlotDialog::CreateControls(wxSizer* parentSizer)
+void SuperSpectrogramView::CreateControls(wxSizer* parentSizer)
 {
    auto* toolbarSizer = new wxBoxSizer(wxHORIZONTAL);
 
@@ -301,7 +301,7 @@ void SuperSpectrogramPlotDialog::CreateControls(wxSizer* parentSizer)
       0, wxEXPAND | wxALL, 5);
 }
 
-wxChoice* SuperSpectrogramPlotDialog::CreateChoice(
+wxChoice* SuperSpectrogramView::CreateChoice(
    wxWindow* parent,
    wxWindowID id,
    const std::vector<ChoiceOption>& options,
@@ -329,7 +329,7 @@ wxChoice* SuperSpectrogramPlotDialog::CreateChoice(
 //-----------------------------------------------------------------
 // Controller: Parameter Change Handlers
 //-----------------------------------------------------------------
-void SuperSpectrogramPlotDialog::OnNoiseFloorChanged(wxCommandEvent&)
+void SuperSpectrogramView::OnNoiseFloorChanged(wxCommandEvent&)
 {
    int sel = mNoiseFloorChoice->GetSelection();
    if (sel == wxNOT_FOUND)
@@ -346,7 +346,7 @@ void SuperSpectrogramPlotDialog::OnNoiseFloorChanged(wxCommandEvent&)
       OnRecomputeRequested();
 }
 
-void SuperSpectrogramPlotDialog::OnHighestNoteChanged(wxCommandEvent&)
+void SuperSpectrogramView::OnHighestNoteChanged(wxCommandEvent&)
 {
    int sel = mHighestNoteChoice->GetSelection();
    if (sel == wxNOT_FOUND)
@@ -365,7 +365,7 @@ void SuperSpectrogramPlotDialog::OnHighestNoteChanged(wxCommandEvent&)
    UpdateLayoutPreservingState();
 }
 
-void SuperSpectrogramPlotDialog::OnColormapChanged(wxCommandEvent&)
+void SuperSpectrogramView::OnColormapChanged(wxCommandEvent&)
 {
    int sel = mColormapChoice->GetSelection();
    if (sel == wxNOT_FOUND)
@@ -379,7 +379,7 @@ void SuperSpectrogramPlotDialog::OnColormapChanged(wxCommandEvent&)
       NotifyColormapChanged(value);
 }
 
-void SuperSpectrogramPlotDialog::OnNoteNamingChanged(wxCommandEvent&)
+void SuperSpectrogramView::OnNoteNamingChanged(wxCommandEvent&)
 {
    if (!mSuperSpectrogramPanel || !mNoteNamingChoice)
       return;
@@ -399,7 +399,7 @@ void SuperSpectrogramPlotDialog::OnNoteNamingChanged(wxCommandEvent&)
    mSuperSpectrogramPanel->SetNoteNamingStyle(style);
 }
 
-void SuperSpectrogramPlotDialog::OnShowNoteLinesChanged(wxCommandEvent& event)
+void SuperSpectrogramView::OnShowNoteLinesChanged(wxCommandEvent& event)
 {
    if (!mSuperSpectrogramPanel)
       return;
@@ -412,7 +412,7 @@ void SuperSpectrogramPlotDialog::OnShowNoteLinesChanged(wxCommandEvent& event)
    mSuperSpectrogramPanel->SetShowNoteLines(value);
 }
 
-void SuperSpectrogramPlotDialog::OnTimeTickChanged(wxCommandEvent&)
+void SuperSpectrogramView::OnTimeTickChanged(wxCommandEvent&)
 {
    if (!mSuperSpectrogramPanel || !mTimeTickChoice)
       return;
@@ -435,13 +435,13 @@ void SuperSpectrogramPlotDialog::OnTimeTickChanged(wxCommandEvent&)
 //-----------------------------------------------------------------
 // Export: Data and rendering output
 //-----------------------------------------------------------------
-void SuperSpectrogramPlotDialog::OnExport(wxCommandEvent&)
+void SuperSpectrogramView::OnExport(wxCommandEvent&)
 {
    if (NotifyExportRequested)
       NotifyExportRequested(this);
 }
 
-void SuperSpectrogramPlotDialog::SetChoiceByValue(wxChoice* choice, int value)
+void SuperSpectrogramView::SetChoiceByValue(wxChoice* choice, int value)
 {
    if (!choice)
       return;
@@ -457,7 +457,7 @@ void SuperSpectrogramPlotDialog::SetChoiceByValue(wxChoice* choice, int value)
    }
 }
 
-SuperSpectrogramPanel& SuperSpectrogramPlotDialog::GetPanel()
+SuperSpectrogramPanel& SuperSpectrogramView::GetPanel()
 {
    return *mSuperSpectrogramPanel;
 }
@@ -472,7 +472,7 @@ SuperSpectrogramPanel& SuperSpectrogramPlotDialog::GetPanel()
 #include "SuperSpectrogramController.h"
 
 namespace {
-   SuperSpectrogramPlotDialog* gSpectrogramDialog = nullptr;
+   SuperSpectrogramView* gSpectrogramDialog = nullptr;
    void ClearSpectrogramDialog()
    {
       gSpectrogramDialog = nullptr;
@@ -494,7 +494,7 @@ namespace {
          return;
       }
 
-      gSpectrogramDialog = new SuperSpectrogramPlotDialog(
+      gSpectrogramDialog = new SuperSpectrogramView(
          &GetProjectFrame(project),
          wxID_ANY,
          SuperSpectrogramTitle,
@@ -546,7 +546,7 @@ namespace {
 //-----------------------------------------------------------------
 // View: Close handling
 //-----------------------------------------------------------------
-void SuperSpectrogramPlotDialog::OnCloseWindow(wxCloseEvent& WXUNUSED(event))
+void SuperSpectrogramView::OnCloseWindow(wxCloseEvent& WXUNUSED(event))
 {
    gSpectrogramDialog = nullptr;
    Destroy();

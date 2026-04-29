@@ -16,7 +16,7 @@ SuperSpectrogramController::SuperSpectrogramController(
    SuperSpectrogramModel& model,
    SuperSpectrogramSettings& settings,
    SuperSpectrogramPanel& panel,
-   SuperSpectrogramPlotDialog& view)
+   SuperSpectrogramView& view)
    : mExtractor(extractor)
    , mModel(model)
    , mSettings(settings)
@@ -297,6 +297,6 @@ void SuperSpectrogramController::BindView()
 
    mView.NotifyExportRequested = [this](wxWindow* parent)
    {
-         OnExportRequested(parent);
+      OnExportRequested(parent);
    };
 }

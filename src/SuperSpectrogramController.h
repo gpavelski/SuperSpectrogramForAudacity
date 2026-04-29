@@ -21,7 +21,7 @@
 class SuperSpectrogramModel;
 class SuperSpectrogramSettings;
 class SuperSpectrogramPanel;
-class SuperSpectrogramPlotDialog;
+class SuperSpectrogramView;
 
 class SuperSpectrogramController
 {
@@ -31,7 +31,7 @@ public:
       SuperSpectrogramModel& model,
       SuperSpectrogramSettings& settings,
       SuperSpectrogramPanel& panel,
-      SuperSpectrogramPlotDialog& view);
+      SuperSpectrogramView& view);
 
    bool Initialize();
    void LoadAudioFromProject();
@@ -62,7 +62,7 @@ private:
    SuperSpectrogramModel& mModel;
    SuperSpectrogramSettings& mSettings;
    SuperSpectrogramPanel& mPanel;
-   SuperSpectrogramPlotDialog& mView;
+   SuperSpectrogramView& mView;
 
    ArrayOf<float> mOwnedData;
    const float* mCurrentData = nullptr;
