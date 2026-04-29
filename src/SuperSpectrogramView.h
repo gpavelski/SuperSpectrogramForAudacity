@@ -13,8 +13,12 @@
 
 #include <vector>
 #include <memory>
+#include <unordered_map>
 #include <wx/font.h>
 #include <wx/choice.h>
+#include <wx/config.h>
+#include <wx/display.h>
+#include <wx/wx.h> 
 #include "SuperSpectrogramPanel.h"
 #include "SuperSpectrogramConfig.h"
 #include "wxPanelWrapper.h"
@@ -41,15 +45,6 @@ public:
    // Override Show() to display dialog
    bool Show(bool show = true) override;
 
-   void ApplySettings(
-      int noiseFloor,
-      int detailLevel,
-      SuperSpectrogramConfig::Colormap colormap,
-      SuperSpectrogramConfig::NoteNaming noteNaming,
-      bool showNoteLines,
-      SuperSpectrogramConfig::TimeTickMode timeTickMode
-   );
-
    void SetSpectrogramData(
       const std::vector<std::vector<double>>& matrix,
       double maxFreq,
@@ -69,8 +64,6 @@ public:
    std::function<void(SuperSpectrogramConfig::NoteNaming)> NotifyNoteNamingChanged;
    std::function<void(bool)> NotifyShowNoteLinesChanged;
    std::function<void(SuperSpectrogramConfig::TimeTickMode)> NotifyTimeTickChanged;
-   std::function<void()> OnRecomputeRequested;
-   std::function<void()> NotifyApplySettingsToView;
    std::function<void(wxWindow*)> NotifyExportRequested;
 
 private:
@@ -92,25 +85,43 @@ private:
 
    void ApplyDataDrivenMinSize();
    void UpdateLayoutPreservingState();
-   // Event handlers
-   void OnCloseWindow(wxCloseEvent& event);
 
    void CreateControls(wxSizer* parentSizer);
+
    wxChoice* CreateChoice(
       wxWindow* parent,
       wxWindowID id,
       const std::vector<ChoiceOption>& options,
-      int defaultValue);
+      int defaultValue,
+      std::unordered_map<int, int>& outIndexMap,
+      std::unordered_map<int, int>& outValueMap
+   );
 
+   void SetChoiceByValue(
+      wxChoice* choice,
+      const std::unordered_map<int, int>& indexMap,
+      int value
+   );
+
+   int GetValueFromChoice(
+      wxChoice* choice,
+      const std::unordered_map<int, int>& valueMap
+   );
+
+   void ApplyConfigToControls(
+      const SuperSpectrogramConfig& config
+   );
+
+   void ApplyConfigToPanel(
+      const SuperSpectrogramConfig& config
+   );
    void OnNoiseFloorChanged(wxCommandEvent& event);
    void OnHighestNoteChanged(wxCommandEvent&);
    void OnColormapChanged(wxCommandEvent&);
    void OnNoteNamingChanged(wxCommandEvent&);
    void OnShowNoteLinesChanged(wxCommandEvent& event);
    void OnTimeTickChanged(wxCommandEvent&);
-
    void OnExport(wxCommandEvent& event);
-   void SetChoiceByValue(wxChoice* choice, int value);
 
    wxChoice* mNoiseFloorChoice = nullptr;
    wxChoice* mHighestNoteChoice = nullptr;
@@ -119,6 +130,18 @@ private:
    wxCheckBox* mShowNoteLinesCheck = nullptr;
    wxChoice* mTimeTickChoice = nullptr;
    wxButton* mExportButton = nullptr;
+
+   std::unordered_map<int, int> mNoiseFloorIndexMap;
+   std::unordered_map<int, int> mHighestNoteIndexMap;
+   std::unordered_map<int, int> mColormapIndexMap;
+   std::unordered_map<int, int> mNoteNamingIndexMap;
+   std::unordered_map<int, int> mTimeTickIndexMap;
+
+   std::unordered_map<int, int> mNoiseFloorValueMap;
+   std::unordered_map<int, int> mHighestNoteValueMap;
+   std::unordered_map<int, int> mColormapValueMap;
+   std::unordered_map<int, int> mNoteNamingValueMap;
+   std::unordered_map<int, int> mTimeTickValueMap;
 
    bool mInitialShowNoteLines = true;
    const std::vector<ChoiceOption> kNoiseFloorOptions{
@@ -178,12 +201,6 @@ private:
 
    // The panel that draws the spectrogram
    std::unique_ptr<SuperSpectrogramPanel> mPanel;
-
-   std::vector<std::vector<double>> mMatrix;
-   double mMaxFreq = 0.0;
-   size_t mNumSamples = 0;
-
-   void ApplyToPanel();
 
    DECLARE_EVENT_TABLE()
 };

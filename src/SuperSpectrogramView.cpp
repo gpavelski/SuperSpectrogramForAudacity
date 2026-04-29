@@ -8,41 +8,35 @@
 
 *******************************************************************//**
 
-\class SuperSpectrogramView
-\brief Displays a detailed spectrogram of the waveform.
-* Responsibilities:
- *  - Acts as the top-level UI controller for the Super Spectrogram analyzer.
- *  - Owns and manages the SuperSpectrogramPanel used to render the STFT matrix.
- *  - Coordinates audio extraction, STFT computation, and visualization updates.
- *  - Translates user interactions (noise floor, highest note, export actions)
- *    into recalculation or rendering changes.
- *  - Enforces data-driven layout constraints based on spectrogram dimensions.
- *  - Provides export facilities for both raw spectrogram data and rendered views.
+ * @class SuperSpectrogramView
+ * @brief Dialog-based view responsible for presenting the Super Spectrogram UI.
  *
-*//****************************************************************//**
-
-\class SuperSpectrogramPlot
-\brief Works with SuperSpectrogramView to display a more detailed
-spectrum plot of the waveform.
-This class actually does the graph display.
-
+ * This class implements the "View" in the MVC architecture. It owns the
+ * SuperSpectrogramPanel, which performs the actual rendering of the
+ * spectrogram matrix.
+ *
+ * Responsibilities:
+ *  - Create and manage all UI controls (toolbar, selectors, export button).
+ *  - Own and update the SuperSpectrogramPanel for visualization.
+ *  - Forward user interactions to the controller via callback functions.
+ *  - Apply configuration and data received from the controller.
+ *  - Manage layout and sizing based on spectrogram content.
+ *  - Provide rendering output (e.g., bitmap export) to the controller.
+ *
+ * 
 *//*******************************************************************/
 
-#include "SuperSpectrogramWindow.h"
-#include "SuperSpectrogramPanel.h"
-#include <wx/config.h>
-#include <wx/display.h>
-#include <wx/wx.h> 
+#include "SuperSpectrogramView.h"
 
 #define SuperSpectrogramTitle XO("Super Spectrogram")
 
 static const wxString kConfigPath = "/SuperSpectrogram";
 
 //-----------------------------------------------------------------
-// Event table for the dialog
+// wxWidgets event table: maps UI events to view handlers.
+// Handlers forward user actions to the controller.
 //-----------------------------------------------------------------
 BEGIN_EVENT_TABLE(SuperSpectrogramView, wxDialogWrapper)
-   EVT_CLOSE(SuperSpectrogramView::OnCloseWindow)
    EVT_CHOICE(ID_NoiseFloorChoice, SuperSpectrogramView::OnNoiseFloorChanged)
    EVT_CHOICE(ID_HighestNoteChoice, SuperSpectrogramView::OnHighestNoteChanged)
    EVT_CHOICE(ID_ColormapChoice, SuperSpectrogramView::OnColormapChanged)
@@ -53,7 +47,7 @@ BEGIN_EVENT_TABLE(SuperSpectrogramView, wxDialogWrapper)
 END_EVENT_TABLE()
 
 //-----------------------------------------------------------------
-// View: Dialog construction & teardown
+// Construction
 //-----------------------------------------------------------------
 SuperSpectrogramView::SuperSpectrogramView(
    wxWindow* parent,
@@ -70,19 +64,16 @@ SuperSpectrogramView::SuperSpectrogramView(
 {
    SetName();
 
+   // Create top-level layout
    auto* mainSizer = new wxBoxSizer(wxVERTICAL);
 
-   // 1) Create toolbar (export + noise floor)
+   // Build toolbar controls (selectors, export button)
    CreateControls(mainSizer);
 
-   // 2) Create spectrogram panel ONCE
-   mPanel =
-      std::make_unique<SuperSpectrogramPanel>(this);
+   // Create the rendering panel (owned exclusively by the view)
+   mPanel = std::make_unique<SuperSpectrogramPanel>(this);
 
-   // Apply settings to UI controls
-   if (NotifyApplySettingsToView)
-      NotifyApplySettingsToView();
-
+   // Panel occupies remaining space
    mainSizer->Add(mPanel.get(), 1, wxEXPAND | wxALL, 5);
 
    SetSizer(mainSizer);
@@ -91,13 +82,12 @@ SuperSpectrogramView::SuperSpectrogramView(
 SuperSpectrogramView::~SuperSpectrogramView() = default;
 
 //-----------------------------------------------------------------
-// View: Visibility and layout
+// Visibility lifecycle
 //-----------------------------------------------------------------
 bool SuperSpectrogramView::Show(bool show)
 {
+   // Trigger recomputation on first show and adjust layout dynamically
    if (show && !IsShown()) {
-      if (OnRecomputeRequested)
-         OnRecomputeRequested();
       ApplyDataDrivenMinSize();
       Layout();
       Fit();
@@ -107,64 +97,82 @@ bool SuperSpectrogramView::Show(bool show)
    return wxDialogWrapper::Show(show);
 }
 
+//-----------------------------------------------------------------
+// Data & configuration application (Controller -> View)
+//-----------------------------------------------------------------
 void SuperSpectrogramView::SetSpectrogramData(
    const std::vector<std::vector<double>>& matrix,
    double maxFreq,
    size_t numSamples)
 {
-   mMatrix = matrix;
-   mMaxFreq = maxFreq;
-   mNumSamples = numSamples;
+   if (!mPanel)
+      return;
 
-   ApplyToPanel();
+   mPanel->SetData(matrix, maxFreq, numSamples);
+   mPanel->ResetView();
 }
 
 void SuperSpectrogramView::ApplyConfig(
    const SuperSpectrogramConfig& config)
 {
+   ApplyConfigToControls(config);
+   ApplyConfigToPanel(config);
+}
+
+void SuperSpectrogramView::ApplyConfigToControls(
+   const SuperSpectrogramConfig& config)
+{
+   SetChoiceByValue(mNoiseFloorChoice, mNoiseFloorIndexMap, config.noiseFloor);
+   SetChoiceByValue(mHighestNoteChoice, mHighestNoteIndexMap, config.detailLevel);
+   SetChoiceByValue(mColormapChoice, mColormapIndexMap, static_cast<int>(config.colormap));
+   SetChoiceByValue(mNoteNamingChoice, mNoteNamingIndexMap, static_cast<int>(config.noteNaming));
+   SetChoiceByValue(mTimeTickChoice, mTimeTickIndexMap, static_cast<int>(config.timeTickMode));
+
+   if (mShowNoteLinesCheck)
+      mShowNoteLinesCheck->SetValue(config.showNoteLines);
+}
+
+void SuperSpectrogramView::ApplyConfigToPanel(
+   const SuperSpectrogramConfig& config)
+{
+   if (!mPanel)
+      return;
+
    mPanel->SetColormap(config.colormap);
    mPanel->SetNoteNamingStyle(config.noteNaming);
    mPanel->SetShowNoteLines(config.showNoteLines);
    mPanel->SetTimeTickMode(config.timeTickMode);
 }
 
-void SuperSpectrogramView::ApplyToPanel()
+void SuperSpectrogramView::SetChoiceByValue(
+   wxChoice* choice,
+   const std::unordered_map<int, int>& indexMap,
+   int value)
 {
-   if (!mPanel)
+   if (!choice)
       return;
 
-   mPanel->SetData(mMatrix, mMaxFreq, mNumSamples);
-   mPanel->ResetView();
+   auto it = indexMap.find(value);
+   if (it != indexMap.end())
+      choice->SetSelection(it->second);
 }
 
 wxBitmap SuperSpectrogramView::RenderToBitmap() const
 {
+   // Render current panel contents to a bitmap (used for export)
    if (!mPanel)
       return {};
 
    return mPanel->RenderCurrentViewToBitmap();
 }
 
-void SuperSpectrogramView::ApplySettings(
-   int noiseFloor,
-   int detailLevel,
-   SuperSpectrogramConfig::Colormap colormap,
-   SuperSpectrogramConfig::NoteNaming noteNaming,
-   bool showNoteLines,
-   SuperSpectrogramConfig::TimeTickMode timeTickMode
-)
-{
-   SetChoiceByValue(mNoiseFloorChoice, noiseFloor);
-   SetChoiceByValue(mHighestNoteChoice, detailLevel);
-   SetChoiceByValue(mColormapChoice, static_cast<int>(colormap));
-   SetChoiceByValue(mNoteNamingChoice, static_cast<int>(noteNaming));
-   SetChoiceByValue(mTimeTickChoice, static_cast<int>(timeTickMode));
-   mShowNoteLinesCheck->SetValue(showNoteLines);
-   mInitialShowNoteLines = showNoteLines;
-}
-
+//-----------------------------------------------------------------
+// Layout management
+//-----------------------------------------------------------------
 void SuperSpectrogramView::ApplyDataDrivenMinSize()
 {
+   // Adjust minimum dialog size based on spectrogram dimensions.
+   // Width scales with number of columns (capped), height scales with screen size.
    constexpr int MAX_VISIBLE_COLUMNS = 800;
    constexpr int PIXELS_PER_COLUMN = 1;
 
@@ -201,6 +209,8 @@ void SuperSpectrogramView::ApplyDataDrivenMinSize()
 
 void SuperSpectrogramView::UpdateLayoutPreservingState()
 {
+   // Recalculate layout while preserving maximized state.
+   // Avoids unexpected resizing when user has maximized the window.
    const bool wasMaximized = IsMaximized();
 
    if (!wasMaximized) {
@@ -217,13 +227,13 @@ void SuperSpectrogramView::UpdateLayoutPreservingState()
 }
 
 //-----------------------------------------------------------------
-// Controller: UI controls & bindings
+// UI construction helpers
 //-----------------------------------------------------------------
 void SuperSpectrogramView::CreateControls(wxSizer* parentSizer)
 {
+   // Build toolbar containing all user-adjustable parameters
    auto* toolbarSizer = new wxBoxSizer(wxHORIZONTAL);
 
-   // Noise floor selector
    toolbarSizer->Add(
       new wxStaticText(this, wxID_ANY, _("Noise floor:")),
       0, wxALIGN_CENTER_VERTICAL | wxLEFT | wxRIGHT, 5);
@@ -232,13 +242,15 @@ void SuperSpectrogramView::CreateControls(wxSizer* parentSizer)
       this,
       ID_NoiseFloorChoice,
       kNoiseFloorOptions,
-      kDefaultNoiseFloor);
+      kDefaultNoiseFloor,
+      mNoiseFloorIndexMap,
+      mNoiseFloorValueMap
+   );
 
    toolbarSizer->Add(
       mNoiseFloorChoice,
       0, wxALIGN_CENTER_VERTICAL | wxRIGHT, 10);
 
-   // Highest note selector
    toolbarSizer->Add(
       new wxStaticText(this, wxID_ANY, _("Highest Note:")),
       0, wxALIGN_CENTER_VERTICAL | wxLEFT | wxRIGHT, 5);
@@ -247,7 +259,10 @@ void SuperSpectrogramView::CreateControls(wxSizer* parentSizer)
       this,
       ID_HighestNoteChoice,
       kHighestNoteOptions,
-      kDefaultHighestNote);
+      kDefaultHighestNote,
+      mHighestNoteIndexMap,
+      mHighestNoteValueMap
+   );
 
    toolbarSizer->Add(
       mHighestNoteChoice,
@@ -261,7 +276,10 @@ void SuperSpectrogramView::CreateControls(wxSizer* parentSizer)
       this,
       ID_NoteNamingChoice,
       kNoteNamingOptions,
-      kDefaultNoteNaming);
+      kDefaultNoteNaming,
+      mNoteNamingIndexMap,
+      mNoteNamingValueMap
+   );
 
    toolbarSizer->Add(
       mNoteNamingChoice,
@@ -275,7 +293,10 @@ void SuperSpectrogramView::CreateControls(wxSizer* parentSizer)
       this,
       ID_ColormapChoice,
       kColormapOptions,
-      kDefaultColormap);
+      kDefaultColormap,
+      mColormapIndexMap,
+      mColormapValueMap
+   );
 
    toolbarSizer->Add(
       mColormapChoice,
@@ -304,7 +325,10 @@ void SuperSpectrogramView::CreateControls(wxSizer* parentSizer)
       this,
       ID_TimeTickChoice,
       kTimeTickOptions,
-      kDefaultTimeTick);
+      kDefaultTimeTick,
+      mTimeTickIndexMap,
+      mTimeTickValueMap
+   );
 
    toolbarSizer->Add(
       mTimeTickChoice,
@@ -327,16 +351,20 @@ wxChoice* SuperSpectrogramView::CreateChoice(
    wxWindow* parent,
    wxWindowID id,
    const std::vector<ChoiceOption>& options,
-   int defaultValue)
+   int defaultValue,
+   std::unordered_map<int, int>& outIndexMap,
+   std::unordered_map<int, int>& outValueMap)
 {
    auto* choice = new wxChoice(parent, id);
 
    int defaultIndex = wxNOT_FOUND;
 
-   for (size_t i = 0; i < options.size(); ++i) {
-      choice->Append(
-         options[i].label,
-         reinterpret_cast<void*>(static_cast<intptr_t>(options[i].value)));
+   for (size_t i = 0; i < options.size(); ++i)
+   {
+      choice->Append(options[i].label);
+
+      outIndexMap[options[i].value] = static_cast<int>(i);
+      outValueMap[static_cast<int>(i)] = options[i].value;
 
       if (options[i].value == defaultValue)
          defaultIndex = static_cast<int>(i);
@@ -348,76 +376,75 @@ wxChoice* SuperSpectrogramView::CreateChoice(
    return choice;
 }
 
+int SuperSpectrogramView::GetValueFromChoice(
+   wxChoice* choice,
+   const std::unordered_map<int, int>& valueMap)
+{
+   if (!choice)
+      return 0;
+
+   int sel = choice->GetSelection();
+   if (sel == wxNOT_FOUND)
+      return 0;
+
+   auto it = valueMap.find(sel);
+   if (it == valueMap.end())
+      return 0;
+
+   return it->second;
+}
+
 //-----------------------------------------------------------------
-// Controller: Parameter Change Handlers
+// UI event handlers (View -> Controller)
 //-----------------------------------------------------------------
 void SuperSpectrogramView::OnNoiseFloorChanged(wxCommandEvent&)
 {
-   int sel = mNoiseFloorChoice->GetSelection();
-   if (sel == wxNOT_FOUND)
-      return;
-
-   int value = static_cast<int>(
-      reinterpret_cast<intptr_t>(
-         mNoiseFloorChoice->GetClientData(sel)));
+   int value = GetValueFromChoice(
+      mNoiseFloorChoice,
+      mNoiseFloorValueMap
+   );
 
    if (NotifyNoiseFloorChanged)
       NotifyNoiseFloorChanged(value);
-
-   if (OnRecomputeRequested)
-      OnRecomputeRequested();
 }
 
 void SuperSpectrogramView::OnHighestNoteChanged(wxCommandEvent&)
 {
-   int sel = mHighestNoteChoice->GetSelection();
-   if (sel == wxNOT_FOUND)
-      return;
-
-   int value = static_cast<int>(
-      reinterpret_cast<intptr_t>(
-         mHighestNoteChoice->GetClientData(sel)));
+   int value = GetValueFromChoice(
+      mHighestNoteChoice,
+      mHighestNoteValueMap
+   );
 
    if (NotifyHighestNoteChanged)
       NotifyHighestNoteChanged(value);
-
-   if (OnRecomputeRequested)
-      OnRecomputeRequested();
 
    UpdateLayoutPreservingState();
 }
 
 void SuperSpectrogramView::OnColormapChanged(wxCommandEvent&)
 {
-   int sel = mColormapChoice->GetSelection();
-   if (sel == wxNOT_FOUND)
-      return;
-
    auto value = static_cast<SuperSpectrogramConfig::Colormap>(
-      reinterpret_cast<intptr_t>(mColormapChoice->GetClientData(sel)));
+      GetValueFromChoice(
+         mColormapChoice,
+         mColormapValueMap
+      )
+      );
 
    if (NotifyColormapChanged)
       NotifyColormapChanged(value);
-
-   mPanel->SetColormap(value);
 }
 
 void SuperSpectrogramView::OnNoteNamingChanged(wxCommandEvent&)
 {
-   if (!mPanel || !mNoteNamingChoice)
-      return;
-
-   int sel = mNoteNamingChoice->GetSelection();
-   if (sel == wxNOT_FOUND)
-      return;
-
    auto value = static_cast<SuperSpectrogramConfig::NoteNaming>(
-      reinterpret_cast<intptr_t>(mNoteNamingChoice->GetClientData(sel)));
+      GetValueFromChoice(
+         mNoteNamingChoice,
+         mNoteNamingValueMap
+      )
+      );
 
    if (NotifyNoteNamingChanged)
       NotifyNoteNamingChanged(value);
-
-   mPanel->SetNoteNamingStyle(value);
 }
 
 void SuperSpectrogramView::OnShowNoteLinesChanged(wxCommandEvent& event)
@@ -429,122 +456,53 @@ void SuperSpectrogramView::OnShowNoteLinesChanged(wxCommandEvent& event)
 
    if (NotifyShowNoteLinesChanged)
       NotifyShowNoteLinesChanged(value);
-
-   mPanel->SetShowNoteLines(value);
 }
 
 void SuperSpectrogramView::OnTimeTickChanged(wxCommandEvent&)
 {
-   if (!mPanel || !mTimeTickChoice)
-      return;
-
-   int sel = mTimeTickChoice->GetSelection();
-   if (sel == wxNOT_FOUND)
-      return;
-
    auto value = static_cast<SuperSpectrogramConfig::TimeTickMode>(
-      reinterpret_cast<intptr_t>(mTimeTickChoice->GetClientData(sel)));
+      GetValueFromChoice(
+         mTimeTickChoice,
+         mTimeTickValueMap
+      )
+      );
 
    if (NotifyTimeTickChanged)
       NotifyTimeTickChanged(value);
-
-   mPanel->SetTimeTickMode(value);
 }
 
 //-----------------------------------------------------------------
-// Export: Data and rendering output
+// Export
 //-----------------------------------------------------------------
 void SuperSpectrogramView::OnExport(wxCommandEvent&)
 {
+   // Delegate export handling to controller
    if (NotifyExportRequested)
       NotifyExportRequested(this);
 }
 
-void SuperSpectrogramView::SetChoiceByValue(wxChoice* choice, int value)
-{
-   if (!choice)
-      return;
-
-   for (unsigned i = 0; i < choice->GetCount(); ++i) {
-      int v = static_cast<int>(
-         reinterpret_cast<intptr_t>(choice->GetClientData(i)));
-
-      if (v == value) {
-         choice->SetSelection(i);
-         return;
-      }
-   }
-}
-
 //-----------------------------------------------------------------
-// Application integration & command registration
+// Application integration (command registration)
 //-----------------------------------------------------------------
 #include "CommandContext.h"
 #include "CommandManager.h"
 #include "ProjectWindows.h"
 #include "CommonCommandFlags.h"
-#include "SuperSpectrogramController.h"
+#include "SuperSpectrogramSession.h"
 
 namespace {
-   SuperSpectrogramView* gSpectrogramDialog = nullptr;
-   void ClearSpectrogramDialog()
-   {
-      gSpectrogramDialog = nullptr;
-   }
-
-   static std::unique_ptr<SuperSpectrogramController> gController;
-   static std::unique_ptr<SuperSpectrogramAudioExtractor> gAudioExtractor;
-   static std::unique_ptr<SuperSpectrogramModel> gModel;
-   static std::unique_ptr<SuperSpectrogramConfig> gConfig;
+   std::unique_ptr<SuperSpectrogramSession> gSession;
 
    void OnPlotSuperSpectrogram(const CommandContext& context)
    {
       auto& project = context.project;
       CommandManager::Get(project).RegisterLastAnalyzer(context);
 
-      if (gSpectrogramDialog) {
-         gSpectrogramDialog->Raise();
-         gSpectrogramDialog->SetFocus();
-         return;
-      }
+      if (!gSession)
+         gSession = std::make_unique<SuperSpectrogramSession>(project);
 
-      gSpectrogramDialog = new SuperSpectrogramView(
-         &GetProjectFrame(project),
-         wxID_ANY,
-         SuperSpectrogramTitle,
-         wxPoint{ 150, 150 }
-      );
-
-      // create dependencies
-      gAudioExtractor = std::make_unique<SuperSpectrogramAudioExtractor>(project);
-      gConfig = std::make_unique<SuperSpectrogramConfig>();
-      gModel = std::make_unique<SuperSpectrogramModel>();
-
-      gConfig->Load();
-
-      gController = std::make_unique<SuperSpectrogramController>(
-         *gAudioExtractor,
-         *gConfig,
-         *gModel,
-         *gSpectrogramDialog
-      );
-
-      gController->BindView();
-      if (!gController->Initialize())
-      {
-         gSpectrogramDialog->Destroy();
-         gSpectrogramDialog = nullptr;
-         gController.reset();
-         gAudioExtractor.reset();
-         gConfig.reset();
-         gModel.reset();
-         return;
-      }
-
-      gSpectrogramDialog->Show(true);
-      gSpectrogramDialog->Show(true);
+      gSession->Show();
    }
-
 
    // Register that menu item
    using namespace MenuRegistry;
@@ -554,13 +512,4 @@ namespace {
            AudioIONotBusyFlag() | WaveTracksSelectedFlag() | TimeSelectedFlag()),
        wxT("Analyze/Analyzers/Windows")
    };
-}
-
-//-----------------------------------------------------------------
-// View: Close handling
-//-----------------------------------------------------------------
-void SuperSpectrogramView::OnCloseWindow(wxCloseEvent& WXUNUSED(event))
-{
-   gSpectrogramDialog = nullptr;
-   Destroy();
 }

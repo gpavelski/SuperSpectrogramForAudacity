@@ -15,7 +15,7 @@
 #include "SuperSpectrogramAudioExtractor.h"
 #include "SuperSpectrogramModel.h"
 #include "SuperSpectrogramConfig.h"
-#include "SuperSpectrogramWindow.h"
+#include "SuperSpectrogramView.h"
 
 class SuperSpectrogramConfig;
 class SuperSpectrogramModel;
@@ -49,8 +49,8 @@ public:
    void SetAudioData(const float* data, size_t len, double rate);
 
 private:
+   void UpdateView();
    void UpdateModelParameters();
-   void PushSettingsToView();
    void ExportMatrixAsText(wxWindow* parent);
    void ExportViewAsPNG(wxWindow* parent);
 

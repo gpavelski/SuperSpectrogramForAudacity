@@ -186,8 +186,6 @@ set( SOURCES
       ShuttleGetDefinition.h
       SoundActivatedRecord.cpp
       SoundActivatedRecord.h
-      SuperSpectrogramWindow.cpp
-      SuperSpectrogramWindow.h
       SpectralDataDialog.cpp
       SpectralDataManager.h
       SpectralDataManager.cpp
@@ -201,6 +199,9 @@ set( SOURCES
       SuperSpectrogramModel.h
       SuperSpectrogramPanel.cpp
       SuperSpectrogramPanel.h
+      SuperSpectrogramSession.h
+      SuperSpectrogramView.cpp
+      SuperSpectrogramView.h
       SseMathFuncs.cpp
       SseMathFuncs.h
       TagsEditor.cpp

@@ -38,7 +38,6 @@ bool SuperSpectrogramController::Initialize()
    if (!mCurrentData || mCurrentLen == 0)
       return false;
 
-   PushSettingsToView();
    Recompute(mCurrentData, mCurrentLen, mCurrentRate);
 
    return true;
@@ -71,18 +70,6 @@ void SuperSpectrogramController::UpdateModelParameters()
    mModel.SetParameters(p);
 }
 
-void SuperSpectrogramController::PushSettingsToView()
-{
-    mView.ApplySettings(
-      mConfig.noiseFloor,
-      mConfig.detailLevel,
-      mConfig.colormap,
-      mConfig.noteNaming,
-      mConfig.showNoteLines,
-      mConfig.timeTickMode
-    );
-}
-
 //------------------------------------------------------------
 // Recompute (core orchestration)
 //------------------------------------------------------------
@@ -105,6 +92,11 @@ void SuperSpectrogramController::Recompute(
    mView.SetSpectrogramData(matrix, maxFreq, numSamples);
 }
 
+void SuperSpectrogramController::UpdateView()
+{
+   mView.ApplyConfig(mConfig);
+}
+
 //------------------------------------------------------------
 // Event Handlers
 //------------------------------------------------------------
@@ -115,6 +107,8 @@ void SuperSpectrogramController::OnNoiseFloorChanged(int value)
 
    mConfig.noiseFloor = value;
    mConfig.Save();
+
+   Recompute(mCurrentData, mCurrentLen, mCurrentRate);
 }
 
 void SuperSpectrogramController::OnDetailLevelChanged(int value)
@@ -124,6 +118,8 @@ void SuperSpectrogramController::OnDetailLevelChanged(int value)
 
    mConfig.detailLevel = value;
    mConfig.Save();
+
+   Recompute(mCurrentData, mCurrentLen, mCurrentRate);
 }
 
 void SuperSpectrogramController::OnColormapChanged(SuperSpectrogramConfig::Colormap value)
@@ -133,6 +129,8 @@ void SuperSpectrogramController::OnColormapChanged(SuperSpectrogramConfig::Color
 
    mConfig.colormap = value;
    mConfig.Save();
+
+   UpdateView();
 }
 
 void SuperSpectrogramController::OnNoteNamingChanged(SuperSpectrogramConfig::NoteNaming value)
@@ -142,6 +140,8 @@ void SuperSpectrogramController::OnNoteNamingChanged(SuperSpectrogramConfig::Not
 
    mConfig.noteNaming = value;
    mConfig.Save();
+
+   UpdateView();
 }
 
 void SuperSpectrogramController::OnShowNoteLinesChanged(bool value)
@@ -151,6 +151,8 @@ void SuperSpectrogramController::OnShowNoteLinesChanged(bool value)
 
    mConfig.showNoteLines = value;
    mConfig.Save();
+
+   UpdateView();
 }
 
 void SuperSpectrogramController::OnTimeTickModeChanged(SuperSpectrogramConfig::TimeTickMode value)
@@ -160,6 +162,8 @@ void SuperSpectrogramController::OnTimeTickModeChanged(SuperSpectrogramConfig::T
 
    mConfig.timeTickMode = value;
    mConfig.Save();
+
+   UpdateView();
 }
 
 void SuperSpectrogramController::OnExportRequested(wxWindow* parent)
@@ -269,10 +273,6 @@ void SuperSpectrogramController::BindView()
 
    mView.NotifyTimeTickChanged = [this](SuperSpectrogramConfig::TimeTickMode value) {
       OnTimeTickModeChanged(value);
-   };
-
-   mView.OnRecomputeRequested = [this]() {
-      Recompute(mCurrentData, mCurrentLen, mCurrentRate);
    };
 
    mView.NotifyExportRequested = [this](wxWindow* parent)
