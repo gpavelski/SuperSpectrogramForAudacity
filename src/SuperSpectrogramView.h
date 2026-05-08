@@ -57,14 +57,11 @@ public:
 
    wxBitmap RenderToBitmap() const;
 
+   SuperSpectrogramConfig BuildConfigFromUI() const;
+   void ApplyDataDrivenMinSize();
    // Controller bindings
-   std::function<void(int)> NotifyNoiseFloorChanged;
-   std::function<void(int)> NotifyHighestNoteChanged;
-   std::function<void(SuperSpectrogramConfig::Colormap)> NotifyColormapChanged;
-   std::function<void(SuperSpectrogramConfig::NoteNaming)> NotifyNoteNamingChanged;
-   std::function<void(bool)> NotifyShowNoteLinesChanged;
-   std::function<void(SuperSpectrogramConfig::TimeTickMode)> NotifyTimeTickChanged;
-   std::function<void(wxWindow*)> NotifyExportRequested;
+   std::function<void(const SuperSpectrogramConfig&)> NotifyConfigChanged;
+   std::function<void(int format, const std::string& path)> NotifyExportRequested;
 
 private:
 
@@ -82,9 +79,6 @@ private:
       wxString label;
       int value;
    };
-
-   void ApplyDataDrivenMinSize();
-   void UpdateLayoutPreservingState();
 
    void CreateControls(wxSizer* parentSizer);
 
@@ -106,7 +100,7 @@ private:
    int GetValueFromChoice(
       wxChoice* choice,
       const std::unordered_map<int, int>& valueMap
-   );
+   ) const;
 
    void ApplyConfigToControls(
       const SuperSpectrogramConfig& config

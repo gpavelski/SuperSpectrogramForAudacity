@@ -42,6 +42,7 @@ private:
       );
 
       mAudioExtractor = std::make_unique<SuperSpectrogramAudioExtractor>(mProject);
+      mExportService = std::make_unique<SuperSpectrogramExportService>();
       mConfig = std::make_unique<SuperSpectrogramConfig>();
       mModel = std::make_unique<SuperSpectrogramModel>();
 
@@ -50,6 +51,7 @@ private:
       mController = std::make_unique<SuperSpectrogramController>(
          *mAudioExtractor,
          *mConfig,
+         *mExportService,
          *mModel,
          *mView
       );
@@ -92,6 +94,7 @@ private:
    std::unique_ptr<SuperSpectrogramAudioExtractor> mAudioExtractor;
    std::unique_ptr<SuperSpectrogramModel> mModel;
    std::unique_ptr<SuperSpectrogramConfig> mConfig;
+   std::unique_ptr<SuperSpectrogramExportService> mExportService;
 };
 
 #endif

@@ -14,10 +14,12 @@
 SuperSpectrogramController::SuperSpectrogramController(
    SuperSpectrogramAudioExtractor& extractor,
    SuperSpectrogramConfig& config,
+   SuperSpectrogramExportService& exportService,
    SuperSpectrogramModel& model,
    SuperSpectrogramView& view)
    : mExtractor(extractor)
    , mConfig(config)
+   , mExportService(exportService)
    , mModel(model)
    , mView(view)
 {
@@ -100,146 +102,76 @@ void SuperSpectrogramController::UpdateView()
 //------------------------------------------------------------
 // Event Handlers
 //------------------------------------------------------------
-void SuperSpectrogramController::OnNoiseFloorChanged(int value)
+void SuperSpectrogramController::ApplyConfigChange(
+   const SuperSpectrogramConfig& newConfig)
 {
-   if (mConfig.noiseFloor == value)
-      return;
+   ConfigDiff diff = ComputeDiff(mConfig, newConfig);
 
-   mConfig.noiseFloor = value;
+   mConfig = newConfig;
    mConfig.Save();
 
-   Recompute(mCurrentData, mCurrentLen, mCurrentRate);
+   if (diff.needsRecompute)
+      Recompute(mCurrentData, mCurrentLen, mCurrentRate);
+      UpdateLayoutPreservingState();
+
+   if (diff.needsViewUpdate)
+      UpdateView();
 }
 
-void SuperSpectrogramController::OnDetailLevelChanged(int value)
+SuperSpectrogramController::ConfigDiff
+SuperSpectrogramController::ComputeDiff(
+   const SuperSpectrogramConfig& oldCfg,
+   const SuperSpectrogramConfig& newCfg)
 {
-   if (mConfig.detailLevel == value)
-      return;
+   ConfigDiff d;
 
-   mConfig.detailLevel = value;
-   mConfig.Save();
-
-   Recompute(mCurrentData, mCurrentLen, mCurrentRate);
-}
-
-void SuperSpectrogramController::OnColormapChanged(SuperSpectrogramConfig::Colormap value)
-{
-   if (mConfig.colormap == value)
-      return;
-
-   mConfig.colormap = value;
-   mConfig.Save();
-
-   UpdateView();
-}
-
-void SuperSpectrogramController::OnNoteNamingChanged(SuperSpectrogramConfig::NoteNaming value)
-{
-   if (mConfig.noteNaming == value)
-      return;
-
-   mConfig.noteNaming = value;
-   mConfig.Save();
-
-   UpdateView();
-}
-
-void SuperSpectrogramController::OnShowNoteLinesChanged(bool value)
-{
-   if (mConfig.showNoteLines == value)
-      return;
-
-   mConfig.showNoteLines = value;
-   mConfig.Save();
-
-   UpdateView();
-}
-
-void SuperSpectrogramController::OnTimeTickModeChanged(SuperSpectrogramConfig::TimeTickMode value)
-{
-   if (mConfig.timeTickMode == value)
-      return;
-
-   mConfig.timeTickMode = value;
-   mConfig.Save();
-
-   UpdateView();
-}
-
-void SuperSpectrogramController::OnExportRequested(wxWindow* parent)
-{
-   if (!parent)
-      return;
-
-   wxArrayString choices;
-   choices.Add("Export matrix as text (.txt)");
-   choices.Add("Export current view as image (.png)");
-
-   wxSingleChoiceDialog dlg(
-      parent,
-      "Choose export format",
-      "Export Spectrogram",
-      choices);
-
-   if (dlg.ShowModal() != wxID_OK)
-      return;
-
-   if (dlg.GetSelection() == 0)
-      ExportMatrixAsText(parent);
-   else
-      ExportViewAsPNG(parent);
-}
-
-void SuperSpectrogramController::ExportMatrixAsText(wxWindow* parent)
-{
-   wxFileDialog dlg(
-      parent,
-      "Save spectrogram matrix",
-      "",
-      "spectrogram.txt",
-      "Text files (*.txt)|*.txt",
-      wxFD_SAVE | wxFD_OVERWRITE_PROMPT);
-
-   if (dlg.ShowModal() != wxID_OK)
-      return;
-
-   const auto& matrix = mModel.GetMatrix();
-
-   std::ofstream out(dlg.GetPath().ToStdString());
-   if (!out.is_open())
-      return;
-
-   for (const auto& column : matrix)
+   // compute-affecting
+   if (oldCfg.noiseFloor != newCfg.noiseFloor ||
+      oldCfg.detailLevel != newCfg.detailLevel)
    {
-      for (size_t i = 0; i < column.size(); ++i)
-      {
-         out << column[i];
-         if (i + 1 < column.size())
-            out << '\t';
-      }
-      out << '\n';
+      d.needsRecompute = true;
+   }
+
+   // visual-only
+   if (oldCfg.colormap != newCfg.colormap ||
+      oldCfg.noteNaming != newCfg.noteNaming ||
+      oldCfg.showNoteLines != newCfg.showNoteLines ||
+      oldCfg.timeTickMode != newCfg.timeTickMode)
+   {
+      d.needsViewUpdate = true;
+   }
+
+   return d;
+}
+
+void SuperSpectrogramController::UpdateLayoutPreservingState()
+{
+   // Recalculate layout while preserving maximized state.
+   // Avoids unexpected resizing when user has maximized the window.
+   const bool wasMaximized = mView.IsMaximized();
+
+   if (!wasMaximized) {
+      mView.ApplyDataDrivenMinSize();
+      mView.Layout();
+      mView.Fit();
+      mView.Centre();
+   }
+   else {
+      mView.Layout();
+      // Explicitly re-maximize to guard against platform quirks
+      mView.Maximize(true);
    }
 }
 
-void SuperSpectrogramController::ExportViewAsPNG(wxWindow* parent)
+void SuperSpectrogramController::ExportMatrix(const std::string& path)
 {
-   wxFileDialog dlg(
-      parent,
-      "Save spectrogram image",
-      "",
-      "spectrogram.png",
-      "PNG files (*.png)|*.png",
-      wxFD_SAVE | wxFD_OVERWRITE_PROMPT
-   );
+   mExportService.ExportMatrixAsText(mModel.GetMatrix(), path);
+}
 
-   if (dlg.ShowModal() != wxID_OK)
-      return;
-
+void SuperSpectrogramController::ExportCurrentView(const std::string& path)
+{
    wxBitmap bmp = mView.RenderToBitmap();
-   if (!bmp.IsOk())
-      return;
-
-   bmp.SaveFile(dlg.GetPath(), wxBITMAP_TYPE_PNG);
+   mExportService.ExportViewAsPNG(bmp, path);
 }
 
 void SuperSpectrogramController::SetAudioData(const float* data, size_t len, double rate)
@@ -251,32 +183,17 @@ void SuperSpectrogramController::SetAudioData(const float* data, size_t len, dou
 
 void SuperSpectrogramController::BindView()
 {
-   mView.NotifyNoiseFloorChanged = [this](int value) {
-      OnNoiseFloorChanged(value);
-   };
+   mView.NotifyConfigChanged = [this](const SuperSpectrogramConfig& cfg)
+      {
+         ApplyConfigChange(cfg);
+      };
 
-   mView.NotifyHighestNoteChanged = [this](int value) {
-      OnDetailLevelChanged(value);
-   };
-
-   mView.NotifyColormapChanged = [this](SuperSpectrogramConfig::Colormap value) {
-      OnColormapChanged(value);
-   };
-
-   mView.NotifyNoteNamingChanged = [this](SuperSpectrogramConfig::NoteNaming value) {
-      OnNoteNamingChanged(value);
-   };
-
-   mView.NotifyShowNoteLinesChanged = [this](bool value) {
-      OnShowNoteLinesChanged(value);
-   };
-
-   mView.NotifyTimeTickChanged = [this](SuperSpectrogramConfig::TimeTickMode value) {
-      OnTimeTickModeChanged(value);
-   };
-
-   mView.NotifyExportRequested = [this](wxWindow* parent)
-   {
-      OnExportRequested(parent);
-   };
+   mView.NotifyExportRequested =
+      [this](int format, const std::string& path)
+      {
+         if (format == 0)
+            ExportMatrix(path);
+         else
+            ExportCurrentView(path);
+      };
 }

@@ -195,6 +195,8 @@ set( SOURCES
       SuperSpectrogramConfig.h
       SuperSpectrogramController.cpp
       SuperSpectrogramController.h
+      SuperSpectrogramExportService.h
+      SuperSpectrogramExportService.cpp
       SuperSpectrogramModel.cpp
       SuperSpectrogramModel.h
       SuperSpectrogramPanel.cpp

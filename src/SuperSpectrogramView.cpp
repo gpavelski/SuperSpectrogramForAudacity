@@ -207,25 +207,6 @@ void SuperSpectrogramView::ApplyDataDrivenMinSize()
    SetMinSize(wxSize(minWidth, minHeight));
 }
 
-void SuperSpectrogramView::UpdateLayoutPreservingState()
-{
-   // Recalculate layout while preserving maximized state.
-   // Avoids unexpected resizing when user has maximized the window.
-   const bool wasMaximized = IsMaximized();
-
-   if (!wasMaximized) {
-      ApplyDataDrivenMinSize();
-      Layout();
-      Fit();
-      Centre();
-   }
-   else {
-      Layout();
-      // Explicitly re-maximize to guard against platform quirks
-      Maximize(true);
-   }
-}
-
 //-----------------------------------------------------------------
 // UI construction helpers
 //-----------------------------------------------------------------
@@ -378,7 +359,8 @@ wxChoice* SuperSpectrogramView::CreateChoice(
 
 int SuperSpectrogramView::GetValueFromChoice(
    wxChoice* choice,
-   const std::unordered_map<int, int>& valueMap)
+   const std::unordered_map<int, int>& valueMap
+) const
 {
    if (!choice)
       return 0;
@@ -388,87 +370,71 @@ int SuperSpectrogramView::GetValueFromChoice(
       return 0;
 
    auto it = valueMap.find(sel);
-   if (it == valueMap.end())
-      return 0;
+   if (it != valueMap.end())
+      return it->second;
 
-   return it->second;
+   return 0;
 }
 
+SuperSpectrogramConfig SuperSpectrogramView::BuildConfigFromUI() const
+{
+   SuperSpectrogramConfig cfg;
+
+   cfg.noiseFloor = GetValueFromChoice(mNoiseFloorChoice, mNoiseFloorValueMap);
+   cfg.detailLevel = GetValueFromChoice(mHighestNoteChoice, mHighestNoteValueMap);
+
+   cfg.colormap = static_cast<SuperSpectrogramConfig::Colormap>(
+      GetValueFromChoice(mColormapChoice, mColormapValueMap));
+
+   cfg.noteNaming = static_cast<SuperSpectrogramConfig::NoteNaming>(
+      GetValueFromChoice(mNoteNamingChoice, mNoteNamingValueMap));
+
+   cfg.showNoteLines = mShowNoteLinesCheck
+      ? mShowNoteLinesCheck->GetValue()
+      : true;
+
+   cfg.timeTickMode = static_cast<SuperSpectrogramConfig::TimeTickMode>(
+      GetValueFromChoice(mTimeTickChoice, mTimeTickValueMap));
+
+   return cfg;
+}
 //-----------------------------------------------------------------
 // UI event handlers (View -> Controller)
 //-----------------------------------------------------------------
 void SuperSpectrogramView::OnNoiseFloorChanged(wxCommandEvent&)
 {
-   int value = GetValueFromChoice(
-      mNoiseFloorChoice,
-      mNoiseFloorValueMap
-   );
-
-   if (NotifyNoiseFloorChanged)
-      NotifyNoiseFloorChanged(value);
+   if (NotifyConfigChanged)
+      NotifyConfigChanged(BuildConfigFromUI());
 }
 
 void SuperSpectrogramView::OnHighestNoteChanged(wxCommandEvent&)
 {
-   int value = GetValueFromChoice(
-      mHighestNoteChoice,
-      mHighestNoteValueMap
-   );
-
-   if (NotifyHighestNoteChanged)
-      NotifyHighestNoteChanged(value);
-
-   UpdateLayoutPreservingState();
+   if (NotifyConfigChanged)
+      NotifyConfigChanged(BuildConfigFromUI());
 }
 
 void SuperSpectrogramView::OnColormapChanged(wxCommandEvent&)
 {
-   auto value = static_cast<SuperSpectrogramConfig::Colormap>(
-      GetValueFromChoice(
-         mColormapChoice,
-         mColormapValueMap
-      )
-      );
-
-   if (NotifyColormapChanged)
-      NotifyColormapChanged(value);
+   if (NotifyConfigChanged)
+      NotifyConfigChanged(BuildConfigFromUI());
 }
 
 void SuperSpectrogramView::OnNoteNamingChanged(wxCommandEvent&)
 {
-   auto value = static_cast<SuperSpectrogramConfig::NoteNaming>(
-      GetValueFromChoice(
-         mNoteNamingChoice,
-         mNoteNamingValueMap
-      )
-      );
-
-   if (NotifyNoteNamingChanged)
-      NotifyNoteNamingChanged(value);
+   if (NotifyConfigChanged)
+      NotifyConfigChanged(BuildConfigFromUI());
 }
 
-void SuperSpectrogramView::OnShowNoteLinesChanged(wxCommandEvent& event)
+void SuperSpectrogramView::OnShowNoteLinesChanged(wxCommandEvent&)
 {
-   if (!mPanel)
-      return;
-
-   bool value = event.IsChecked();
-
-   if (NotifyShowNoteLinesChanged)
-      NotifyShowNoteLinesChanged(value);
+   if (NotifyConfigChanged)
+      NotifyConfigChanged(BuildConfigFromUI());
 }
 
 void SuperSpectrogramView::OnTimeTickChanged(wxCommandEvent&)
 {
-   auto value = static_cast<SuperSpectrogramConfig::TimeTickMode>(
-      GetValueFromChoice(
-         mTimeTickChoice,
-         mTimeTickValueMap
-      )
-      );
-
-   if (NotifyTimeTickChanged)
-      NotifyTimeTickChanged(value);
+   if (NotifyConfigChanged)
+      NotifyConfigChanged(BuildConfigFromUI());
 }
 
 //-----------------------------------------------------------------
@@ -476,9 +442,38 @@ void SuperSpectrogramView::OnTimeTickChanged(wxCommandEvent&)
 //-----------------------------------------------------------------
 void SuperSpectrogramView::OnExport(wxCommandEvent&)
 {
-   // Delegate export handling to controller
-   if (NotifyExportRequested)
-      NotifyExportRequested(this);
+   if (!NotifyExportRequested)
+      return;
+
+   wxArrayString choices;
+   choices.Add("Export matrix as text (.txt)");
+   choices.Add("Export current view as image (.png)");
+
+   wxSingleChoiceDialog dlg(
+      this,
+      "Choose export format",
+      "Export Spectrogram",
+      choices);
+
+   if (dlg.ShowModal() != wxID_OK)
+      return;
+
+   const int selection = dlg.GetSelection();
+
+   wxFileDialog fileDlg(
+      this,
+      "Save file",
+      "",
+      selection == 0 ? "spectrogram.txt" : "spectrogram.png",
+      selection == 0
+      ? "Text files (*.txt)|*.txt"
+      : "PNG files (*.png)|*.png",
+      wxFD_SAVE | wxFD_OVERWRITE_PROMPT);
+
+   if (fileDlg.ShowModal() != wxID_OK)
+      return;
+
+   NotifyExportRequested(selection, fileDlg.GetPath().ToStdString());
 }
 
 //-----------------------------------------------------------------

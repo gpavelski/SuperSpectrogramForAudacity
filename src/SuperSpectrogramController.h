@@ -15,6 +15,7 @@
 #include "SuperSpectrogramAudioExtractor.h"
 #include "SuperSpectrogramModel.h"
 #include "SuperSpectrogramConfig.h"
+#include "SuperSpectrogramExportService.h"
 #include "SuperSpectrogramView.h"
 
 class SuperSpectrogramConfig;
@@ -27,6 +28,7 @@ public:
    SuperSpectrogramController(
       SuperSpectrogramAudioExtractor& extractor,
       SuperSpectrogramConfig& config,
+      SuperSpectrogramExportService& exportService,
       SuperSpectrogramModel& model,
       SuperSpectrogramView& view);
 
@@ -34,14 +36,16 @@ public:
    void LoadAudioFromProject();
    void BindView();
 
-   // Event handlers (called by dialog)
-   void OnNoiseFloorChanged(int value);
-   void OnDetailLevelChanged(int value);
-   void OnColormapChanged(SuperSpectrogramConfig::Colormap value);
-   void OnNoteNamingChanged(SuperSpectrogramConfig::NoteNaming value);
-   void OnShowNoteLinesChanged(bool value);
-   void OnTimeTickModeChanged(SuperSpectrogramConfig::TimeTickMode value);
-   void OnExportRequested(wxWindow* parent);
+   struct ConfigDiff
+   {
+      bool needsRecompute = false;
+      bool needsViewUpdate = false;
+   };
+
+   void ApplyConfigChange(const SuperSpectrogramConfig& newConfig);
+   SuperSpectrogramController::ConfigDiff ComputeDiff(
+      const SuperSpectrogramConfig& oldCfg,
+      const SuperSpectrogramConfig& newCfg);
 
    // External trigger (dialog Show)
    void Recompute(const float* data, size_t len, double rate);
@@ -51,11 +55,14 @@ public:
 private:
    void UpdateView();
    void UpdateModelParameters();
-   void ExportMatrixAsText(wxWindow* parent);
-   void ExportViewAsPNG(wxWindow* parent);
+   void UpdateLayoutPreservingState();
+   void ExportMatrix(const std::string& path);
+   void ExportCurrentView(const std::string& path);
 
    SuperSpectrogramAudioExtractor& mExtractor;
    SuperSpectrogramConfig& mConfig;
+   SuperSpectrogramExportService& mExportService;
+   SuperSpectrogramConfig mLastAppliedConfig;
    SuperSpectrogramModel& mModel;
    SuperSpectrogramView& mView;
 
