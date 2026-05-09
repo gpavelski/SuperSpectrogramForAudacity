@@ -11,90 +11,64 @@
 #ifndef __SUPER_SPECTROGRAM_SESSION__
 #define __SUPER_SPECTROGRAM_SESSION__
 
-#include "SuperSpectrogramController.h"
+#include <memory>
+
+// Forward declarations (avoid heavy includes in header)
+class SuperSpectrogramController;
+class SuperSpectrogramView;
+class SuperSpectrogramAudioExtractor;
+class SuperSpectrogramModel;
+class SuperSpectrogramExportService;
+class SuperSpectrogramConfig;
+class AudacityProject;
 
 class SuperSpectrogramSession
 {
 public:
-   SuperSpectrogramSession(AudacityProject& project)
-      : mProject(project)
-   {}
+   explicit SuperSpectrogramSession(AudacityProject& project);
+   ~SuperSpectrogramSession();
 
-   void Show()
-   {
-      if (mView) {
-         mView->Raise();
-         mView->SetFocus();
-         return;
-      }
+   // UI entry point
+   void Show();
 
-      Create();
-   }
+   // Audio ownership (Session = source of truth)
+   void SetAudio(
+      Floats data,
+      size_t len,
+      double rate
+   );
+
+   const float* GetAudioData() const;
+   size_t GetAudioLength() const;
+   double GetSampleRate() const;
+
+   SuperSpectrogramConfig& GetConfig();
+   const SuperSpectrogramConfig& GetConfig() const;
 
 private:
-   void Create()
-   {
-      mView = new SuperSpectrogramView(
-         &GetProjectFrame(mProject),
-         wxID_ANY,
-         SuperSpectrogramTitle,
-         wxPoint{150,150}
-      );
-
-      mAudioExtractor = std::make_unique<SuperSpectrogramAudioExtractor>(mProject);
-      mExportService = std::make_unique<SuperSpectrogramExportService>();
-      mConfig = std::make_unique<SuperSpectrogramConfig>();
-      mModel = std::make_unique<SuperSpectrogramModel>();
-
-      mConfig->Load();
-
-      mController = std::make_unique<SuperSpectrogramController>(
-         *mAudioExtractor,
-         *mConfig,
-         *mExportService,
-         *mModel,
-         *mView
-      );
-
-      mController->BindView();
-
-      if (!mController->Initialize()) {
-         Destroy();
-         return;
-      }
-
-      // Hook lifecycle cleanup
-      mView->Bind(wxEVT_CLOSE_WINDOW, [this](wxCloseEvent& evt) {
-         Destroy();
-         evt.Skip();
-      });
-
-      mView->Show(true);
-   }
-
-   void Destroy()
-   {
-      if (mView) {
-         mView->Destroy();
-         mView = nullptr;
-      }
-
-      mController.reset();
-      mAudioExtractor.reset();
-      mConfig.reset();
-      mModel.reset();
-   }
+   void Create();
+   void Destroy();
 
 private:
    AudacityProject& mProject;
 
+   // View (owned, raw pointer due to wx lifetime rules)
    SuperSpectrogramView* mView = nullptr;
 
+   // Core components
    std::unique_ptr<SuperSpectrogramController> mController;
    std::unique_ptr<SuperSpectrogramAudioExtractor> mAudioExtractor;
    std::unique_ptr<SuperSpectrogramModel> mModel;
-   std::unique_ptr<SuperSpectrogramConfig> mConfig;
    std::unique_ptr<SuperSpectrogramExportService> mExportService;
+
+   // Audio state
+   Floats mOwnedData;
+   const float* mData = nullptr;
+   size_t mLength = 0;
+   double mRate = 0.0;
+
+   // Persistent config (owned here now)
+   std::unique_ptr<SuperSpectrogramConfig> mConfig;
 };
 
-#endif
+#endif // __SUPER_SPECTROGRAM_SESSION__

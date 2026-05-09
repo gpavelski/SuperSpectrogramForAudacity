@@ -21,10 +21,10 @@ class FFT_API SuperSpectrogramAnalyst
 public:
    // Return true if successful
    bool Calculate(
-      const float *data,
+      const float* data,
       size_t dataLen,
+      size_t frequencyRate,
       size_t detailLevel,
-      size_t rate,
       size_t lowerThreshold
    );
 

@@ -100,16 +100,12 @@ bool SuperSpectrogramView::Show(bool show)
 //-----------------------------------------------------------------
 // Data & configuration application (Controller -> View)
 //-----------------------------------------------------------------
-void SuperSpectrogramView::SetSpectrogramData(
-   const std::vector<std::vector<double>>& matrix,
-   double maxFreq,
-   size_t numSamples)
+void SuperSpectrogramView::Render(const SuperSpectrogramFrame& frame)
 {
    if (!mPanel)
       return;
 
-   mPanel->SetData(matrix, maxFreq, numSamples);
-   mPanel->ResetView();
+   mPanel->SetData(frame);
 }
 
 void SuperSpectrogramView::ApplyConfig(

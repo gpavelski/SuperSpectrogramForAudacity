@@ -237,14 +237,11 @@ std::vector<wxColour> SuperSpectrogramPanel::BuildColormap(
 // Sets the spectrogram data matrix and associated metadata, then
 // rebuilds the backing bitmap and resets the view extents
 //----------------------------------------------------------------------
-void SuperSpectrogramPanel::SetData(const std::vector<std::vector<double>>& m,
-       double maxFreq,
-       size_t numSamples
-)
+void SuperSpectrogramPanel::SetData(const SuperSpectrogramFrame& frame)
 {
-   m_matrix = m;
-   m_maxFreq = maxFreq;
-   m_signalLength = numSamples;
+   m_matrix = frame.matrix;
+   m_maxFreq = frame.maxFreq;
+   m_signalLength = frame.numSamples;
 
    BuildBitmap();
    ResetView();

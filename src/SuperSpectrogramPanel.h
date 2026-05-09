@@ -14,6 +14,7 @@
 #include <vector>
 #include <limits>
 #include "SuperSpectrogramConfig.h"
+#include "SuperSpectrogramFrame.h"
 
 class SuperSpectrogramPanel : public wxPanel
 {
@@ -26,9 +27,7 @@ public:
    // --------------------------
    // Public API
    // --------------------------
-   void SetData(const std::vector<std::vector<double>>& matrix,
-          double maxFreq,
-          size_t numSamples);
+   void SetData(const SuperSpectrogramFrame& frame);
    void ResetView();
    void Clear();
 

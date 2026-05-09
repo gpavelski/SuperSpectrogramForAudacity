@@ -25,8 +25,8 @@ STFT calculation and returning the calculated Spectrogram.
 bool SuperSpectrogramAnalyst::Calculate(
    const float* data,
    size_t dataLen,
-   size_t detailLevel,
    size_t frequencyRate,
+   size_t detailLevel,
    size_t lowerThreshold
 )
 {

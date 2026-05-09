@@ -36,7 +36,8 @@ SuperSpectrogramModel::GetParameters() const
 void SuperSpectrogramModel::Compute(
    const float* data,
    size_t len,
-   double rate)
+   double rate,
+   const Parameters& params)
 {
    if (!data || len == 0 || !mAnalyst)
       return;
@@ -44,13 +45,29 @@ void SuperSpectrogramModel::Compute(
    mAnalyst->Calculate(
       data,
       len,
-      mParams.detailLevel,
       rate,
-      mParams.noiseFloor);
+      params.detailLevel,
+      params.noiseFloor);
 
    mMatrix = mAnalyst->GetMatrix();
    mMaxFreq = mAnalyst->GetTargetRate() / 2.0;
    mNumSamples = mAnalyst->GetSignalLength();
+}
+
+SuperSpectrogramFrame SuperSpectrogramModel::ComputeFrame(
+   const float* data,
+   size_t len,
+   double rate,
+   const Parameters& params)
+{
+   Compute(data, len, rate, params);
+
+   SuperSpectrogramFrame frame;
+   frame.matrix = GetMatrix();
+   frame.maxFreq = GetMaxFreq();
+   frame.numSamples = GetNumSamples();
+
+   return frame;
 }
 
 //------------------------------------------------------------

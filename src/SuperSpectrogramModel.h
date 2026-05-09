@@ -13,6 +13,7 @@
 
 #include <memory>
 #include "SuperSpectrogramAnalyst.h"
+#include "SuperSpectrogramFrame.h"
 
 class STFTProcessor;
 
@@ -29,7 +30,12 @@ public:
    void SetParameters(const Parameters& p);
    const Parameters& GetParameters() const;
 
-   void Compute(const float* data, size_t len, double rate);
+   SuperSpectrogramFrame ComputeFrame(
+      const float* data,
+      size_t len,
+      double rate,
+      const Parameters& params
+   );
 
    const std::vector<std::vector<double>>& GetMatrix() const;
    double GetMaxFreq() const;
@@ -37,6 +43,13 @@ public:
 
 private:
    Parameters mParams{};
+
+   void Compute(
+      const float* data,
+      size_t len,
+      double rate,
+      const Parameters& params
+   );
 
    std::vector<std::vector<double>> mMatrix;
    double mMaxFreq{};

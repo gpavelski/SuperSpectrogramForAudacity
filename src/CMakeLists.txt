@@ -197,11 +197,13 @@ set( SOURCES
       SuperSpectrogramController.h
       SuperSpectrogramExportService.h
       SuperSpectrogramExportService.cpp
+      SuperSpectrogramFrame.h
       SuperSpectrogramModel.cpp
       SuperSpectrogramModel.h
       SuperSpectrogramPanel.cpp
       SuperSpectrogramPanel.h
       SuperSpectrogramSession.h
+      SuperSpectrogramSession.cpp
       SuperSpectrogramView.cpp
       SuperSpectrogramView.h
       SseMathFuncs.cpp

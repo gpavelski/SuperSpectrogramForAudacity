@@ -13,14 +13,14 @@
 
 SuperSpectrogramController::SuperSpectrogramController(
    SuperSpectrogramAudioExtractor& extractor,
-   SuperSpectrogramConfig& config,
    SuperSpectrogramExportService& exportService,
    SuperSpectrogramModel& model,
+   SuperSpectrogramSession& session,
    SuperSpectrogramView& view)
    : mExtractor(extractor)
-   , mConfig(config)
    , mExportService(exportService)
    , mModel(model)
+   , mSession(session)
    , mView(view)
 {
 }
@@ -30,73 +30,45 @@ SuperSpectrogramController::SuperSpectrogramController(
 //------------------------------------------------------------
 bool SuperSpectrogramController::Initialize()
 {
-   mConfig.Load();
+   auto& config = mSession.GetConfig();
+   config.Load();
 
-   UpdateModelParameters();
-   mView.ApplyConfig(mConfig);
+   mView.ApplyConfig(config);
 
-   LoadAudioFromProject();
-
-   if (!mCurrentData || mCurrentLen == 0)
+   auto audio = mExtractor.Extract();
+   if (!audio)
       return false;
 
-   Recompute(mCurrentData, mCurrentLen, mCurrentRate);
+   mSession.SetAudio(
+      std::move(audio->data),
+      audio->length,
+      audio->rate
+   );
+
+   Recompute();
 
    return true;
-}
-
-void SuperSpectrogramController::LoadAudioFromProject()
-{
-   auto audio = mExtractor.Extract();
-
-   if (!audio)
-      return;
-
-   // Take ownership of the buffer
-   mOwnedData = std::move(audio->data);
-
-   mCurrentData = mOwnedData.get();
-   mCurrentLen = audio->length;
-   mCurrentRate = audio->rate;
-}
-
-//------------------------------------------------------------
-// Internal helpers
-//------------------------------------------------------------
-void SuperSpectrogramController::UpdateModelParameters()
-{
-   SuperSpectrogramModel::Parameters p;
-   p.noiseFloor = mConfig.noiseFloor;
-   p.detailLevel = mConfig.detailLevel;
-
-   mModel.SetParameters(p);
 }
 
 //------------------------------------------------------------
 // Recompute (core orchestration)
 //------------------------------------------------------------
-void SuperSpectrogramController::Recompute(
-   const float* data,
-   size_t len,
-   double rate)
+void SuperSpectrogramController::Recompute()
 {
-   if (!data || len == 0)
-      return;
+   const auto& cfg = mSession.GetConfig();
 
-   UpdateModelParameters();
+   SuperSpectrogramModel::Parameters p;
+   p.noiseFloor = cfg.noiseFloor;
+   p.detailLevel = cfg.detailLevel;
 
-   mModel.Compute(data, len, rate);
+   auto frame = mModel.ComputeFrame(
+      mSession.GetAudioData(),
+      mSession.GetAudioLength(),
+      mSession.GetSampleRate(),
+      p
+   );
 
-   auto matrix = mModel.GetMatrix();
-   auto maxFreq = mModel.GetMaxFreq();
-   auto numSamples = mModel.GetNumSamples();
-
-   mView.SetSpectrogramData(matrix, maxFreq, numSamples);
-}
-
-void SuperSpectrogramController::UpdateView()
-{
-   mView.ApplyConfig(mConfig);
+   mView.Render(frame);
 }
 
 //------------------------------------------------------------
@@ -105,17 +77,18 @@ void SuperSpectrogramController::UpdateView()
 void SuperSpectrogramController::ApplyConfigChange(
    const SuperSpectrogramConfig& newConfig)
 {
-   ConfigDiff diff = ComputeDiff(mConfig, newConfig);
+   auto& current = mSession.GetConfig();
 
-   mConfig = newConfig;
-   mConfig.Save();
+   const bool needsRecompute =
+      RequiresRecompute(current, newConfig);
 
-   if (diff.needsRecompute)
-      Recompute(mCurrentData, mCurrentLen, mCurrentRate);
-      UpdateLayoutPreservingState();
+   current = newConfig;
+   current.Save();
 
-   if (diff.needsViewUpdate)
-      UpdateView();
+   if (needsRecompute)
+      Recompute();
+
+   mView.ApplyConfig(current);
 }
 
 SuperSpectrogramController::ConfigDiff
@@ -174,13 +147,6 @@ void SuperSpectrogramController::ExportCurrentView(const std::string& path)
    mExportService.ExportViewAsPNG(bmp, path);
 }
 
-void SuperSpectrogramController::SetAudioData(const float* data, size_t len, double rate)
-{
-   mCurrentData = data;
-   mCurrentLen = len;
-   mCurrentRate = rate;
-}
-
 void SuperSpectrogramController::BindView()
 {
    mView.NotifyConfigChanged = [this](const SuperSpectrogramConfig& cfg)
@@ -196,4 +162,13 @@ void SuperSpectrogramController::BindView()
          else
             ExportCurrentView(path);
       };
+}
+
+bool SuperSpectrogramController::RequiresRecompute(
+   const SuperSpectrogramConfig& oldCfg,
+   const SuperSpectrogramConfig& newCfg)
+{
+   return
+      oldCfg.noiseFloor != newCfg.noiseFloor ||
+      oldCfg.detailLevel != newCfg.detailLevel;
 }

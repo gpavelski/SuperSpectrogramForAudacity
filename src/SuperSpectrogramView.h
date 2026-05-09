@@ -19,8 +19,9 @@
 #include <wx/config.h>
 #include <wx/display.h>
 #include <wx/wx.h> 
-#include "SuperSpectrogramPanel.h"
 #include "SuperSpectrogramConfig.h"
+#include "SuperSpectrogramFrame.h"
+#include "SuperSpectrogramPanel.h"
 #include "wxPanelWrapper.h"
 
 class AudacityProject;
@@ -45,10 +46,8 @@ public:
    // Override Show() to display dialog
    bool Show(bool show = true) override;
 
-   void SetSpectrogramData(
-      const std::vector<std::vector<double>>& matrix,
-      double maxFreq,
-      size_t numSamples
+   void Render(
+      const SuperSpectrogramFrame& frame
    );
 
    void ApplyConfig(
