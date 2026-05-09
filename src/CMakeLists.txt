@@ -193,6 +193,7 @@ set( SOURCES
       SuperSpectrogramAudioExtractor.h
       SuperSpectrogramConfig.cpp
       SuperSpectrogramConfig.h
+      SuperSpectrogramConstants.h
       SuperSpectrogramController.cpp
       SuperSpectrogramController.h
       SuperSpectrogramExportService.h

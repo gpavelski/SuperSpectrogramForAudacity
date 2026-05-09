@@ -57,7 +57,7 @@ SuperSpectrogramView::SuperSpectrogramView(
       id,
       title,
       pos,
-      wxSize(1000, 600),
+      wxSize(SuperSpectrogramConstants::UI::kDefaultWidth, SuperSpectrogramConstants::UI::kDefaultHeight),
       wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER | wxMAXIMIZE_BOX)
 {
    SetName();
@@ -165,10 +165,6 @@ wxBitmap SuperSpectrogramView::RenderToBitmap() const
 //-----------------------------------------------------------------
 void SuperSpectrogramView::ApplyDataDrivenMinSize()
 {
-   // Adjust minimum dialog size based on spectrogram dimensions.
-   // Width scales with number of columns (capped), height scales with screen size.
-   constexpr int MAX_VISIBLE_COLUMNS = 800;
-   constexpr int PIXELS_PER_COLUMN = 1;
 
    int columns = mPanel
       ? mPanel->GetColumnCount()
@@ -180,8 +176,8 @@ void SuperSpectrogramView::ApplyDataDrivenMinSize()
    // -----------------------------
    // Width: data-driven 
    // -----------------------------
-   int visibleColumns = std::min(columns, MAX_VISIBLE_COLUMNS);
-   int minWidth = visibleColumns * PIXELS_PER_COLUMN;
+   int visibleColumns = std::min(columns, SuperSpectrogramConstants::UI::kMaxVisibleColumns);
+   int minWidth = visibleColumns * SuperSpectrogramConstants::UI::kPixelsPerColumn;
 
    // -----------------------------------
    // Height: derived from screen size
@@ -189,14 +185,9 @@ void SuperSpectrogramView::ApplyDataDrivenMinSize()
    wxDisplay display(GetParent() ? GetParent() : this);
    wxRect clientArea = display.GetClientArea();
 
-   // Use a conservative fraction of usable screen height
-   constexpr double HEIGHT_RATIO = 0.75; // 75% of available height
+   int minHeight = static_cast<int>(clientArea.GetHeight() * SuperSpectrogramConstants::UI::kHeightRatio);
 
-   int minHeight = static_cast<int>(clientArea.GetHeight() * HEIGHT_RATIO);
-
-   // enforce a reasonable lower bound
-   constexpr int MIN_HEIGHT_FALLBACK = 400;
-   minHeight = std::max(minHeight, MIN_HEIGHT_FALLBACK);
+   minHeight = std::max(minHeight, SuperSpectrogramConstants::UI::kMinHeightFallback);
 
    SetMinSize(wxSize(minWidth, minHeight));
 }

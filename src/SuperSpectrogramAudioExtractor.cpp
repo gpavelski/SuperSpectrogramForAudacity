@@ -10,6 +10,7 @@
 
 **********************************************************************/
 #include "SuperSpectrogramAudioExtractor.h"
+#include "SuperSpectrogramConstants.h"
 #include "BasicUI.h"
 #include "Prefs.h"
 #include "SampleFormat.h"
@@ -18,7 +19,6 @@
 
 SuperSpectrogramAudioExtractor::SuperSpectrogramAudioExtractor(AudacityProject& project)
    : mProject{ &project }
-   , mAnalyst(std::make_unique<SuperSpectrogramAnalyst>())
 {
 }
 
@@ -40,7 +40,7 @@ SuperSpectrogramAudioExtractor::AudioExtractionResult SuperSpectrogramAudioExtra
       {
          result.rate = track->GetRate();
 
-         if (result.rate < maxTargetRate)
+         if (result.rate < SuperSpectrogramConstants::Audio::kMaxTargetRate)
             return { AudioExtractionResult::Status::RateTooLow };
 
          auto end = track->TimeToLongSamples(selectedRegion.t1());
@@ -118,19 +118,19 @@ SuperSpectrogramAudioExtractor::AudioExtractionResult SuperSpectrogramAudioExtra
 
 size_t SuperSpectrogramAudioExtractor::ComputeMaxSamples(double rate)
 {
-   size_t maxSamplesAfterDecimation = static_cast<size_t>(maxProcessingTime * maxTargetRate);
-   double minDecimationRatio = rate / maxTargetRate;
+   size_t maxSamplesAfterDecimation = static_cast<size_t>(SuperSpectrogramConstants::Audio::kMaxProcessingTime * SuperSpectrogramConstants::Audio::kMaxTargetRate);
+   double minDecimationRatio = rate / SuperSpectrogramConstants::Audio::kMaxTargetRate;
    size_t maxNumberOfSamples = static_cast<size_t>(maxSamplesAfterDecimation * minDecimationRatio);
 
    return maxNumberOfSamples;
 }
 
-// At least one window should be computed for a decimated rate of 8820 Hz;
-// That would represent 2 windows at 4410 Hz, 4 windows at 2205 Hz and so on.
+// At least one window should be computed for a decimated rate of kMaxTargetRate Hz;
+// That would represent 2 windows at kMaxTargetRate/2 Hz, 4 windows at kMaxTargetRate/4 Hz and so on.
 size_t SuperSpectrogramAudioExtractor::ComputeMinSamples(double rate)
 {
-   double minDecimationRatio = rate / maxTargetRate;
-   size_t minNumberOfSamples = static_cast<size_t>(maxWindowSize * minDecimationRatio);
+   double minDecimationRatio = rate / SuperSpectrogramConstants::Audio::kMaxTargetRate;
+   size_t minNumberOfSamples = static_cast<size_t>(SuperSpectrogramConstants::Audio::kMaxWindowSize * minDecimationRatio);
 
    return minNumberOfSamples;
 }

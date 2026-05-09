@@ -42,7 +42,7 @@ SuperSpectrogramPanel::SuperSpectrogramPanel(wxWindow* parent)
    SetBackgroundStyle(wxBG_STYLE_PAINT);
    SetDoubleBuffered(true);
    m_cmap = MakeJetColormap();
-   mNoteLabels = MakeNoteLabels(mNoteNamingStyle, mMinNote, mMaxNote);
+   mNoteLabels = MakeNoteLabels(mNoteNamingStyle, SuperSpectrogramConstants::Notes::kMinNote, SuperSpectrogramConstants::Notes::kMaxNote);
 }
 
 void SuperSpectrogramPanel::SetColormap(SuperSpectrogramConfig::Colormap type)
@@ -103,8 +103,6 @@ std::vector<wxColour> SuperSpectrogramPanel::MakeViridisColormap()
 
    return BuildColormap(anchors);
 }
-
-
 
 std::vector<wxColour> SuperSpectrogramPanel::MakeHotColormap()
 {
@@ -252,25 +250,14 @@ std::vector<wxString> SuperSpectrogramPanel::MakeNoteLabels(
    int minNote,
    int maxNote)
 {
-   static const std::array<const char*, 12> sharpNames = {
-      "C","C#","D","D#","E","F","F#","G","G#","A","A#","B"
-   };
 
-   static const std::array<const char*, 12> flatNames = {
-      "C","Db","D","Eb","E","F","Gb","G","Ab","A","Bb","B"
-   };
-
-   static const std::array<const char*, 12> mixedNames = {
-      "C","C#","D","Eb","E","F","F#","G","Ab","A","Bb","B"
-   };
-
-   const auto* names = &mixedNames;
+   const auto* names = &SuperSpectrogramConstants::Notes::kMixedNames;
 
    switch (style)
    {
-   case SuperSpectrogramConfig::NoteNaming::Sharps: names = &sharpNames; break;
-   case SuperSpectrogramConfig::NoteNaming::Flats:  names = &flatNames;  break;
-   case SuperSpectrogramConfig::NoteNaming::Mixed:  names = &mixedNames; break;
+   case SuperSpectrogramConfig::NoteNaming::Sharps: names = &SuperSpectrogramConstants::Notes::kSharpNames; break;
+   case SuperSpectrogramConfig::NoteNaming::Flats:  names = &SuperSpectrogramConstants::Notes::kFlatNames;  break;
+   case SuperSpectrogramConfig::NoteNaming::Mixed:  names = &SuperSpectrogramConstants::Notes::kMixedNames; break;
    }
 
    std::vector<wxString> labels;
@@ -296,7 +283,7 @@ void SuperSpectrogramPanel::SetNoteNamingStyle(SuperSpectrogramConfig::NoteNamin
 
    mNoteNamingStyle = style;
 
-   mNoteLabels = MakeNoteLabels(style, mMinNote, mMaxNote);
+   mNoteLabels = MakeNoteLabels(style, SuperSpectrogramConstants::Notes::kMinNote, SuperSpectrogramConstants::Notes::kMaxNote);
 
    Refresh();
 }
@@ -307,7 +294,6 @@ void SuperSpectrogramPanel::SetNoteNamingStyle(SuperSpectrogramConfig::NoteNamin
 //----------------------------------------------------------------------
 void SuperSpectrogramPanel::Clear()
 {
-   // Clear the matrix
    m_matrix.clear();
 
    // Create empty bitmap
@@ -354,8 +340,8 @@ void SuperSpectrogramPanel::DrawNoteLines(wxDC& dc, const wxSize& size) const
 
    double lastLabelY = -1e9;
 
-   for (size_t i = 0; i < s_noteFrequencies.size(); ++i) {
-      double freq = s_noteFrequencies[i];
+   for (size_t i = 0; i < SuperSpectrogramConstants::Notes::kFrequencies.size(); ++i) {
+      double freq = SuperSpectrogramConstants::Notes::kFrequencies[i];
       double y = FreqToWidgetY(freq, size.GetHeight());
       if (y < 0) continue;
 
