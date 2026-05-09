@@ -17,7 +17,7 @@
 #include <stdexcept>
 #include "Cheby1LowPassIIRFilter.h"
 
-class Decimator {
+class FFT_API Decimator {
 public:
    Decimator(double frequencyRate, double targetRate);
 

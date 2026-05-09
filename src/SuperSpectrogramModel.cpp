@@ -13,21 +13,6 @@
 
 SuperSpectrogramModel::SuperSpectrogramModel()
 {
-   mAnalyst = std::make_unique<SuperSpectrogramAnalyst>();
-}
-
-//------------------------------------------------------------
-// Parameters
-//------------------------------------------------------------
-void SuperSpectrogramModel::SetParameters(const Parameters& p)
-{
-   mParams = p;
-}
-
-const SuperSpectrogramModel::Parameters&
-SuperSpectrogramModel::GetParameters() const
-{
-   return mParams;
 }
 
 //------------------------------------------------------------
@@ -39,19 +24,24 @@ void SuperSpectrogramModel::Compute(
    double rate,
    const Parameters& params)
 {
-   if (!data || len == 0 || !mAnalyst)
+   if (!data || len == 0)
       return;
 
-   mAnalyst->Calculate(
-      data,
-      len,
-      rate,
-      params.detailLevel,
-      params.noiseFloor);
+   const double targetRate = MapDetailToTargetRate(params.detailLevel);
 
-   mMatrix = mAnalyst->GetMatrix();
-   mMaxFreq = mAnalyst->GetTargetRate() / 2.0;
-   mNumSamples = mAnalyst->GetSignalLength();
+   // --- Decimation ---
+   Decimator decimator(rate, targetRate);
+   auto decimatedSignal = decimator.process(data, len);
+
+   // --- STFT ---
+   STFTProcessor stftProcessor(params.detailLevel);
+   stftProcessor.setLowerThreshold(params.noiseFloor);
+
+   mMatrix = stftProcessor.processFullSTFTMatrix(decimatedSignal);
+
+   // --- Metadata ---
+   mMaxFreq = targetRate / 2.0;
+   mNumSamples = stftProcessor.getResizedSignalLength();
 }
 
 SuperSpectrogramFrame SuperSpectrogramModel::ComputeFrame(

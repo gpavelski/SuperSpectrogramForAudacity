@@ -12,7 +12,6 @@
 #define __SUPER_SPECTROGRAM_MODEL__
 
 #include <memory>
-#include "SuperSpectrogramAnalyst.h"
 #include "SuperSpectrogramFrame.h"
 
 class STFTProcessor;
@@ -27,9 +26,6 @@ public:
       int detailLevel;
    };
 
-   void SetParameters(const Parameters& p);
-   const Parameters& GetParameters() const;
-
    SuperSpectrogramFrame ComputeFrame(
       const float* data,
       size_t len,
@@ -42,7 +38,6 @@ public:
    size_t GetNumSamples() const;
 
 private:
-   Parameters mParams{};
 
    void Compute(
       const float* data,
@@ -55,7 +50,22 @@ private:
    double mMaxFreq{};
    size_t mNumSamples{};
 
-   std::unique_ptr<SuperSpectrogramAnalyst> mAnalyst;
+   static double MapDetailToTargetRate(size_t detailLevel)
+   {
+      static const std::unordered_map<size_t, double> map = {
+         {4, 551.25},
+         {5, 1102.5},
+         {6, 2205.0},
+         {7, 4410.0},
+         {8, 8820.0}
+      };
+
+      auto it = map.find(detailLevel);
+      if (it == map.end())
+         throw std::invalid_argument("Invalid detail level");
+
+      return it->second;
+   }
 };
 
 #endif

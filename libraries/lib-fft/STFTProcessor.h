@@ -21,7 +21,7 @@
 #define M_PI 3.14159265358979323846
 #endif
 
-class STFTProcessor {
+class FFT_API STFTProcessor {
 public:
 
     // Constructor accepting sigmaExponent

@@ -28,8 +28,6 @@ set( SOURCES
    SpectrumTransformer.h
    STFTProcessor.cpp
    STFTProcessor.h
-   SuperSpectrogramAnalyst.cpp
-   SuperSpectrogramAnalyst.h
 )
 
 set( LIBRARIES
