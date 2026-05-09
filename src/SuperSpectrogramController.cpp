@@ -9,6 +9,7 @@
 **********************************************************************/
 
 #include "SuperSpectrogramController.h"
+#include "SuperSpectrogramAudioExtractor.h"
 #include <fstream>
 
 SuperSpectrogramController::SuperSpectrogramController(
@@ -30,21 +31,50 @@ SuperSpectrogramController::SuperSpectrogramController(
 //------------------------------------------------------------
 bool SuperSpectrogramController::Initialize()
 {
-   auto& config = mSession.GetConfig();
-   config.Load();
+   auto audioResult = mExtractor.Extract();
 
-   mView.ApplyConfig(config);
+   switch (audioResult.status)
+   {
+   case SuperSpectrogramAudioExtractor::AudioExtractionResult::Status::Success:
+      break;
 
-   auto audio = mExtractor.Extract();
-   if (!audio)
+   case SuperSpectrogramAudioExtractor::AudioExtractionResult::Status::RateTooLow:
+      mView.ShowError("The signal sampling rate is too low. Minimum sampling rate: 8820 Hz");
       return false;
 
+   case SuperSpectrogramAudioExtractor::AudioExtractionResult::Status::TooShort:
+      mView.ShowError("To plot the spectrogram, at least the minimum number of samples must be selected.");
+      return false;
+
+   case SuperSpectrogramAudioExtractor::AudioExtractionResult::Status::MismatchedSampleRate:
+      mView.ShowError("All selected tracks must have the same sample rate.");
+      return false;
+
+   case SuperSpectrogramAudioExtractor::AudioExtractionResult::Status::ReadError:
+      mView.ShowError(
+         "Audio could not be analyzed. This may be due to a stretched or pitch-shifted clip.\n"
+         "Try resetting any stretched clips, or mixing and rendering the tracks before analyzing."
+      );
+      return false;
+
+   case SuperSpectrogramAudioExtractor::AudioExtractionResult::Status::Truncated:
+      mView.ShowWarning(
+         "Too much audio was selected. Only the first portion will be analyzed."
+      );
+      break;
+
+   case SuperSpectrogramAudioExtractor::AudioExtractionResult::Status::NoSelection:
+      mView.ShowWarning("No tracks are selected for analysis.");
+      return false;
+   }
+
    mSession.SetAudio(
-      std::move(audio->data),
-      audio->length,
-      audio->rate
+      std::move(*audioResult.data),
+      audioResult.length,
+      audioResult.rate
    );
 
+   mView.ApplyConfig(mSession.GetConfig());
    Recompute();
 
    return true;

@@ -2,14 +2,14 @@
 
   Audacity: A Digital Audio Editor
 
-  SuperSpectrogramWindow.h
+  SuperSpectrogramView.h
 
   Guilherme Pavelski
 
 **********************************************************************/
 
-#ifndef __AUDACITY_SUPER_SPECTROGRAM_WINDOW__
-#define __AUDACITY_SUPER_SPECTROGRAM_WINDOW__
+#ifndef __AUDACITY_SUPER_SPECTROGRAM_VIEW__
+#define __AUDACITY_SUPER_SPECTROGRAM_VIEW__
 
 #include <vector>
 #include <memory>
@@ -58,6 +58,10 @@ public:
 
    SuperSpectrogramConfig BuildConfigFromUI() const;
    void ApplyDataDrivenMinSize();
+
+   void ShowError(const wxString& message);
+   void ShowWarning(const wxString& message);
+
    // Controller bindings
    std::function<void(const SuperSpectrogramConfig&)> NotifyConfigChanged;
    std::function<void(int format, const std::string& path)> NotifyExportRequested;
@@ -198,4 +202,4 @@ private:
    DECLARE_EVENT_TABLE()
 };
 
-#endif // __AUDACITY_SUPER_SPECTROGRAM_WINDOW__
+#endif // __AUDACITY_SUPER_SPECTROGRAM_VIEW__

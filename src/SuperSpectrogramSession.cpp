@@ -91,6 +91,8 @@ void SuperSpectrogramSession::Create()
    mModel          = std::make_unique<SuperSpectrogramModel>();
    mConfig         = std::make_unique<SuperSpectrogramConfig>();
 
+   mConfig->Load();
+
    // --- Controller ---
    mController = std::make_unique<SuperSpectrogramController>(
       *mAudioExtractor,

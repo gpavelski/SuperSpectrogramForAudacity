@@ -10,7 +10,8 @@
 
 **********************************************************************/
 
-#pragma once
+#ifndef __SUPER_SPECTROGRAM_ANALYST__
+#define __SUPER_SPECTROGRAM_ANALYST__
 
 #include <vector>
 #include <functional>
@@ -58,3 +59,5 @@ private:
        {8, 8820.0}
    };
 };
+
+#endif //__SUPER_SPECTROGRAM_ANALYST__

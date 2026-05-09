@@ -9,6 +9,7 @@
   Matthieu Hodgkinson split from FreqWindow.h
 
 **********************************************************************/
+
 #ifndef __SUPER_SPECTROGRAM_AUDIO_EXTRACTOR__
 #define __SUPER_SPECTROGRAM_AUDIO_EXTRACTOR__
 
@@ -33,7 +34,27 @@ public:
       double rate = 0.0;
    };
 
-   std::optional<AudioData> Extract();
+   struct AudioExtractionResult
+   {
+      enum class Status
+      {
+         Success,
+         NoSelection,
+         RateTooLow,
+         MismatchedSampleRate,
+         TooShort,
+         ReadError,
+         Truncated
+      };
+
+      Status status = Status::Success;
+      std::optional<Floats> data;
+      size_t length = 0;
+      double rate = 0.0;
+      size_t trackCount = 0;        // Number of tracks processed
+   };
+
+   AudioExtractionResult Extract();
 
 private:
    size_t ComputeMaxSamples(double rate);

@@ -7,7 +7,9 @@
   Guilherme Pavelski
 
 **********************************************************************/
-#pragma once
+
+#ifndef __SUPER_SPECTROGRAM_PANEL__
+#define __SUPER_SPECTROGRAM_PANEL__
 
 #include <wx/wx.h>
 #include <wx/dcbuffer.h>
@@ -193,3 +195,5 @@ private:
 // --------------------------
    wxDECLARE_EVENT_TABLE();
 };
+
+#endif //__SUPER_SPECTROGRAM_PANEL__

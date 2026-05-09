@@ -28,9 +28,7 @@
 
 #include "SuperSpectrogramView.h"
 
-#define SuperSpectrogramTitle XO("Super Spectrogram")
-
-static const wxString kConfigPath = "/SuperSpectrogram";
+static const wxString SuperSpectrogramTitle = "Super Spectrogram";
 
 //-----------------------------------------------------------------
 // wxWidgets event table: maps UI events to view handlers.
@@ -431,6 +429,16 @@ void SuperSpectrogramView::OnTimeTickChanged(wxCommandEvent&)
 {
    if (NotifyConfigChanged)
       NotifyConfigChanged(BuildConfigFromUI());
+}
+
+void SuperSpectrogramView::ShowError(const wxString& message)
+{
+   wxMessageBox(message, SuperSpectrogramTitle, wxOK | wxICON_ERROR, this);
+}
+
+void SuperSpectrogramView::ShowWarning(const wxString& message)
+{
+   wxMessageBox(message, SuperSpectrogramTitle, wxOK | wxICON_WARNING, this);
 }
 
 //-----------------------------------------------------------------
