@@ -1,3 +1,13 @@
+/**********************************************************************
+
+  Audacity: A Digital Audio Editor
+
+  SuperSpectrogramSession.cpp
+
+  Guilherme Pavelski
+
+**********************************************************************/
+
 #include "SuperSpectrogramSession.h"
 
 // Concrete includes (ONLY here)

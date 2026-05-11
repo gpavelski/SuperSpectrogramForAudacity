@@ -473,9 +473,8 @@ namespace {
       auto& project = context.project;
       CommandManager::Get(project).RegisterLastAnalyzer(context);
 
-      if (!gSession)
-         gSession = std::make_unique<SuperSpectrogramSession>(project);
-
+      // Always recreate session
+      gSession = std::make_unique<SuperSpectrogramSession>(project);
       gSession->Show();
    }
 

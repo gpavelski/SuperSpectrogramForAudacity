@@ -1,3 +1,13 @@
+/**********************************************************************
+
+  Audacity: A Digital Audio Editor
+
+  SuperSpectrogramConstants.h
+
+  Guilherme Pavelski
+
+**********************************************************************/
+
 #ifndef SUPER_SPECTROGRAM_CONSTANTS_H
 #define SUPER_SPECTROGRAM_CONSTANTS_H
 
