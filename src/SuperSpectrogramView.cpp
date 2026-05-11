@@ -80,22 +80,6 @@ SuperSpectrogramView::SuperSpectrogramView(
 SuperSpectrogramView::~SuperSpectrogramView() = default;
 
 //-----------------------------------------------------------------
-// Visibility lifecycle
-//-----------------------------------------------------------------
-bool SuperSpectrogramView::Show(bool show)
-{
-   // Trigger recomputation on first show and adjust layout dynamically
-   if (show && !IsShown()) {
-      ApplyDataDrivenMinSize();
-      Layout();
-      Fit();
-      Centre();
-   }
-
-   return wxDialogWrapper::Show(show);
-}
-
-//-----------------------------------------------------------------
 // Data & configuration application (Controller -> View)
 //-----------------------------------------------------------------
 void SuperSpectrogramView::Render(const SuperSpectrogramFrame& frame)
@@ -383,6 +367,7 @@ SuperSpectrogramConfig SuperSpectrogramView::BuildConfigFromUI() const
 
    return cfg;
 }
+
 //-----------------------------------------------------------------
 // UI event handlers (View -> Controller)
 //-----------------------------------------------------------------

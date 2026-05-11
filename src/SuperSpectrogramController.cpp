@@ -68,15 +68,12 @@ bool SuperSpectrogramController::Initialize()
       return false;
    }
 
-   mSession.SetAudio(
-      std::move(*audioResult.data),
-      audioResult.length,
-      audioResult.rate
-   );
+   if (!mSession.InitializeAudio()) {
+      return false;
+   }
 
    mView.ApplyConfig(mSession.GetConfig());
    Recompute();
-
    return true;
 }
 
@@ -87,15 +84,17 @@ void SuperSpectrogramController::Recompute()
 {
    const auto& cfg = mSession.GetConfig();
 
-   SuperSpectrogramModel::Parameters p;
-   p.noiseFloor = cfg.noiseFloor;
-   p.detailLevel = cfg.detailLevel;
+   SuperSpectrogramModel::Parameters params;
+   params.noiseFloor = cfg.noiseFloor;
+   params.detailLevel = cfg.detailLevel;
+
+   const auto& audio = mSession.GetAudio();
 
    auto frame = mModel.ComputeFrame(
-      mSession.GetAudioData(),
-      mSession.GetAudioLength(),
-      mSession.GetSampleRate(),
-      p
+      audio.ptr(),
+      audio.length,
+      audio.rate,
+      params
    );
 
    mView.Render(frame);

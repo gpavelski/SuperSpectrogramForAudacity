@@ -74,7 +74,7 @@ struct SuperSpectrogramConstants
     {
         // Could add panel sizes, pixel ratios, or default selections here
         inline static constexpr int kDefaultWidth = 1000;
-        inline static constexpr int kDefaultHeight = 600;
+        inline static constexpr int kDefaultHeight = 800;
 
         // Example: maximum visible columns in layout
         inline static constexpr int kMaxVisibleColumns = 800;

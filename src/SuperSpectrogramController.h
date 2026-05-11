@@ -31,7 +31,8 @@ public:
       SuperSpectrogramExportService& exportService,
       SuperSpectrogramModel& model,
       SuperSpectrogramSession& session,
-      SuperSpectrogramView& view);
+      SuperSpectrogramView& view
+   );
 
    bool Initialize();
    void BindView();
@@ -45,11 +46,11 @@ public:
    void ApplyConfigChange(const SuperSpectrogramConfig& newConfig);
    SuperSpectrogramController::ConfigDiff ComputeDiff(
       const SuperSpectrogramConfig& oldCfg,
-      const SuperSpectrogramConfig& newCfg);
+      const SuperSpectrogramConfig& newCfg
+   );
 
    // External trigger (dialog Show)
    void Recompute();
-
 
 private:
    void UpdateLayoutPreservingState();

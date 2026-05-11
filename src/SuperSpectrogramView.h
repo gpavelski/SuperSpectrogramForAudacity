@@ -43,9 +43,6 @@ public:
       const wxPoint& pos = wxDefaultPosition);
    virtual ~SuperSpectrogramView();
 
-   // Override Show() to display dialog
-   bool Show(bool show = true) override;
-
    void Render(
       const SuperSpectrogramFrame& frame
    );
@@ -56,7 +53,6 @@ public:
 
    wxBitmap RenderToBitmap() const;
 
-   SuperSpectrogramConfig BuildConfigFromUI() const;
    void ApplyDataDrivenMinSize();
 
    void ShowError(const wxString& message);
@@ -112,6 +108,9 @@ private:
    void ApplyConfigToPanel(
       const SuperSpectrogramConfig& config
    );
+
+   SuperSpectrogramConfig BuildConfigFromUI() const;
+
    void OnNoiseFloorChanged(wxCommandEvent& event);
    void OnHighestNoteChanged(wxCommandEvent&);
    void OnColormapChanged(wxCommandEvent&);

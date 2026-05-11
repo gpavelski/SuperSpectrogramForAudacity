@@ -39,27 +39,25 @@ void SuperSpectrogramSession::Show()
    Create();
 }
 
-void SuperSpectrogramSession::SetAudio(Floats data, size_t len, double rate)
+bool SuperSpectrogramSession::InitializeAudio()
 {
-   mOwnedData = std::move(data);
-   mData = mOwnedData.get();
-   mLength = len;
-   mRate = rate;
+   auto result = mAudioExtractor->Extract();
+
+   if (result.status != SuperSpectrogramAudioExtractor::AudioExtractionResult::Status::Success)
+      return false;
+
+   mAudio = AudioData{
+      std::move(*result.data),
+      result.length,
+      result.rate
+   };
+
+   return true;
 }
 
-const float* SuperSpectrogramSession::GetAudioData() const
+const SuperSpectrogramSession::AudioData& SuperSpectrogramSession::GetAudio() const
 {
-   return mData;
-}
-
-size_t SuperSpectrogramSession::GetAudioLength() const
-{
-   return mLength;
-}
-
-double SuperSpectrogramSession::GetSampleRate() const
-{
-   return mRate;
+   return *mAudio;
 }
 
 SuperSpectrogramConfig& SuperSpectrogramSession::GetConfig()

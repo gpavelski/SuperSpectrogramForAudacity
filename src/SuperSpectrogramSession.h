@@ -31,16 +31,19 @@ public:
    // UI entry point
    void Show();
 
-   // Audio ownership (Session = source of truth)
-   void SetAudio(
-      Floats data,
-      size_t len,
-      double rate
-   );
+   struct AudioData
+   {
+      Floats data;
+      size_t length = 0;
+      double rate = 0.0;
 
-   const float* GetAudioData() const;
-   size_t GetAudioLength() const;
-   double GetSampleRate() const;
+      const float* ptr() const { return data.get(); }
+   };
+
+   // Audio ownership (Session = source of truth)
+   bool InitializeAudio();
+
+   const AudioData& GetAudio() const;
 
    SuperSpectrogramConfig& GetConfig();
    const SuperSpectrogramConfig& GetConfig() const;
@@ -61,14 +64,10 @@ private:
    std::unique_ptr<SuperSpectrogramModel> mModel;
    std::unique_ptr<SuperSpectrogramExportService> mExportService;
 
-   // Audio state
-   Floats mOwnedData;
-   const float* mData = nullptr;
-   size_t mLength = 0;
-   double mRate = 0.0;
-
    // Persistent config (owned here now)
    std::unique_ptr<SuperSpectrogramConfig> mConfig;
+   std::optional<AudioData> mAudio;
+
 };
 
 #endif // __SUPER_SPECTROGRAM_SESSION__
