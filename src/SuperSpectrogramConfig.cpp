@@ -22,6 +22,7 @@ void SuperSpectrogramConfig::Load()
    cfg->SetPath(kConfigPath);
 
    long value;
+   long w, h, x, y;
 
    if (cfg->Read("NoiseFloor", &value))
       noiseFloor = static_cast<int>(value);
@@ -39,6 +40,20 @@ void SuperSpectrogramConfig::Load()
 
    if (cfg->Read("TimeTickMode", &value))
       timeTickMode = static_cast<SuperSpectrogramConfig::TimeTickMode>(value);
+
+   if (cfg->Read("Width", &w) && cfg->Read("Height", &h))
+   {
+      window.width = static_cast<int>(w);
+      window.height = static_cast<int>(h);
+      window.valid = true;
+   }
+
+   if (cfg->Read("PosX", &x) && cfg->Read("PosY", &y))
+   {
+      window.posX = static_cast<int>(x);
+      window.posY = static_cast<int>(y);
+   }
+
 }
 
 void SuperSpectrogramConfig::Save() const
@@ -55,6 +70,10 @@ void SuperSpectrogramConfig::Save() const
    cfg->Write("NoteNaming", (long)noteNaming);
    cfg->Write("ShowNoteLines", showNoteLines);
    cfg->Write("TimeTickMode", (long)timeTickMode);
+   cfg->Write("Width", (long)window.width);
+   cfg->Write("Height", (long)window.height);
+   cfg->Write("PosX", (long)window.posX);
+   cfg->Write("PosY", (long)window.posY);
 
    cfg->Flush();
 }

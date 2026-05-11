@@ -12,6 +12,7 @@
 #define __SUPER_SPECTROGRAM_SESSION__
 
 #include <memory>
+#include <optional>
 
 // Forward declarations (avoid heavy includes in header)
 class SuperSpectrogramController;
@@ -51,6 +52,8 @@ public:
 private:
    void Create();
    void Destroy();
+
+   void SaveWindowGeometry();
 
 private:
    AudacityProject& mProject;

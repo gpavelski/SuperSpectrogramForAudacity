@@ -11,6 +11,8 @@
 #ifndef __SUPER_SPECTROGRAM_CONFIG__
 #define __SUPER_SPECTROGRAM_CONFIG__
 
+#include "SuperSpectrogramConstants.h"
+
 class SuperSpectrogramConfig
 {
 public:
@@ -55,6 +57,17 @@ public:
    NoteNaming noteNaming = NoteNaming::Mixed;
    bool showNoteLines = true;
    TimeTickMode timeTickMode = TimeTickMode::Seconds;
+
+   struct WindowGeometry
+   {
+      int width = SuperSpectrogramConstants::UI::kDefaultWidth;
+      int height = SuperSpectrogramConstants::UI::kDefaultHeight;
+      int posX = wxDefaultCoord;
+      int posY = wxDefaultCoord;
+      bool valid = false;
+   };
+
+   WindowGeometry window;
 
    // =========================
    // Persistence
