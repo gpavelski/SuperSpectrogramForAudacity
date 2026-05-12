@@ -45,16 +45,12 @@ SuperSpectrogramPanel::SuperSpectrogramPanel(wxWindow* parent)
    m_colormap = SuperSpectrogramColormapFactory::Create(
       SuperSpectrogramConfig::Colormap::Jet);
    mNoteLabels = MakeNoteLabels(mNoteNamingStyle, SuperSpectrogramConstants::Notes::kMinNote, SuperSpectrogramConstants::Notes::kMaxNote);
-   m_renderer = std::make_unique<SuperSpectrogramRenderer>();
 }
 
 void SuperSpectrogramPanel::SetColormap(
    SuperSpectrogramConfig::Colormap type)
 {
    m_colormap = SuperSpectrogramColormapFactory::Create(type);
-
-   if (!m_normalized.empty())
-      UpdateBitmap();
 
    Refresh();
 }
@@ -70,7 +66,6 @@ void SuperSpectrogramPanel::SetData(const SuperSpectrogramFrame& frame)
    m_signalLength = frame.numSamples;
 
    NormalizeMatrix();
-   UpdateBitmap();
 
    ResetView();
 }
@@ -162,25 +157,6 @@ void SuperSpectrogramPanel::SetNoteNamingStyle(SuperSpectrogramConfig::NoteNamin
    Refresh();
 }
 
-
-//----------------------------------------------------------------------
-// Clears all spectrogram data and replaces it with a placeholder bitmap
-//----------------------------------------------------------------------
-void SuperSpectrogramPanel::Clear()
-{
-   m_matrix.clear();
-
-   // Create empty bitmap
-   m_bitmap = wxBitmap(100, 100);
-   wxMemoryDC memDC(m_bitmap);
-   memDC.SetBackground(*wxWHITE_BRUSH);
-   memDC.Clear();
-   memDC.SetTextForeground(*wxBLACK);
-   memDC.DrawText("No Data", 30, 45);
-
-   Refresh();
-}
-
 //----------------------------------------------------------------------
 // Handles paint events by rendering the current view to the panel
 //----------------------------------------------------------------------
@@ -195,7 +171,7 @@ void SuperSpectrogramPanel::OnPaint(wxPaintEvent&)
 //----------------------------------------------------------------------
 void SuperSpectrogramPanel::OnSize(wxSizeEvent& event)
 {
-   if (!m_matrix.empty() && m_bitmap.IsOk()) {
+   if (!m_matrix.empty()) {
       Refresh();
    }
    event.Skip();
@@ -250,7 +226,7 @@ void SuperSpectrogramPanel::DrawNoteLines(wxDC& dc, const wxSize& size) const
 //----------------------------------------------------------------------
 double SuperSpectrogramPanel::FreqToWidgetY(double freq, int widgetHeight) const
 {
-   const int rows = m_bitmap.GetHeight();
+   const int rows = static_cast<int>(m_rows);
    const double fNyq = m_maxFreq;
 
    if (freq < 0.0 || freq > fNyq)
@@ -279,31 +255,54 @@ void SuperSpectrogramPanel::Render(wxDC& dc, const wxSize& target) const
    dc.SetBackground(*wxBLACK_BRUSH);
    dc.Clear();
 
-   if (!m_bitmap.IsOk())
+   if (m_normalized.empty() || !m_colormap)
       return;
 
-   const int srcX = (int)m_viewLeftFrame;
-   const int srcY = (int)m_viewTopBin;
-   const int srcW = (int)(m_viewRightFrame - m_viewLeftFrame);
-   const int srcH = (int)(m_viewBottomBin - m_viewTopBin);
+   const int width = target.GetWidth();
+   const int height = target.GetHeight();
 
-   wxBitmap sub = m_bitmap.GetSubBitmap(
-      wxRect(srcX, srcY, std::max(1, srcW), std::max(1, srcH))
-   );
+   wxImage img(width, height, false);
+   unsigned char* data = img.GetData();
 
-   wxMemoryDC srcDC;
-   srcDC.SelectObject(sub);
+   // Viewport bounds
+   const double left = m_viewLeftFrame;
+   const double right = m_viewRightFrame;
+   const double top = m_viewTopBin;
+   const double bottom = m_viewBottomBin;
 
-   dc.StretchBlit(
-      0, 0,
-      target.GetWidth(), target.GetHeight(),
-      &srcDC,
-      0, 0,
-      srcW, srcH
-   );
+   const double dx = (right - left) / width;
+   const double dy = (bottom - top) / height;
 
-   srcDC.SelectObject(wxNullBitmap);
+   for (int py = 0; py < height; ++py)
+   {
+      for (int px = 0; px < width; ++px)
+      {
+         // Map screen -> data indices
+         double fx = left + px * dx;
+         double fy = top + py * dy;
 
+         size_t ix = static_cast<size_t>(fx);
+         size_t iy = static_cast<size_t>(fy);
+
+         // Clamp
+         ix = std::min(ix, m_cols - 1);
+         iy = std::min(iy, m_rows - 1);
+
+         float norm = m_normalized[iy * m_cols + ix];
+
+         const wxColour& c = m_colormap->Map(norm);
+
+         size_t offset = 3 * (py * width + px);
+         data[offset + 0] = c.Red();
+         data[offset + 1] = c.Green();
+         data[offset + 2] = c.Blue();
+      }
+   }
+
+   wxBitmap bmp(img);
+   dc.DrawBitmap(bmp, 0, 0);
+
+   // Overlays stay unchanged
    if (m_showNoteLines)
       DrawNoteLines(dc, target);
 
@@ -324,23 +323,6 @@ wxBitmap SuperSpectrogramPanel::RenderCurrentViewToBitmap() const
    dc.SelectObject(wxNullBitmap);
 
    return bmp;
-}
-
-//----------------------------------------------------------------------
-// Builds the full-resolution backing bitmap from the spectrogram matrix,
-// performing value normalization and colormap mapping
-//----------------------------------------------------------------------
-void SuperSpectrogramPanel::UpdateBitmap()
-{
-   if (!m_renderer || m_normalized.empty())
-      return;
-
-   m_bitmap = m_renderer->Render(
-      m_normalized,
-      m_rows,
-      m_cols,
-      *m_colormap
-   );
 }
 
 //----------------------------------------------------------------------
@@ -384,11 +366,6 @@ void SuperSpectrogramPanel::OnWheel(wxMouseEvent& event)
 //----------------------------------------------------------------------
 void SuperSpectrogramPanel::OnMouse(wxMouseEvent& event)
 {
-   if (!m_bitmap.IsOk()) {
-      event.Skip();
-      return;
-   }
-
    if (event.LeftDown()) {
       m_lastMouse = event.GetPosition();
       CaptureMouse();

@@ -208,8 +208,6 @@ set( SOURCES
       SuperSpectrogramModel.h
       SuperSpectrogramPanel.cpp
       SuperSpectrogramPanel.h
-      SuperSpectrogramRenderer.cpp
-      SuperSpectrogramRenderer.h
       SuperSpectrogramSession.h
       SuperSpectrogramSession.cpp
       SuperSpectrogramView.cpp
