@@ -11,6 +11,7 @@
 #include "SuperSpectrogramController.h"
 #include "SuperSpectrogramAudioExtractor.h"
 #include <fstream>
+#include <future>
 
 SuperSpectrogramController::SuperSpectrogramController(
    SuperSpectrogramAudioExtractor& extractor,
@@ -167,13 +168,43 @@ void SuperSpectrogramController::UpdateLayoutPreservingState()
 
 void SuperSpectrogramController::ExportMatrix(const std::string& path)
 {
-   mExportService.ExportMatrixAsText(mModel.GetMatrix(), path);
+   mView.SetExportEnabled(false);
+
+   auto matrixCopy = mModel.GetMatrix();
+
+   mExportTask = std::async(std::launch::async,
+      [this, matrixCopy = std::move(matrixCopy), path]()
+      {
+         mExportService.ExportMatrixAsText(matrixCopy, path);
+
+         mView.CallAfter([this]() {
+            mView.SetExportEnabled(true);
+         });
+      }
+   );
 }
 
 void SuperSpectrogramController::ExportCurrentView(const std::string& path)
 {
+   // UI thread: disable button
+   mView.SetExportEnabled(false);
+
+   // UI thread: capture bitmap
    wxBitmap bmp = mView.RenderToBitmap();
-   mExportService.ExportViewAsPNG(bmp, path);
+
+   // Copy bitmap (safe for thread use)
+   wxBitmap bmpCopy = bmp;
+
+   mExportTask = std::async(std::launch::async,
+      [this, bmpCopy, path]()
+      {
+         mExportService.ExportViewAsPNG(bmpCopy, path);
+
+         mView.CallAfter([this]() {
+            mView.SetExportEnabled(true);
+         });
+      }
+   );
 }
 
 void SuperSpectrogramController::BindView()

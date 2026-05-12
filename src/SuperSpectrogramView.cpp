@@ -417,6 +417,12 @@ void SuperSpectrogramView::ShowWarning(const wxString& message)
    wxMessageBox(message, SuperSpectrogramTitle, wxOK | wxICON_WARNING, this);
 }
 
+void SuperSpectrogramView::SetExportEnabled(bool enabled)
+{
+   if (mExportButton)
+      mExportButton->Enable(enabled);
+}
+
 //-----------------------------------------------------------------
 // Export
 //-----------------------------------------------------------------

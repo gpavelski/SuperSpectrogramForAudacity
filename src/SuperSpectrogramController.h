@@ -12,6 +12,7 @@
 #define __SUPER_SPECTROGRAM_CONTROLLER__
 
 #include <memory>
+#include <future>
 #include "SuperSpectrogramAudioExtractor.h"
 #include "SuperSpectrogramModel.h"
 #include "SuperSpectrogramConfig.h"
@@ -67,6 +68,8 @@ private:
    SuperSpectrogramModel& mModel;
    SuperSpectrogramSession& mSession;
    SuperSpectrogramView& mView;
+
+   std::future<void> mExportTask;
 };
 
 #endif

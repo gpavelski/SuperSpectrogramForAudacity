@@ -57,6 +57,7 @@ public:
 
    void ShowError(const wxString& message);
    void ShowWarning(const wxString& message);
+   void SetExportEnabled(bool enabled);
 
    // Controller bindings
    std::function<void(const SuperSpectrogramConfig&)> NotifyConfigChanged;
