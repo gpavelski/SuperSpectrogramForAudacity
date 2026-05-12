@@ -19,6 +19,7 @@
 #include "SuperSpectrogramColormap.h"
 #include "SuperSpectrogramConstants.h"
 #include "SuperSpectrogramFrame.h"
+#include "SuperSpectrogramRenderer.h"
 
 class SuperSpectrogramPanel : public wxPanel
 {
@@ -79,7 +80,7 @@ private:
 
    void ClampViewRanges();
    double FreqToWidgetY(double freq, int widgetHeight) const;
-   void BuildBitmap();
+   void UpdateBitmap();
    void NormalizeMatrix();
 
    // --------------------------
@@ -114,6 +115,9 @@ private:
 
    // Colormap
    std::unique_ptr<IColormap> m_colormap;
+
+   // Renderer
+   std::unique_ptr<SuperSpectrogramRenderer> m_renderer;
 
    SuperSpectrogramConfig::TimeTickMode m_timeTickMode{ SuperSpectrogramConfig::TimeTickMode::Seconds };
 

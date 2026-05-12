@@ -45,6 +45,7 @@ SuperSpectrogramPanel::SuperSpectrogramPanel(wxWindow* parent)
    m_colormap = SuperSpectrogramColormapFactory::Create(
       SuperSpectrogramConfig::Colormap::Jet);
    mNoteLabels = MakeNoteLabels(mNoteNamingStyle, SuperSpectrogramConstants::Notes::kMinNote, SuperSpectrogramConstants::Notes::kMaxNote);
+   m_renderer = std::make_unique<SuperSpectrogramRenderer>();
 }
 
 void SuperSpectrogramPanel::SetColormap(
@@ -53,7 +54,7 @@ void SuperSpectrogramPanel::SetColormap(
    m_colormap = SuperSpectrogramColormapFactory::Create(type);
 
    if (!m_normalized.empty())
-      BuildBitmap();
+      UpdateBitmap();
 
    Refresh();
 }
@@ -69,7 +70,7 @@ void SuperSpectrogramPanel::SetData(const SuperSpectrogramFrame& frame)
    m_signalLength = frame.numSamples;
 
    NormalizeMatrix();
-   BuildBitmap();
+   UpdateBitmap();
 
    ResetView();
 }
@@ -329,31 +330,17 @@ wxBitmap SuperSpectrogramPanel::RenderCurrentViewToBitmap() const
 // Builds the full-resolution backing bitmap from the spectrogram matrix,
 // performing value normalization and colormap mapping
 //----------------------------------------------------------------------
-void SuperSpectrogramPanel::BuildBitmap()
+void SuperSpectrogramPanel::UpdateBitmap()
 {
-   if (m_normalized.empty())
+   if (!m_renderer || m_normalized.empty())
       return;
 
-   wxImage img(static_cast<int>(m_cols), static_cast<int>(m_rows), false);
-
-   unsigned char* data = img.GetData();
-
-   for (size_t y = 0; y < m_rows; ++y)
-   {
-      for (size_t x = 0; x < m_cols; ++x)
-      {
-         float norm = m_normalized[y * m_cols + x];
-
-         const wxColour& c = m_colormap->Map(norm);
-
-         size_t offset = 3 * (y * m_cols + x);
-         data[offset + 0] = c.Red();
-         data[offset + 1] = c.Green();
-         data[offset + 2] = c.Blue();
-      }
-   }
-
-   m_bitmap = wxBitmap(img);
+   m_bitmap = m_renderer->Render(
+      m_normalized,
+      m_rows,
+      m_cols,
+      *m_colormap
+   );
 }
 
 //----------------------------------------------------------------------
