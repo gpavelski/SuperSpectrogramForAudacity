@@ -67,7 +67,9 @@ void SuperSpectrogramPanel::SetData(const SuperSpectrogramFrame& frame)
 
    NormalizeMatrix();
 
-   ResetView();
+   m_viewport.SetBounds(m_rows, m_cols);
+
+   Refresh();
 }
 
 void SuperSpectrogramPanel::NormalizeMatrix()
@@ -236,13 +238,13 @@ double SuperSpectrogramPanel::FreqToWidgetY(double freq, int widgetHeight) const
    const double binIndex = (freq / fNyq) * rows + 0.5;
 
    // Clip to valid bin range
-   if (binIndex < m_viewTopBin || binIndex > m_viewBottomBin)
+   if (binIndex < m_viewport.Top() || binIndex > m_viewport.Bottom())
       return -1;
 
    // Map visible bins -> widget Y
    const double binRel =
-      (binIndex - m_viewTopBin) /
-      (m_viewBottomBin - m_viewTopBin);
+      (binIndex - m_viewport.Top()) /
+      (m_viewport.Bottom() - m_viewport.Top());
 
    return binRel * widgetHeight;
 }
@@ -265,10 +267,10 @@ void SuperSpectrogramPanel::Render(wxDC& dc, const wxSize& target) const
    unsigned char* data = img.GetData();
 
    // Viewport bounds
-   const double left = m_viewLeftFrame;
-   const double right = m_viewRightFrame;
-   const double top = m_viewTopBin;
-   const double bottom = m_viewBottomBin;
+   const double left = m_viewport.Left();
+   const double right = m_viewport.Right();
+   const double top = m_viewport.Top();
+   const double bottom = m_viewport.Bottom();
 
    const double dx = (right - left) / width;
    const double dy = (bottom - top) / height;
@@ -332,32 +334,15 @@ void SuperSpectrogramPanel::OnWheel(wxMouseEvent& event)
 {
    if (m_matrix.empty()) return;
 
-   double factor = (event.GetWheelRotation() > 0) ? 0.8 : 1.25; // 20% zoom
+   double factor = (event.GetWheelRotation() > 0) ? 0.8 : 1.25;
 
-   int mouseY = event.GetY();
-   int mouseX = event.GetX();
    wxSize size = GetClientSize();
 
-   // Mouse percentage in window
-   double fy = (double)mouseY / size.GetHeight();
-   double fx = (double)mouseX / size.GetWidth();
+   double fx = (double)event.GetX() / size.GetWidth();
+   double fy = (double)event.GetY() / size.GetHeight();
 
-   // Current ranges
-   double height = m_viewBottomBin - m_viewTopBin;
-   double width = m_viewRightFrame - m_viewLeftFrame;
+   m_viewport.Zoom(factor, fx, fy);
 
-   // New ranges
-   double newHeight = height * factor;
-   double newWidth = width * factor;
-
-   // Anchor at mouse position
-   m_viewTopBin += (height - newHeight) * fy;
-   m_viewBottomBin = m_viewTopBin + newHeight;
-
-   m_viewLeftFrame += (width - newWidth) * fx;
-   m_viewRightFrame = m_viewLeftFrame + newWidth;
-
-   ClampViewRanges();
    Refresh();
 }
 
@@ -379,50 +364,9 @@ void SuperSpectrogramPanel::OnMouse(wxMouseEvent& event)
       wxPoint delta = pos - m_lastMouse;
       m_lastMouse = pos;
 
-      wxSize size = GetClientSize();
+      m_viewport.Pan(delta.x, delta.y, GetClientSize());
 
-      // Current ranges
-      double height = m_viewBottomBin - m_viewTopBin;
-      double width = m_viewRightFrame - m_viewLeftFrame;
-
-      // Convert pixel delta to data delta
-      double dx = (double)delta.x / size.GetWidth() * width;
-      double dy = (double)delta.y / size.GetHeight() * height;
-
-      m_viewLeftFrame -= dx;
-      m_viewRightFrame -= dx;
-
-      m_viewTopBin -= dy;
-      m_viewBottomBin -= dy;
-
-      ClampViewRanges();
       Refresh();
-   }
-}
-
-//----------------------------------------------------------------------
-// Clamps the current view extents to valid spectrogram bounds and
-// enforces minimum visible ranges
-//----------------------------------------------------------------------
-void SuperSpectrogramPanel::ClampViewRanges()
-{
-   if (m_matrix.empty()) return;
-
-   const int totalBins = (int)m_matrix.size();
-   const int totalFrames = (int)m_matrix[0].size();
-
-   // Vertical clamp (frequency bins)
-   if (m_viewTopBin < 0) m_viewTopBin = 0;
-   if (m_viewBottomBin > totalBins) m_viewBottomBin = totalBins;
-   if (m_viewBottomBin - m_viewTopBin < 2) {
-      m_viewBottomBin = m_viewTopBin + 2; // minimum 2 bins
-   }
-
-   // Horizontal clamp (time frames)
-   if (m_viewLeftFrame < 0) m_viewLeftFrame = 0;
-   if (m_viewRightFrame > totalFrames) m_viewRightFrame = totalFrames;
-   if (m_viewRightFrame - m_viewLeftFrame < 2) {
-      m_viewRightFrame = m_viewLeftFrame + 2; // minimum 2 frames
    }
 }
 
@@ -431,17 +375,7 @@ void SuperSpectrogramPanel::ClampViewRanges()
 //----------------------------------------------------------------------
 void SuperSpectrogramPanel::ResetView()
 {
-   if (m_matrix.empty())
-      return;
-
-   const int totalBins = (int)m_matrix.size();
-   const int totalFrames = (int)m_matrix[0].size();
-
-   m_viewTopBin = 0.0;
-   m_viewBottomBin = (double)totalBins;
-   m_viewLeftFrame = 0.0;
-   m_viewRightFrame = (double)totalFrames;
-
+   m_viewport.Reset();
    Refresh(false);
 }
 
@@ -470,8 +404,8 @@ void SuperSpectrogramPanel::DrawTimeTicks(wxDC& dc, const wxSize& size) const
 
    const size_t numFrames = m_matrix[0].size();
 
-   const double viewLeftFrame = m_viewLeftFrame;
-   const double viewRightFrame = m_viewRightFrame;
+   const double viewLeftFrame = m_viewport.Left();
+   const double viewRightFrame = m_viewport.Right();
 
    const double frameSpan = viewRightFrame - viewLeftFrame;
    if (frameSpan <= 0)

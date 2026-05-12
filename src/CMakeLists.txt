@@ -212,6 +212,8 @@ set( SOURCES
       SuperSpectrogramSession.cpp
       SuperSpectrogramView.cpp
       SuperSpectrogramView.h
+      SuperSpectrogramViewport.cpp
+      SuperSpectrogramViewport.h
       SseMathFuncs.cpp
       SseMathFuncs.h
       TagsEditor.cpp
