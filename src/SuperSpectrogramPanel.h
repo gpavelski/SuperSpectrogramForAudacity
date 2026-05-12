@@ -50,16 +50,6 @@ public:
 
    void SetColormap(SuperSpectrogramConfig::Colormap type);
 
-   static wxColour Lerp(const wxColour& a,
-      const wxColour& b,
-      double t
-   );
-
-   static std::vector<wxColour> BuildColormap(
-      const std::vector<wxColour>& anchors,
-      size_t resolution = 256
-   );
-
    void SetNoteNamingStyle(SuperSpectrogramConfig::NoteNaming style);
    void SetShowNoteLines(bool show);
 
@@ -90,6 +80,7 @@ private:
    void ClampViewRanges();
    double FreqToWidgetY(double freq, int widgetHeight) const;
    void BuildBitmap();
+   void NormalizeMatrix();
 
    // --------------------------
    // Data
@@ -109,10 +100,13 @@ private:
    // Optional note lines overlay
    bool m_showNoteLines = true;
 
-
    // Min/max values in the current matrix
    double m_minValue = 0.0;
    double m_maxValue = 1.0;
+
+   std::vector<float> m_normalized; // flattened [0,1]
+   size_t m_rows = 0;
+   size_t m_cols = 0;
 
    // Time tick data
    bool m_showTimeTicks = false;

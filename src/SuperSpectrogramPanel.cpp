@@ -52,7 +52,7 @@ void SuperSpectrogramPanel::SetColormap(
 {
    m_colormap = SuperSpectrogramColormapFactory::Create(type);
 
-   if (!m_matrix.empty())
+   if (!m_normalized.empty())
       BuildBitmap();
 
    Refresh();
@@ -68,8 +68,54 @@ void SuperSpectrogramPanel::SetData(const SuperSpectrogramFrame& frame)
    m_maxFreq = frame.maxFreq;
    m_signalLength = frame.numSamples;
 
+   NormalizeMatrix();
    BuildBitmap();
+
    ResetView();
+}
+
+void SuperSpectrogramPanel::NormalizeMatrix()
+{
+   if (m_matrix.empty() || m_matrix[0].empty())
+      return;
+
+   m_rows = m_matrix.size();
+   m_cols = m_matrix[0].size();
+
+   m_normalized.resize(m_rows * m_cols);
+
+   double minv = std::numeric_limits<double>::infinity();
+   double maxv = -std::numeric_limits<double>::infinity();
+
+   // Pass 1: find min/max
+   for (const auto& row : m_matrix)
+      for (double v : row)
+         if (std::isfinite(v)) {
+            minv = std::min(minv, v);
+            maxv = std::max(maxv, v);
+         }
+
+   if (!std::isfinite(minv) || minv == maxv) {
+      minv = 0.0;
+      maxv = 1.0;
+   }
+
+   const double invRange = 1.0 / (maxv - minv + 1e-9);
+
+   // Pass 2: normalize
+   for (size_t y = 0; y < m_rows; ++y)
+   {
+      for (size_t x = 0; x < m_cols; ++x)
+      {
+         double v = m_matrix[y][x];
+
+         float norm = 0.0f;
+         if (std::isfinite(v))
+            norm = static_cast<float>((v - minv) * invRange);
+
+         m_normalized[y * m_cols + x] = norm;
+      }
+   }
 }
 
 std::vector<wxString> SuperSpectrogramPanel::MakeNoteLabels(
@@ -285,58 +331,22 @@ wxBitmap SuperSpectrogramPanel::RenderCurrentViewToBitmap() const
 //----------------------------------------------------------------------
 void SuperSpectrogramPanel::BuildBitmap()
 {
-   if (m_matrix.empty() || m_matrix[0].empty()) {
-      // Create a placeholder bitmap
-      m_bitmap = wxBitmap(100, 100);
-      wxMemoryDC memDC(m_bitmap);
-      memDC.SetBackground(*wxWHITE_BRUSH);
-      memDC.Clear();
-      memDC.SetTextForeground(*wxWHITE);
-      memDC.DrawText("No Data", 30, 45);
+   if (m_normalized.empty())
       return;
-   }
 
-   const size_t rows = m_matrix.size();
-   const size_t cols = m_matrix[0].size();
-
-   wxImage img(static_cast<int>(cols), static_cast<int>(rows), false); // RGB only
-
-   // Find min/max values
-   double minv = std::numeric_limits<double>::infinity();
-   double maxv = -std::numeric_limits<double>::infinity();
-
-   for (const auto& row : m_matrix) {
-      for (double v : row) {
-         if (std::isfinite(v)) {
-            minv = std::min(minv, v);
-            maxv = std::max(maxv, v);
-         }
-      }
-   }
-
-   if (!std::isfinite(minv) || minv == maxv) {
-      minv = 0.0;
-      maxv = 1.0;
-   }
+   wxImage img(static_cast<int>(m_cols), static_cast<int>(m_rows), false);
 
    unsigned char* data = img.GetData();
 
-   for (int y = 0; y < static_cast<int>(rows); ++y) {
-      for (int x = 0; x < static_cast<int>(cols); ++x) {
-         double v = m_matrix[y][x];
-         int idx;
+   for (size_t y = 0; y < m_rows; ++y)
+   {
+      for (size_t x = 0; x < m_cols; ++x)
+      {
+         float norm = m_normalized[y * m_cols + x];
 
-         if (!std::isfinite(v)) {
-            idx = 0; // Use first colormap color for invalid values
-         }
-         else {
-            idx = static_cast<int>(255 * (v - minv) / (maxv - minv + 1e-9));
-            idx = std::clamp(idx, 0, 255);
-         }
-
-         double norm = (v - minv) / (maxv - minv + 1e-9);
          const wxColour& c = m_colormap->Map(norm);
-         int offset = 3 * (y * cols + x);
+
+         size_t offset = 3 * (y * m_cols + x);
          data[offset + 0] = c.Red();
          data[offset + 1] = c.Green();
          data[offset + 2] = c.Blue();
