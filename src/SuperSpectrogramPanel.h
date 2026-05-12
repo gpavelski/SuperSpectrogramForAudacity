@@ -16,6 +16,7 @@
 #include <vector>
 #include <limits>
 #include "SuperSpectrogramConfig.h"
+#include "SuperSpectrogramColormap.h"
 #include "SuperSpectrogramConstants.h"
 #include "SuperSpectrogramFrame.h"
 
@@ -90,15 +91,6 @@ private:
    double FreqToWidgetY(double freq, int widgetHeight) const;
    void BuildBitmap();
 
-   static std::vector<wxColour> MakeJetColormap();
-   static std::vector<wxColour> MakeGrayColormap();
-   static std::vector<wxColour> MakeHotColormap();
-   static std::vector<wxColour> MakeViridisColormap();
-   static std::vector<wxColour> MakeInfernoColormap();
-   static std::vector<wxColour> MakeMagmaColormap();
-   static std::vector<wxColour> MakeCividisColormap();
-   static std::vector<wxColour> MakeParulaColormap();
-
    // --------------------------
    // Data
    // --------------------------
@@ -117,8 +109,6 @@ private:
    // Optional note lines overlay
    bool m_showNoteLines = true;
 
-   // Precomputed color map
-   const std::vector<wxColour> s_jet = MakeJetColormap();
 
    // Min/max values in the current matrix
    double m_minValue = 0.0;
@@ -129,23 +119,7 @@ private:
    size_t m_signalLength = 0;       // length of the resampled signal
 
    // Colormap
-   SuperSpectrogramConfig::Colormap m_colormap = SuperSpectrogramConfig::Colormap::Jet;
-   std::vector<wxColour> m_cmap;
-
-   std::vector<wxColour> BuildColormap(SuperSpectrogramConfig::Colormap type)
-   {
-      switch (type) {
-         case SuperSpectrogramConfig::Colormap::Jet:     return MakeJetColormap();
-         case SuperSpectrogramConfig::Colormap::Gray:    return MakeGrayColormap();
-         case SuperSpectrogramConfig::Colormap::Hot:     return MakeHotColormap();
-         case SuperSpectrogramConfig::Colormap::Viridis: return MakeViridisColormap();
-         case SuperSpectrogramConfig::Colormap::Inferno: return MakeInfernoColormap();
-         case SuperSpectrogramConfig::Colormap::Magma:   return MakeMagmaColormap();
-         case SuperSpectrogramConfig::Colormap::Cividis: return MakeCividisColormap();
-         case SuperSpectrogramConfig::Colormap::Parula:  return MakeParulaColormap();
-      }
-      return MakeJetColormap();
-   }
+   std::unique_ptr<IColormap> m_colormap;
 
    SuperSpectrogramConfig::TimeTickMode m_timeTickMode{ SuperSpectrogramConfig::TimeTickMode::Seconds };
 

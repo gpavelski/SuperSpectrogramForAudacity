@@ -11,7 +11,6 @@
 #include "SuperSpectrogramController.h"
 #include "SuperSpectrogramAudioExtractor.h"
 #include <fstream>
-#include <future>
 
 SuperSpectrogramController::SuperSpectrogramController(
    SuperSpectrogramAudioExtractor& extractor,
