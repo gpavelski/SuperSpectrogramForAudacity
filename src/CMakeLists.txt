@@ -201,6 +201,8 @@ set( SOURCES
       SuperSpectrogramConstants.h
       SuperSpectrogramController.cpp
       SuperSpectrogramController.h
+      SuperSpectrogramDataAdapter.cpp
+      SuperSpectrogramDataAdapter.h
       SuperSpectrogramExportService.h
       SuperSpectrogramExportService.cpp
       SuperSpectrogramFrame.h

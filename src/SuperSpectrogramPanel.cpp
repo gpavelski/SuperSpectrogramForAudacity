@@ -61,59 +61,14 @@ void SuperSpectrogramPanel::SetColormap(
 //----------------------------------------------------------------------
 void SuperSpectrogramPanel::SetData(const SuperSpectrogramFrame& frame)
 {
-   m_matrix = frame.matrix;
-   m_maxFreq = frame.maxFreq;
-   m_signalLength = frame.numSamples;
+   m_data.SetFrame(frame);
 
-   NormalizeMatrix();
-
-   m_viewport.SetBounds(m_rows, m_cols);
+   m_viewport.SetBounds(
+      m_data.Rows(),
+      m_data.Cols()
+   );
 
    Refresh();
-}
-
-void SuperSpectrogramPanel::NormalizeMatrix()
-{
-   if (m_matrix.empty() || m_matrix[0].empty())
-      return;
-
-   m_rows = m_matrix.size();
-   m_cols = m_matrix[0].size();
-
-   m_normalized.resize(m_rows * m_cols);
-
-   double minv = std::numeric_limits<double>::infinity();
-   double maxv = -std::numeric_limits<double>::infinity();
-
-   // Pass 1: find min/max
-   for (const auto& row : m_matrix)
-      for (double v : row)
-         if (std::isfinite(v)) {
-            minv = std::min(minv, v);
-            maxv = std::max(maxv, v);
-         }
-
-   if (!std::isfinite(minv) || minv == maxv) {
-      minv = 0.0;
-      maxv = 1.0;
-   }
-
-   const double invRange = 1.0 / (maxv - minv + 1e-9);
-
-   // Pass 2: normalize
-   for (size_t y = 0; y < m_rows; ++y)
-   {
-      for (size_t x = 0; x < m_cols; ++x)
-      {
-         double v = m_matrix[y][x];
-
-         float norm = 0.0f;
-         if (std::isfinite(v))
-            norm = static_cast<float>((v - minv) * invRange);
-
-         m_normalized[y * m_cols + x] = norm;
-      }
-   }
 }
 
 std::vector<wxString> SuperSpectrogramPanel::MakeNoteLabels(
@@ -173,7 +128,7 @@ void SuperSpectrogramPanel::OnPaint(wxPaintEvent&)
 //----------------------------------------------------------------------
 void SuperSpectrogramPanel::OnSize(wxSizeEvent& event)
 {
-   if (!m_matrix.empty()) {
+   if (!m_data.GetNormalized().empty()) {
       Refresh();
    }
    event.Skip();
@@ -184,7 +139,7 @@ void SuperSpectrogramPanel::OnSize(wxSizeEvent& event)
 //----------------------------------------------------------------------
 void SuperSpectrogramPanel::DrawNoteLines(wxDC& dc, const wxSize& size) const
 {
-   if (m_matrix.empty()) return;
+   if (m_data.GetNormalized().empty()) return;
 
    dc.SetPen(wxPen(*wxWHITE, 1));
    dc.SetTextForeground(*wxWHITE);
@@ -228,8 +183,8 @@ void SuperSpectrogramPanel::DrawNoteLines(wxDC& dc, const wxSize& size) const
 //----------------------------------------------------------------------
 double SuperSpectrogramPanel::FreqToWidgetY(double freq, int widgetHeight) const
 {
-   const int rows = static_cast<int>(m_rows);
-   const double fNyq = m_maxFreq;
+   const int rows = static_cast<int>(m_data.Rows());
+   const double fNyq = m_data.GetMaxFreq();
 
    if (freq < 0.0 || freq > fNyq)
       return -1;
@@ -257,7 +212,7 @@ void SuperSpectrogramPanel::Render(wxDC& dc, const wxSize& target) const
    dc.SetBackground(*wxBLACK_BRUSH);
    dc.Clear();
 
-   if (m_normalized.empty() || !m_colormap)
+   if (m_data.GetNormalized().empty() || !m_colormap)
       return;
 
    const int width = target.GetWidth();
@@ -275,6 +230,9 @@ void SuperSpectrogramPanel::Render(wxDC& dc, const wxSize& target) const
    const double dx = (right - left) / width;
    const double dy = (bottom - top) / height;
 
+   const auto& normalized = m_data.GetNormalized();
+   size_t cols = m_data.Cols();
+
    for (int py = 0; py < height; ++py)
    {
       for (int px = 0; px < width; ++px)
@@ -286,11 +244,7 @@ void SuperSpectrogramPanel::Render(wxDC& dc, const wxSize& target) const
          size_t ix = static_cast<size_t>(fx);
          size_t iy = static_cast<size_t>(fy);
 
-         // Clamp
-         ix = std::min(ix, m_cols - 1);
-         iy = std::min(iy, m_rows - 1);
-
-         float norm = m_normalized[iy * m_cols + ix];
+         float norm = normalized[iy * cols + ix];
 
          const wxColour& c = m_colormap->Map(norm);
 
@@ -332,8 +286,6 @@ wxBitmap SuperSpectrogramPanel::RenderCurrentViewToBitmap() const
 //----------------------------------------------------------------------
 void SuperSpectrogramPanel::OnWheel(wxMouseEvent& event)
 {
-   if (m_matrix.empty()) return;
-
    double factor = (event.GetWheelRotation() > 0) ? 0.8 : 1.25;
 
    wxSize size = GetClientSize();
@@ -395,14 +347,14 @@ void SuperSpectrogramPanel::OnRightClick(wxMouseEvent& event)
 void SuperSpectrogramPanel::DrawTimeTicks(wxDC& dc, const wxSize& size) const
 {
    if (m_timeTickMode == SuperSpectrogramConfig::TimeTickMode::None ||
-      m_signalLength == 0 ||
-      m_matrix.empty())
+      m_data.GetNumSamples() == 0 ||
+      m_data.GetNormalized().empty())
       return;
 
    dc.SetFont(wxFont(8, wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL));
    dc.SetTextForeground(*wxWHITE);
 
-   const size_t numFrames = m_matrix[0].size();
+   const size_t numFrames = m_data.Cols();
 
    const double viewLeftFrame = m_viewport.Left();
    const double viewRightFrame = m_viewport.Right();
@@ -417,7 +369,7 @@ void SuperSpectrogramPanel::DrawTimeTicks(wxDC& dc, const wxSize& size) const
    if (m_timeTickMode == SuperSpectrogramConfig::TimeTickMode::Seconds)
    {
       const double totalDuration =
-         static_cast<double>(m_signalLength) / (2 * m_maxFreq);
+         static_cast<double>(m_data.GetNumSamples()) / (2 * m_data.GetMaxFreq());
 
       const double viewLeftTime =
          (viewLeftFrame / numFrames) * totalDuration;
@@ -470,7 +422,7 @@ void SuperSpectrogramPanel::DrawTimeTicks(wxDC& dc, const wxSize& size) const
    {
       // Map frame -> sample
       const double samplesPerFrame =
-         static_cast<double>(m_signalLength) / numFrames;
+         static_cast<double>(m_data.GetNumSamples()) / numFrames;
 
       const double viewLeftSample = viewLeftFrame * samplesPerFrame;
       const double viewRightSample = viewRightFrame * samplesPerFrame;

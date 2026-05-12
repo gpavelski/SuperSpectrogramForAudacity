@@ -18,6 +18,7 @@
 #include "SuperSpectrogramConfig.h"
 #include "SuperSpectrogramColormap.h"
 #include "SuperSpectrogramConstants.h"
+#include "SuperSpectrogramDataAdapter.h"
 #include "SuperSpectrogramFrame.h"
 #include "SuperSpectrogramViewport.h"
 
@@ -37,8 +38,8 @@ public:
    void Clear();
 
    size_t GetColumnCount() const {
-      if (m_matrix.empty()) return 0;
-      return m_matrix[0].size();
+      if (m_data.GetNormalized().empty()) return 0;
+      return m_data.Cols();
    }
 
    // Note line display
@@ -79,15 +80,11 @@ private:
       const wxString& label) const;
 
    double FreqToWidgetY(double freq, int widgetHeight) const;
-   void NormalizeMatrix();
 
    // --------------------------
    // Data
    // --------------------------
-   std::vector<std::vector<double>> m_matrix;
    wxPoint m_lastMouse;
-
-   double m_maxFreq = 0.0;
 
    // Optional note lines overlay
    bool m_showNoteLines = true;
@@ -96,17 +93,13 @@ private:
    double m_minValue = 0.0;
    double m_maxValue = 1.0;
 
-   std::vector<float> m_normalized; // flattened [0,1]
-   size_t m_rows = 0;
-   size_t m_cols = 0;
-
    // Time tick data
    bool m_showTimeTicks = false;
-   size_t m_signalLength = 0;       // length of the resampled signal
 
    // Colormap
    std::unique_ptr<IColormap> m_colormap;
 
+   SuperSpectrogramDataAdapter m_data;
    SuperSpectrogramViewport m_viewport;
 
    SuperSpectrogramConfig::TimeTickMode m_timeTickMode{ SuperSpectrogramConfig::TimeTickMode::Seconds };
