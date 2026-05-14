@@ -17,16 +17,11 @@
 #include <limits>
 #include <memory>
 #include "SuperSpectrogramConfig.h"
-#include "SuperSpectrogramColormap.h"
-#include "SuperSpectrogramColormapFactory.h"
 #include "SuperSpectrogramConstants.h"
 #include "SuperSpectrogramDataAdapter.h"
-#include "SuperSpectrogramFrame.h"
-#include "SuperSpectrogramInteractionController.h"
-#include "SuperSpectrogramNotesLinesOverlay.h"
+#include "SuperSpectrogramMouseEvent.h"
 #include "SuperSpectrogramRenderer.h"
-#include "SuperSpectrogramViewport.h"
-#include "SuperSpectrogramTimeTicksOverlay.h"
+#include "SuperSpectrogramViewModel.h"
 
 class ISpectrogramOverlay;
 
@@ -46,8 +41,7 @@ public:
    void Clear();
 
    size_t GetColumnCount() const {
-      if (m_data.GetNormalized().empty()) return 0;
-      return m_data.Cols();
+      return m_vm.GetColumnCount();
    }
 
    // Render
@@ -78,16 +72,8 @@ private:
    void OnRightClick(wxMouseEvent& event);
    void OnWheel(wxMouseEvent& event);
 
-   // Colormap
-   std::unique_ptr<IColormap> m_colormap;
-   SuperSpectrogramDataAdapter m_data;
-   SuperSpectrogramInteractionController m_interactionController;
-   std::vector<std::unique_ptr<ISpectrogramOverlay>> m_overlays;
+   SuperSpectrogramViewModel m_vm;
    SuperSpectrogramRenderer m_renderer;
-   SuperSpectrogramViewport m_viewport;
-
-   SuperSpectrogramNotesLinesOverlay* m_notesOverlay = nullptr;
-   SuperSpectrogramTimeTicksOverlay* m_timeOverlay = nullptr;
 
  // --------------------------
 // Event table declaration

@@ -226,6 +226,8 @@ set( SOURCES
       SuperSpectrogramTimeTicksOverlay.h
       SuperSpectrogramView.cpp
       SuperSpectrogramView.h
+      SuperSpectrogramViewModel.cpp
+      SuperSpectrogramViewModel.h
       SuperSpectrogramViewport.cpp
       SuperSpectrogramViewport.h
 #

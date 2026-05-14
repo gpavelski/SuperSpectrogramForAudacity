@@ -26,6 +26,8 @@ public:
    double GetMaxFreq() const { return m_maxFreq; }
    size_t GetNumSamples() const { return m_numSamples; }
 
+   void Clear();
+
 private:
    void Normalize();
 

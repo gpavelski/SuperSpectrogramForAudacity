@@ -66,3 +66,15 @@ void SuperSpectrogramDataAdapter::Normalize()
       }
    }
 }
+
+void SuperSpectrogramDataAdapter::Clear()
+{
+   m_matrix.clear();
+   m_normalized.clear();
+
+   m_rows = 0;
+   m_cols = 0;
+
+   m_maxFreq = 0.0;
+   m_numSamples = 0;
+}

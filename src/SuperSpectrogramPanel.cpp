@@ -41,29 +41,12 @@ SuperSpectrogramPanel::SuperSpectrogramPanel(wxWindow* parent)
 {
    SetBackgroundStyle(wxBG_STYLE_PAINT);
    SetDoubleBuffered(true);
-
-   m_colormap = SuperSpectrogramColormapFactory::Create(
-      SuperSpectrogramConfig::Colormap::Jet);
-
-   auto notes = std::make_unique<SuperSpectrogramNotesLinesOverlay>(
-      SuperSpectrogramConfig::NoteNaming::Mixed
-   );
-   m_notesOverlay = notes.get();
-   m_overlays.push_back(std::move(notes));
-
-   auto time = std::make_unique<SuperSpectrogramTimeTicksOverlay>(
-      SuperSpectrogramConfig::TimeTickMode::Seconds
-   );
-
-   m_timeOverlay = time.get();
-   m_overlays.push_back(std::move(time));
 }
 
 void SuperSpectrogramPanel::SetColormap(
    SuperSpectrogramConfig::Colormap type)
 {
-   m_colormap = SuperSpectrogramColormapFactory::Create(type);
-
+   m_vm.SetColormap(type);
    Refresh();
 }
 
@@ -73,49 +56,34 @@ void SuperSpectrogramPanel::SetColormap(
 //----------------------------------------------------------------------
 void SuperSpectrogramPanel::SetData(const SuperSpectrogramFrame& frame)
 {
-   m_data.SetFrame(frame);
-
-   m_viewport.SetBounds(
-      m_data.Rows(),
-      m_data.Cols()
-   );
-
+   m_vm.SetData(frame);
    Refresh();
 }
 
 void SuperSpectrogramPanel::SetNoteNamingStyle(
    SuperSpectrogramConfig::NoteNaming style)
 {
-   if (m_notesOverlay)
-      m_notesOverlay->SetNoteNamingStyle(style);
-
+   m_vm.SetNoteNamingStyle(style);
    Refresh();
 }
 
 void SuperSpectrogramPanel::SetShowNoteLines(bool show)
 {
-   if (m_notesOverlay)
-      m_notesOverlay->SetEnabled(show);
-
+   m_vm.SetShowNoteLines(show);
    Refresh();
 }
 
 void SuperSpectrogramPanel::SetTimeTickMode(
    SuperSpectrogramConfig::TimeTickMode mode)
 {
-   if (m_timeOverlay)
-      m_timeOverlay->SetMode(mode);
-
+   m_vm.SetTimeTickMode(mode);
    Refresh();
 }
 
 SuperSpectrogramConfig::TimeTickMode
 SuperSpectrogramPanel::GetTimeTickMode() const
 {
-   if (m_timeOverlay)
-      return m_timeOverlay->GetMode();
-
-   return SuperSpectrogramConfig::TimeTickMode::None;
+   return m_vm.GetTimeTickMode();
 }
 
 //----------------------------------------------------------------------
@@ -132,7 +100,7 @@ void SuperSpectrogramPanel::OnPaint(wxPaintEvent&)
 //----------------------------------------------------------------------
 void SuperSpectrogramPanel::OnSize(wxSizeEvent& event)
 {
-   if (!m_data.GetNormalized().empty()) {
+   if(m_vm.HasData()) {
       Refresh();
    }
    event.Skip();
@@ -146,26 +114,15 @@ void SuperSpectrogramPanel::Render(wxDC& dc, const wxSize& target) const
    dc.SetBackground(*wxBLACK_BRUSH);
    dc.Clear();
 
-   if (m_data.GetNormalized().empty() || !m_colormap)
+   if (!m_vm.HasData())
       return;
 
-   SuperSpectrogramRenderContext ctx{
-      m_data.GetNormalized(),
-      m_data.Rows(),
-      m_data.Cols(),
-      *m_colormap,
-      m_viewport
-   };
-
+   auto ctx = m_vm.BuildRenderContext();
    wxBitmap bmp = m_renderer.Render(ctx, target);
 
    dc.DrawBitmap(bmp, 0, 0);
 
-   for (const auto& overlay : m_overlays)
-   {
-      if (overlay->IsEnabled())
-         overlay->Render(dc, target, m_data, m_viewport);
-   }
+   m_vm.RenderOverlays(dc, target);
 }
 
 //----------------------------------------------------------------------
@@ -194,7 +151,7 @@ void SuperSpectrogramPanel::OnWheel(wxMouseEvent& event)
    e.y = event.GetY();
    e.wheelRotation = event.GetWheelRotation();
 
-   if (m_interactionController.OnWheel(e, m_viewport, GetClientSize()))
+   if (m_vm.HandleWheel(e, GetClientSize()))
       Refresh();
 }
 
@@ -215,7 +172,7 @@ void SuperSpectrogramPanel::OnMouse(wxMouseEvent& event)
    else if (event.LeftUp() && HasCapture())
       ReleaseMouse();
 
-   if (m_interactionController.OnMouse(e, m_viewport, GetClientSize()))
+   if (m_vm.HandleMouse(e, GetClientSize()))
       Refresh();
 }
 
@@ -224,7 +181,7 @@ void SuperSpectrogramPanel::OnMouse(wxMouseEvent& event)
 //----------------------------------------------------------------------
 void SuperSpectrogramPanel::ResetView()
 {
-   m_viewport.Reset();
+   m_vm.ResetView();
    Refresh(false);
 }
 
