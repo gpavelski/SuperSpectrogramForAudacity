@@ -189,6 +189,7 @@ set( SOURCES
       SpectralDataDialog.cpp
       SpectralDataManager.h
       SpectralDataManager.cpp
+# Super Spectrogram sources
       SuperSpectrogramAudioExtractor.cpp
       SuperSpectrogramAudioExtractor.h
       SuperSpectrogramConfig.cpp
@@ -196,16 +197,18 @@ set( SOURCES
       SuperSpectrogramColormap.h
       SuperSpectrogramColormapFactory.cpp
       SuperSpectrogramColormapFactory.h
-      SuperSpectrogramColormapUtils.h
       SuperSpectrogramColormapUtils.cpp
+      SuperSpectrogramColormapUtils.h
       SuperSpectrogramConstants.h
       SuperSpectrogramController.cpp
       SuperSpectrogramController.h
       SuperSpectrogramDataAdapter.cpp
       SuperSpectrogramDataAdapter.h
-      SuperSpectrogramExportService.h
       SuperSpectrogramExportService.cpp
+      SuperSpectrogramExportService.h
       SuperSpectrogramFrame.h
+      SuperSpectrogramInteractionController.cpp
+      SuperSpectrogramInteractionController.h
       SuperSpectrogramModel.cpp
       SuperSpectrogramModel.h
       SuperSpectrogramNotesLinesOverlay.cpp
@@ -213,14 +216,15 @@ set( SOURCES
       SuperSpectrogramOverlay.h
       SuperSpectrogramPanel.cpp
       SuperSpectrogramPanel.h
-      SuperSpectrogramSession.h
       SuperSpectrogramSession.cpp
+      SuperSpectrogramSession.h
       SuperSpectrogramTimeTicksOverlay.cpp
       SuperSpectrogramTimeTicksOverlay.h
       SuperSpectrogramView.cpp
       SuperSpectrogramView.h
       SuperSpectrogramViewport.cpp
       SuperSpectrogramViewport.h
+#
       SseMathFuncs.cpp
       SseMathFuncs.h
       TagsEditor.cpp

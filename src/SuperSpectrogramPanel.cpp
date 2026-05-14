@@ -221,16 +221,14 @@ wxBitmap SuperSpectrogramPanel::RenderCurrentViewToBitmap() const
 //----------------------------------------------------------------------
 void SuperSpectrogramPanel::OnWheel(wxMouseEvent& event)
 {
-   double factor = (event.GetWheelRotation() > 0) ? 0.8 : 1.25;
-
-   wxSize size = GetClientSize();
-
-   double fx = (double)event.GetX() / size.GetWidth();
-   double fy = (double)event.GetY() / size.GetHeight();
-
-   m_viewport.Zoom(factor, fx, fy);
-
-   Refresh();
+   if (m_interactionController.OnWheel(
+      event,
+      m_viewport,
+      GetClientSize()
+   ))
+   {
+      Refresh();
+   }
 }
 
 //----------------------------------------------------------------------
@@ -238,23 +236,14 @@ void SuperSpectrogramPanel::OnWheel(wxMouseEvent& event)
 //----------------------------------------------------------------------
 void SuperSpectrogramPanel::OnMouse(wxMouseEvent& event)
 {
-   if (event.LeftDown()) {
-      m_lastMouse = event.GetPosition();
-      CaptureMouse();
-   }
-   else if (event.LeftUp()) {
-      if (HasCapture()) ReleaseMouse();
-   }
-   else if (event.Dragging() && event.LeftIsDown())
-   {
-      wxPoint pos = event.GetPosition();
-      wxPoint delta = pos - m_lastMouse;
-      m_lastMouse = pos;
+   m_interactionController.OnMouse(
+      event,
+      m_viewport,
+      GetClientSize(),
+      *this
+   );
 
-      m_viewport.Pan(delta.x, delta.y, GetClientSize());
-
-      Refresh();
-   }
+   Refresh();
 }
 
 //----------------------------------------------------------------------

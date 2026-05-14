@@ -21,10 +21,10 @@
 #include "SuperSpectrogramConstants.h"
 #include "SuperSpectrogramDataAdapter.h"
 #include "SuperSpectrogramFrame.h"
+#include "SuperSpectrogramInteractionController.h"
 #include "SuperSpectrogramNotesLinesOverlay.h"
 #include "SuperSpectrogramViewport.h"
 #include "SuperSpectrogramTimeTicksOverlay.h"
-
 
 class ISpectrogramOverlay;
 
@@ -76,14 +76,10 @@ private:
    void OnRightClick(wxMouseEvent& event);
    void OnWheel(wxMouseEvent& event);
 
-   // --------------------------
-   // Data
-   // --------------------------
-   wxPoint m_lastMouse;
-
    // Colormap
    std::unique_ptr<IColormap> m_colormap;
    SuperSpectrogramDataAdapter m_data;
+   SuperSpectrogramInteractionController m_interactionController;
    std::vector<std::unique_ptr<ISpectrogramOverlay>> m_overlays;
    SuperSpectrogramViewport m_viewport;
 
