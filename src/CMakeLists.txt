@@ -208,10 +208,15 @@ set( SOURCES
       SuperSpectrogramFrame.h
       SuperSpectrogramModel.cpp
       SuperSpectrogramModel.h
+      SuperSpectrogramNotesLinesOverlay.cpp
+      SuperSpectrogramNotesLinesOverlay.h
+      SuperSpectrogramOverlay.h
       SuperSpectrogramPanel.cpp
       SuperSpectrogramPanel.h
       SuperSpectrogramSession.h
       SuperSpectrogramSession.cpp
+      SuperSpectrogramTimeTicksOverlay.cpp
+      SuperSpectrogramTimeTicksOverlay.h
       SuperSpectrogramView.cpp
       SuperSpectrogramView.h
       SuperSpectrogramViewport.cpp
