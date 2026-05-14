@@ -13,6 +13,7 @@
 
 #include <wx/event.h>
 #include <wx/gdicmn.h>
+#include "SuperSpectrogramMouseEvent.h"
 
 class SuperSpectrogramViewport;
 
@@ -20,14 +21,13 @@ class SuperSpectrogramInteractionController
 {
 public:
    bool OnMouse(
-      wxMouseEvent& event,
+      const SuperSpectrogramMouseEvent& event,
       SuperSpectrogramViewport& viewport,
-      const wxSize& size,
-      wxWindow& window
+      const wxSize& size
    );
 
    bool OnWheel(
-      wxMouseEvent& event,
+      const SuperSpectrogramMouseEvent& event,
       SuperSpectrogramViewport& viewport,
       const wxSize& size
    );

@@ -211,11 +211,15 @@ set( SOURCES
       SuperSpectrogramInteractionController.h
       SuperSpectrogramModel.cpp
       SuperSpectrogramModel.h
+      SuperSpectrogramMouseEvent.h
       SuperSpectrogramNotesLinesOverlay.cpp
       SuperSpectrogramNotesLinesOverlay.h
       SuperSpectrogramOverlay.h
       SuperSpectrogramPanel.cpp
       SuperSpectrogramPanel.h
+      SuperSpectrogramRenderer.cpp
+      SuperSpectrogramRenderer.h
+      SuperSpectrogramRenderContext.h
       SuperSpectrogramSession.cpp
       SuperSpectrogramSession.h
       SuperSpectrogramTimeTicksOverlay.cpp

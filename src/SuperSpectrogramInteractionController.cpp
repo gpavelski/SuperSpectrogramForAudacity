@@ -15,33 +15,26 @@
 // Mouse handling (pan)
 //------------------------------------------------------------
 bool SuperSpectrogramInteractionController::OnMouse(
-   wxMouseEvent& event,
+   const SuperSpectrogramMouseEvent& event,
    SuperSpectrogramViewport& viewport,
-   const wxSize& size,
-   wxWindow& window
+   const wxSize& size
 )
 {
-   if (event.LeftDown())
+   if (event.leftDown)
    {
-      m_lastMouse = event.GetPosition();
-      window.CaptureMouse();
-
+      m_lastMouse = wxPoint(event.x, event.y);
       return false;
    }
-   else if (event.LeftUp())
+   else if (event.dragging)
    {
-      if (window.HasCapture())
-         window.ReleaseMouse();
-   }
-   else if (event.Dragging() && event.LeftIsDown())
-   {
-      wxPoint pos = event.GetPosition();
+      wxPoint pos(event.x, event.y);
       wxPoint delta = pos - m_lastMouse;
       m_lastMouse = pos;
 
       viewport.Pan(delta.x, delta.y, size);
       return true;
    }
+
    return false;
 }
 
@@ -49,17 +42,21 @@ bool SuperSpectrogramInteractionController::OnMouse(
 // Wheel handling (zoom)
 //------------------------------------------------------------
 bool SuperSpectrogramInteractionController::OnWheel(
-   wxMouseEvent& event,
+   const SuperSpectrogramMouseEvent& event,
    SuperSpectrogramViewport& viewport,
    const wxSize& size
 )
 {
-   double factor = (event.GetWheelRotation() > 0) ? 0.8 : 1.25;
+   if (event.wheelRotation == 0)
+      return false;
 
-   double fx = static_cast<double>(event.GetX()) / size.GetWidth();
-   double fy = static_cast<double>(event.GetY()) / size.GetHeight();
+   double factor = (event.wheelRotation > 0) ? 0.8 : 1.25;
+
+   double fx = static_cast<double>(event.x) / size.GetWidth();
+   double fy = static_cast<double>(event.y) / size.GetHeight();
 
    viewport.Zoom(factor, fx, fy);
+
    return true;
 }
 

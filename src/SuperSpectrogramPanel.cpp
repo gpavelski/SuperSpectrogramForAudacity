@@ -18,7 +18,6 @@ such as note lines and time ticks.
 *//*******************************************************************/
 
 #include "SuperSpectrogramPanel.h"
-#include "SuperSpectrogramColormapFactory.h"
 #include <wx/dcclient.h>
 #include <wx/dcmemory.h>
 #include <algorithm>
@@ -150,47 +149,16 @@ void SuperSpectrogramPanel::Render(wxDC& dc, const wxSize& target) const
    if (m_data.GetNormalized().empty() || !m_colormap)
       return;
 
-   const int width = target.GetWidth();
-   const int height = target.GetHeight();
+   SuperSpectrogramRenderContext ctx{
+      m_data.GetNormalized(),
+      m_data.Rows(),
+      m_data.Cols(),
+      *m_colormap,
+      m_viewport
+   };
 
-   wxImage img(width, height, false);
-   unsigned char* data = img.GetData();
+   wxBitmap bmp = m_renderer.Render(ctx, target);
 
-   // Viewport bounds
-   const double left = m_viewport.Left();
-   const double right = m_viewport.Right();
-   const double top = m_viewport.Top();
-   const double bottom = m_viewport.Bottom();
-
-   const double dx = (right - left) / width;
-   const double dy = (bottom - top) / height;
-
-   const auto& normalized = m_data.GetNormalized();
-   size_t cols = m_data.Cols();
-
-   for (int py = 0; py < height; ++py)
-   {
-      for (int px = 0; px < width; ++px)
-      {
-         // Map screen -> data indices
-         double fx = left + px * dx;
-         double fy = top + py * dy;
-
-         size_t ix = static_cast<size_t>(fx);
-         size_t iy = static_cast<size_t>(fy);
-
-         float norm = normalized[iy * cols + ix];
-
-         const wxColour& c = m_colormap->Map(norm);
-
-         size_t offset = 3 * (py * width + px);
-         data[offset + 0] = c.Red();
-         data[offset + 1] = c.Green();
-         data[offset + 2] = c.Blue();
-      }
-   }
-
-   wxBitmap bmp(img);
    dc.DrawBitmap(bmp, 0, 0);
 
    for (const auto& overlay : m_overlays)
@@ -221,14 +189,13 @@ wxBitmap SuperSpectrogramPanel::RenderCurrentViewToBitmap() const
 //----------------------------------------------------------------------
 void SuperSpectrogramPanel::OnWheel(wxMouseEvent& event)
 {
-   if (m_interactionController.OnWheel(
-      event,
-      m_viewport,
-      GetClientSize()
-   ))
-   {
+   SuperSpectrogramMouseEvent e;
+   e.x = event.GetX();
+   e.y = event.GetY();
+   e.wheelRotation = event.GetWheelRotation();
+
+   if (m_interactionController.OnWheel(e, m_viewport, GetClientSize()))
       Refresh();
-   }
 }
 
 //----------------------------------------------------------------------
@@ -236,14 +203,20 @@ void SuperSpectrogramPanel::OnWheel(wxMouseEvent& event)
 //----------------------------------------------------------------------
 void SuperSpectrogramPanel::OnMouse(wxMouseEvent& event)
 {
-   m_interactionController.OnMouse(
-      event,
-      m_viewport,
-      GetClientSize(),
-      *this
-   );
+   SuperSpectrogramMouseEvent e;
+   e.x = event.GetX();
+   e.y = event.GetY();
+   e.leftDown = event.LeftDown();
+   e.leftUp = event.LeftUp();
+   e.dragging = event.Dragging() && event.LeftIsDown();
 
-   Refresh();
+   if (event.LeftDown())
+      CaptureMouse();
+   else if (event.LeftUp() && HasCapture())
+      ReleaseMouse();
+
+   if (m_interactionController.OnMouse(e, m_viewport, GetClientSize()))
+      Refresh();
 }
 
 //----------------------------------------------------------------------

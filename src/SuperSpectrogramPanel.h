@@ -18,11 +18,13 @@
 #include <memory>
 #include "SuperSpectrogramConfig.h"
 #include "SuperSpectrogramColormap.h"
+#include "SuperSpectrogramColormapFactory.h"
 #include "SuperSpectrogramConstants.h"
 #include "SuperSpectrogramDataAdapter.h"
 #include "SuperSpectrogramFrame.h"
 #include "SuperSpectrogramInteractionController.h"
 #include "SuperSpectrogramNotesLinesOverlay.h"
+#include "SuperSpectrogramRenderer.h"
 #include "SuperSpectrogramViewport.h"
 #include "SuperSpectrogramTimeTicksOverlay.h"
 
@@ -81,6 +83,7 @@ private:
    SuperSpectrogramDataAdapter m_data;
    SuperSpectrogramInteractionController m_interactionController;
    std::vector<std::unique_ptr<ISpectrogramOverlay>> m_overlays;
+   SuperSpectrogramRenderer m_renderer;
    SuperSpectrogramViewport m_viewport;
 
    SuperSpectrogramNotesLinesOverlay* m_notesOverlay = nullptr;
