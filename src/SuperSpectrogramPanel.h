@@ -13,9 +13,7 @@
 
 #include <wx/wx.h>
 #include <wx/dcbuffer.h>
-#include <vector>
-#include <limits>
-#include <memory>
+
 #include "SuperSpectrogramConfig.h"
 #include "SuperSpectrogramConstants.h"
 #include "SuperSpectrogramDataAdapter.h"
@@ -23,62 +21,46 @@
 #include "SuperSpectrogramRenderer.h"
 #include "SuperSpectrogramViewModel.h"
 
-class ISpectrogramOverlay;
-
 class SuperSpectrogramPanel : public wxPanel
 {
 public:
-   // --------------------------
-   // Constructor
-   // --------------------------
    explicit SuperSpectrogramPanel(wxWindow* parent);
 
-   // --------------------------
-   // Public API
-   // --------------------------
+   // Data & configuration
    void SetData(const SuperSpectrogramFrame& frame);
    void ResetView();
    void Clear();
 
-   size_t GetColumnCount() const {
-      return m_vm.GetColumnCount();
-   }
+   size_t GetColumnCount() const;
 
-   // Render
+   // Rendering
    wxBitmap RenderCurrentViewToBitmap() const;
    void Render(wxDC& dc, const wxSize& target) const;
 
+   // View configuration
    void SetColormap(SuperSpectrogramConfig::Colormap type);
 
-   void SetNoteNamingStyle(
-      SuperSpectrogramConfig::NoteNaming style
-   );
+   void SetNoteNamingStyle(SuperSpectrogramConfig::NoteNaming style);
 
    void SetShowNoteLines(bool show);
 
-   void SetTimeTickMode(
-      SuperSpectrogramConfig::TimeTickMode mode
-   );
+   void SetTimeTickMode(SuperSpectrogramConfig::TimeTickMode mode);
 
    SuperSpectrogramConfig::TimeTickMode GetTimeTickMode() const;
 
 private:
-   // --------------------------
-   // Event handlers
-   // --------------------------
+   // wxWidgets event handlers
    void OnPaint(wxPaintEvent& event);
    void OnSize(wxSizeEvent& event);
    void OnMouse(wxMouseEvent& event);
    void OnRightClick(wxMouseEvent& event);
    void OnWheel(wxMouseEvent& event);
 
+private:
    SuperSpectrogramViewModel m_vm;
-   SuperSpectrogramRenderer m_renderer;
+   SuperSpectrogramRenderer  m_renderer;
 
- // --------------------------
-// Event table declaration
-// --------------------------
    wxDECLARE_EVENT_TABLE();
 };
 
-#endif //__SUPER_SPECTROGRAM_PANEL__
+#endif

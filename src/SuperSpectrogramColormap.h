@@ -34,9 +34,25 @@ public:
 
    wxColour Map(double v) const override
    {
-      int idx = static_cast<int>(v * (m_lut.size() - 1));
-      idx = std::clamp(idx, 0, static_cast<int>(m_lut.size() - 1));
-      return m_lut[idx];
+      if (m_lut.empty())
+         return *wxBLACK;
+
+      v = std::clamp(v, 0.0, 1.0);
+
+      double pos = v * (m_lut.size() - 1);
+      int i = static_cast<int>(pos);
+
+      int j = std::min(i + 1, static_cast<int>(m_lut.size() - 1));
+      double t = pos - i;
+
+      const auto& c1 = m_lut[i];
+      const auto& c2 = m_lut[j];
+
+      return wxColour(
+         static_cast<unsigned char>(c1.Red() + t * (c2.Red() - c1.Red())),
+         static_cast<unsigned char>(c1.Green() + t * (c2.Green() - c1.Green())),
+         static_cast<unsigned char>(c1.Blue() + t * (c2.Blue() - c1.Blue()))
+      );
    }
 
    const std::vector<wxColour>& GetLUT() const override

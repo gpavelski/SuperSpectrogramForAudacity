@@ -13,36 +13,33 @@
 #include "SuperSpectrogramColormapFactory.h"
 #include "SuperSpectrogramNotesLinesOverlay.h"
 #include "SuperSpectrogramTimeTicksOverlay.h"
-#include "SuperSpectrogramRenderer.h"
 
-//------------------------------------------------------------
-// Constructor
-//------------------------------------------------------------
+/**
+ * Initializes default rendering state and registers built-in overlays.
+ */
 SuperSpectrogramViewModel::SuperSpectrogramViewModel()
 {
    m_colormap = SuperSpectrogramColormapFactory::Create(
       SuperSpectrogramConfig::Colormap::Jet);
 
-   // Notes overlay
    auto notes = std::make_unique<SuperSpectrogramNotesLinesOverlay>(
-      SuperSpectrogramConfig::NoteNaming::Mixed
-   );
+      SuperSpectrogramConfig::NoteNaming::Mixed);
+
    m_notesOverlay = notes.get();
    m_overlays.push_back(std::move(notes));
 
-   // Time overlay
    auto time = std::make_unique<SuperSpectrogramTimeTicksOverlay>(
-      SuperSpectrogramConfig::TimeTickMode::Seconds
-   );
+      SuperSpectrogramConfig::TimeTickMode::Seconds);
+
    m_timeOverlay = time.get();
    m_overlays.push_back(std::move(time));
 }
 
-//------------------------------------------------------------
-// Data
-//------------------------------------------------------------
-void SuperSpectrogramViewModel::SetData(
-   const SuperSpectrogramFrame& frame)
+// =========================================================
+// Data lifecycle
+// =========================================================
+
+void SuperSpectrogramViewModel::SetData(const SuperSpectrogramFrame& frame)
 {
    m_data.SetFrame(frame);
 
@@ -65,17 +62,16 @@ void SuperSpectrogramViewModel::Clear()
 
 size_t SuperSpectrogramViewModel::GetColumnCount() const
 {
-   if (m_data.GetNormalized().empty())
-      return 0;
-
-   return m_data.Cols();
+   return m_data.GetNormalized().empty()
+      ? 0
+      : m_data.Cols();
 }
 
-//------------------------------------------------------------
+// =========================================================
 // Configuration
-//------------------------------------------------------------
-void SuperSpectrogramViewModel::SetColormap(
-   SuperSpectrogramConfig::Colormap type)
+// =========================================================
+
+void SuperSpectrogramViewModel::SetColormap(SuperSpectrogramConfig::Colormap type)
 {
    m_colormap = SuperSpectrogramColormapFactory::Create(type);
 }
@@ -103,15 +99,15 @@ void SuperSpectrogramViewModel::SetTimeTickMode(
 SuperSpectrogramConfig::TimeTickMode
 SuperSpectrogramViewModel::GetTimeTickMode() const
 {
-   if (m_timeOverlay)
-      return m_timeOverlay->GetMode();
-
-   return SuperSpectrogramConfig::TimeTickMode::None;
+   return m_timeOverlay
+      ? m_timeOverlay->GetMode()
+      : SuperSpectrogramConfig::TimeTickMode::None;
 }
 
-//------------------------------------------------------------
+// =========================================================
 // Interaction
-//------------------------------------------------------------
+// =========================================================
+
 bool SuperSpectrogramViewModel::HandleMouse(
    const SuperSpectrogramMouseEvent& e,
    const wxSize& size)
@@ -126,9 +122,10 @@ bool SuperSpectrogramViewModel::HandleWheel(
    return m_interactionController.OnWheel(e, m_viewport, size);
 }
 
-//------------------------------------------------------------
+// =========================================================
 // Rendering
-//------------------------------------------------------------
+// =========================================================
+
 bool SuperSpectrogramViewModel::HasData() const
 {
    return !m_data.GetNormalized().empty() && m_colormap != nullptr;
@@ -152,14 +149,14 @@ void SuperSpectrogramViewModel::RenderOverlays(
 {
    for (const auto& overlay : m_overlays)
    {
-      if (overlay->IsEnabled())
-      {
-         overlay->Render(
-            dc,
-            size,
-            m_data,
-            m_viewport
-         );
-      }
+      if (!overlay->IsEnabled())
+         continue;
+
+      overlay->Render(
+         dc,
+         size,
+         m_data,
+         m_viewport
+      );
    }
 }

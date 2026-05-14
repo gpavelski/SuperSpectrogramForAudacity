@@ -14,15 +14,14 @@
 #include <vector>
 #include <cstddef>
 
-// Forward declarations
 class IColormap;
 class SuperSpectrogramViewport;
 
 struct SuperSpectrogramRenderContext
 {
    const std::vector<float>& normalized;
-   size_t rows;
-   size_t cols;
+   size_t rows{ 0 };
+   size_t cols{ 0 };
 
    const IColormap& colormap;
    const SuperSpectrogramViewport& viewport;

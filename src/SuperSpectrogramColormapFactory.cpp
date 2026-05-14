@@ -11,38 +11,32 @@
 #include "SuperSpectrogramColormapFactory.h"
 #include "SuperSpectrogramColormapUtils.h"
 
-std::unique_ptr<IColormap>
-SuperSpectrogramColormapFactory::Create(
-   SuperSpectrogramConfig::Colormap type)
+namespace
 {
-   using namespace ColormapUtils;
+   using ColormapType = SuperSpectrogramConfig::Colormap;
 
-   switch (type)
+   std::unique_ptr<IColormap> MakeColormap(ColormapType type)
    {
-   case SuperSpectrogramConfig::Colormap::Jet:
+      using namespace ColormapUtils;
+
+      switch (type)
+      {
+      case ColormapType::Jet:      return std::make_unique<LUTColormap>(MakeJet());
+      case ColormapType::Gray:     return std::make_unique<LUTColormap>(MakeGray());
+      case ColormapType::Hot:      return std::make_unique<LUTColormap>(MakeHot());
+      case ColormapType::Viridis:  return std::make_unique<LUTColormap>(MakeViridis());
+      case ColormapType::Inferno:  return std::make_unique<LUTColormap>(MakeInferno());
+      case ColormapType::Magma:    return std::make_unique<LUTColormap>(MakeMagma());
+      case ColormapType::Cividis:  return std::make_unique<LUTColormap>(MakeCividis());
+      case ColormapType::Parula:   return std::make_unique<LUTColormap>(MakeParula());
+      }
+
       return std::make_unique<LUTColormap>(MakeJet());
-
-   case SuperSpectrogramConfig::Colormap::Gray:
-      return std::make_unique<LUTColormap>(MakeGray());
-
-   case SuperSpectrogramConfig::Colormap::Hot:
-      return std::make_unique<LUTColormap>(MakeHot());
-
-   case SuperSpectrogramConfig::Colormap::Viridis:
-      return std::make_unique<LUTColormap>(MakeViridis());
-
-   case SuperSpectrogramConfig::Colormap::Inferno:
-      return std::make_unique<LUTColormap>(MakeInferno());
-
-   case SuperSpectrogramConfig::Colormap::Magma:
-      return std::make_unique<LUTColormap>(MakeMagma());
-
-   case SuperSpectrogramConfig::Colormap::Cividis:
-      return std::make_unique<LUTColormap>(MakeCividis());
-
-   case SuperSpectrogramConfig::Colormap::Parula:
-      return std::make_unique<LUTColormap>(MakeParula());
    }
+}
 
-   return std::make_unique<LUTColormap>(MakeJet());
+std::unique_ptr<IColormap>
+SuperSpectrogramColormapFactory::Create(SuperSpectrogramConfig::Colormap type)
+{
+   return MakeColormap(type);
 }

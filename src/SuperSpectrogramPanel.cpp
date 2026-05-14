@@ -6,23 +6,16 @@
 
   Guilherme Pavelski
 
-*******************************************************************//**
-
-\class SuperSpectrogramPanel
-\brief Responsible for UI interaction of the Super Spectrogram
-
-wxPanel responsible for rendering a spectrogram bitmap, handling
-user interaction (pan, zoom, reset), and drawing auxiliary overlays
-such as note lines and time ticks.
-
-*//*******************************************************************/
+*******************************************************************/
 
 #include "SuperSpectrogramPanel.h"
+
 #include <wx/dcclient.h>
 #include <wx/dcmemory.h>
-#include <algorithm>
-#include <cmath>
 
+//------------------------------------------------------------
+// Event table
+//------------------------------------------------------------
 wxBEGIN_EVENT_TABLE(SuperSpectrogramPanel, wxPanel)
 EVT_PAINT(SuperSpectrogramPanel::OnPaint)
 EVT_SIZE(SuperSpectrogramPanel::OnSize)
@@ -33,9 +26,9 @@ EVT_RIGHT_DOWN(SuperSpectrogramPanel::OnRightClick)
 EVT_MOUSEWHEEL(SuperSpectrogramPanel::OnWheel)
 wxEND_EVENT_TABLE()
 
-//----------------------------------------------------------------------
-// Constructs the spectrogram panel and initializes rendering defaults
-//----------------------------------------------------------------------
+//------------------------------------------------------------
+// Construction
+//------------------------------------------------------------
 SuperSpectrogramPanel::SuperSpectrogramPanel(wxWindow* parent)
    : wxPanel(parent)
 {
@@ -43,20 +36,19 @@ SuperSpectrogramPanel::SuperSpectrogramPanel(wxWindow* parent)
    SetDoubleBuffered(true);
 }
 
+//------------------------------------------------------------
+// Data & Configuration API
+//------------------------------------------------------------
+void SuperSpectrogramPanel::SetData(const SuperSpectrogramFrame& frame)
+{
+   m_vm.SetData(frame);
+   Refresh();
+}
+
 void SuperSpectrogramPanel::SetColormap(
    SuperSpectrogramConfig::Colormap type)
 {
    m_vm.SetColormap(type);
-   Refresh();
-}
-
-//----------------------------------------------------------------------
-// Sets the spectrogram data matrix and associated metadata, then
-// rebuilds the backing bitmap and resets the view extents
-//----------------------------------------------------------------------
-void SuperSpectrogramPanel::SetData(const SuperSpectrogramFrame& frame)
-{
-   m_vm.SetData(frame);
    Refresh();
 }
 
@@ -86,28 +78,13 @@ SuperSpectrogramPanel::GetTimeTickMode() const
    return m_vm.GetTimeTickMode();
 }
 
-//----------------------------------------------------------------------
-// Handles paint events by rendering the current view to the panel
-//----------------------------------------------------------------------
-void SuperSpectrogramPanel::OnPaint(wxPaintEvent&)
+size_t SuperSpectrogramPanel::GetColumnCount() const
 {
-   wxAutoBufferedPaintDC dc(this);
-   Render(dc, GetClientSize());
+   return m_vm.GetColumnCount();
 }
 
 //----------------------------------------------------------------------
-// Handles resize events by triggering a repaint when data is present
-//----------------------------------------------------------------------
-void SuperSpectrogramPanel::OnSize(wxSizeEvent& event)
-{
-   if(m_vm.HasData()) {
-      Refresh();
-   }
-   event.Skip();
-}
-
-//----------------------------------------------------------------------
-// Renders the spectrogram view (including overlays) into the target DC
+// Rendering
 //----------------------------------------------------------------------
 void SuperSpectrogramPanel::Render(wxDC& dc, const wxSize& target) const
 {
@@ -126,8 +103,7 @@ void SuperSpectrogramPanel::Render(wxDC& dc, const wxSize& target) const
 }
 
 //----------------------------------------------------------------------
-// Renders the currently visible spectrogram region into a bitmap,
-// used primarily for exporting the view as an image
+// Bitmap Export
 //----------------------------------------------------------------------
 wxBitmap SuperSpectrogramPanel::RenderCurrentViewToBitmap() const
 {
@@ -142,7 +118,7 @@ wxBitmap SuperSpectrogramPanel::RenderCurrentViewToBitmap() const
 }
 
 //----------------------------------------------------------------------
-// Handles mouse wheel input to perform zooming centered at the cursor
+// Interaction Handling
 //----------------------------------------------------------------------
 void SuperSpectrogramPanel::OnWheel(wxMouseEvent& event)
 {
@@ -155,9 +131,6 @@ void SuperSpectrogramPanel::OnWheel(wxMouseEvent& event)
       Refresh();
 }
 
-//----------------------------------------------------------------------
-// Handles mouse press, release, and drag events to support panning
-//----------------------------------------------------------------------
 void SuperSpectrogramPanel::OnMouse(wxMouseEvent& event)
 {
    SuperSpectrogramMouseEvent e;
@@ -177,7 +150,7 @@ void SuperSpectrogramPanel::OnMouse(wxMouseEvent& event)
 }
 
 //----------------------------------------------------------------------
-// Resets the view extents to show the entire spectrogram
+// View Control
 //----------------------------------------------------------------------
 void SuperSpectrogramPanel::ResetView()
 {
@@ -185,11 +158,22 @@ void SuperSpectrogramPanel::ResetView()
    Refresh(false);
 }
 
-//----------------------------------------------------------------------
-// Handles right-click events by resetting the spectrogram view
-//----------------------------------------------------------------------
 void SuperSpectrogramPanel::OnRightClick(wxMouseEvent& event)
 {
    ResetView();
+   event.Skip();
+}
+
+void SuperSpectrogramPanel::OnPaint(wxPaintEvent&)
+{
+   wxAutoBufferedPaintDC dc(this);
+   Render(dc, GetClientSize());
+}
+
+void SuperSpectrogramPanel::OnSize(wxSizeEvent& event)
+{
+   if (m_vm.HasData()) {
+      Refresh();
+   }
    event.Skip();
 }

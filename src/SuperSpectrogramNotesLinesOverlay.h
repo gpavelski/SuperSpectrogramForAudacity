@@ -17,9 +17,10 @@
 
 #include "SuperSpectrogramConfig.h"
 #include "SuperSpectrogramConstants.h"
-#include "SuperSpectrogramDataAdapter.h"
 #include "SuperSpectrogramOverlay.h"
-#include "SuperSpectrogramViewport.h"
+
+class SuperSpectrogramDataAdapter;
+class SuperSpectrogramViewport;
 
 class SuperSpectrogramNotesLinesOverlay : public ISpectrogramOverlay
 {
@@ -40,12 +41,10 @@ public:
    ) const override;
 
 private:
-   std::vector<wxString> MakeNoteLabels(
-      SuperSpectrogramConfig::NoteNaming style,
-      int minNote,
-      int maxNote
-   ) const;
+   // Rebuilds label cache when naming style changes
+   void RebuildLabels(SuperSpectrogramConfig::NoteNaming style);
 
+   // Converts frequency domain value into widget Y coordinate
    double FreqToWidgetY(
       double freq,
       const wxSize& size,
@@ -55,8 +54,9 @@ private:
 
 private:
    std::vector<wxString> m_labels;
+
    SuperSpectrogramConfig::NoteNaming m_style;
    bool m_enabled{ true };
 };
 
-#endif // __SUPER_SPECTROGRAM_NOTES_LINES_OVERLAY__
+#endif

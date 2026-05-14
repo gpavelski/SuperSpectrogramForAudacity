@@ -17,7 +17,7 @@ class SuperSpectrogramConfig
 {
 public:
    // =========================
-   // Domain enums (single source of truth)
+   // Domain configuration enums
    // =========================
 
    enum class Colormap
@@ -47,7 +47,7 @@ public:
    };
 
    // =========================
-   // State
+   // Runtime configuration state
    // =========================
 
    int noiseFloor = -70;
@@ -70,7 +70,7 @@ public:
    WindowGeometry window;
 
    // =========================
-   // Persistence
+   // Persistence API
    // =========================
 
    void Load();

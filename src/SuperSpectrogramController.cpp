@@ -18,11 +18,11 @@ SuperSpectrogramController::SuperSpectrogramController(
    SuperSpectrogramModel& model,
    SuperSpectrogramSession& session,
    SuperSpectrogramView& view)
-   : mExtractor(extractor)
-   , mExportService(exportService)
-   , mModel(model)
-   , mSession(session)
-   , mView(view)
+   : m_extractor(extractor)
+   , m_exportService(exportService)
+   , m_model(model)
+   , m_session(session)
+   , m_view(view)
 {
 }
 
@@ -31,49 +31,48 @@ SuperSpectrogramController::SuperSpectrogramController(
 //------------------------------------------------------------
 bool SuperSpectrogramController::Initialize()
 {
-   auto audioResult = mExtractor.Extract();
+   const auto result = m_extractor.Extract();
 
-   switch (audioResult.status)
+   using Status = SuperSpectrogramAudioExtractor::AudioExtractionResult::Status;
+
+   switch (result.status)
    {
-   case SuperSpectrogramAudioExtractor::AudioExtractionResult::Status::Success:
+   case Status::Success:
       break;
 
-   case SuperSpectrogramAudioExtractor::AudioExtractionResult::Status::RateTooLow:
-      mView.ShowError("The signal sampling rate is too low. Minimum sampling rate: 8820 Hz");
+   case Status::RateTooLow:
+      m_view.ShowError("Sampling rate too low (min 8820 Hz)");
       return false;
 
-   case SuperSpectrogramAudioExtractor::AudioExtractionResult::Status::TooShort:
-      mView.ShowError("To plot the spectrogram, at least the minimum number of samples must be selected.");
+   case Status::TooShort:
+      m_view.ShowError("Not enough samples selected.");
       return false;
 
-   case SuperSpectrogramAudioExtractor::AudioExtractionResult::Status::MismatchedSampleRate:
-      mView.ShowError("All selected tracks must have the same sample rate.");
+   case Status::MismatchedSampleRate:
+      m_view.ShowError("Tracks must share same sample rate.");
       return false;
 
-   case SuperSpectrogramAudioExtractor::AudioExtractionResult::Status::ReadError:
-      mView.ShowError(
-         "Audio could not be analyzed. This may be due to a stretched or pitch-shifted clip.\n"
-         "Try resetting any stretched clips, or mixing and rendering the tracks before analyzing."
+   case Status::ReadError:
+      m_view.ShowError(
+         "Audio analysis failed. Try rendering or resetting processing."
       );
       return false;
 
-   case SuperSpectrogramAudioExtractor::AudioExtractionResult::Status::Truncated:
-      mView.ShowWarning(
-         "Too much audio was selected. Only the first portion will be analyzed."
-      );
+   case Status::Truncated:
+      m_view.ShowWarning("Audio truncated for analysis.");
       break;
 
-   case SuperSpectrogramAudioExtractor::AudioExtractionResult::Status::NoSelection:
-      mView.ShowWarning("No tracks are selected for analysis.");
+   case Status::NoSelection:
+      m_view.ShowWarning("No audio selected.");
       return false;
    }
 
-   if (!mSession.InitializeAudio()) {
+   if (!m_session.InitializeAudio())
       return false;
-   }
 
-   mView.ApplyConfig(mSession.GetConfig());
+   m_view.ApplyConfig(m_session.GetConfig());
    Recompute();
+
    return true;
 }
 
@@ -82,22 +81,21 @@ bool SuperSpectrogramController::Initialize()
 //------------------------------------------------------------
 void SuperSpectrogramController::Recompute()
 {
-   const auto& cfg = mSession.GetConfig();
+   const auto& cfg = m_session.GetConfig();
+   const auto& audio = m_session.GetAudio();
 
    SuperSpectrogramModel::Parameters params;
    params.noiseFloor = cfg.noiseFloor;
    params.detailLevel = cfg.detailLevel;
 
-   const auto& audio = mSession.GetAudio();
-
-   auto frame = mModel.ComputeFrame(
+   auto frame = m_model.ComputeFrame(
       audio.ptr(),
       audio.length,
       audio.rate,
       params
    );
 
-   mView.Render(frame);
+   m_view.Render(frame);
 }
 
 //------------------------------------------------------------
@@ -106,79 +104,74 @@ void SuperSpectrogramController::Recompute()
 void SuperSpectrogramController::ApplyConfigChange(
    const SuperSpectrogramConfig& newConfig)
 {
-   auto& current = mSession.GetConfig();
+   auto& current = m_session.GetConfig();
 
-   const bool needsRecompute =
-      RequiresRecompute(current, newConfig);
+   const auto diff = ComputeDiff(current, newConfig);
 
    current = newConfig;
    current.Save();
 
-   if (needsRecompute)
+   if (diff.needsRecompute)
       Recompute();
 
-   mView.ApplyConfig(current);
+   if (diff.needsViewUpdate)
+      m_view.ApplyConfig(current);
 }
 
 SuperSpectrogramController::ConfigDiff
 SuperSpectrogramController::ComputeDiff(
    const SuperSpectrogramConfig& oldCfg,
-   const SuperSpectrogramConfig& newCfg)
+   const SuperSpectrogramConfig& newCfg
+) const
 {
    ConfigDiff d;
 
-   // compute-affecting
-   if (oldCfg.noiseFloor != newCfg.noiseFloor ||
-      oldCfg.detailLevel != newCfg.detailLevel)
-   {
-      d.needsRecompute = true;
-   }
+   d.needsRecompute =
+      oldCfg.noiseFloor != newCfg.noiseFloor ||
+      oldCfg.detailLevel != newCfg.detailLevel;
 
-   // visual-only
-   if (oldCfg.colormap != newCfg.colormap ||
+   d.needsViewUpdate =
+      oldCfg.colormap != newCfg.colormap ||
       oldCfg.noteNaming != newCfg.noteNaming ||
       oldCfg.showNoteLines != newCfg.showNoteLines ||
-      oldCfg.timeTickMode != newCfg.timeTickMode)
-   {
-      d.needsViewUpdate = true;
-   }
+      oldCfg.timeTickMode != newCfg.timeTickMode;
 
    return d;
 }
 
-void SuperSpectrogramController::UpdateLayoutPreservingState()
+void SuperSpectrogramController::UpdateViewLayout()
 {
-   // Recalculate layout while preserving maximized state.
-   // Avoids unexpected resizing when user has maximized the window.
-   const bool wasMaximized = mView.IsMaximized();
+   const bool wasMaximized = m_view.IsMaximized();
 
-   if (!wasMaximized) {
-      mView.ApplyDataDrivenMinSize();
-      mView.Layout();
-      mView.Fit();
-      mView.Centre();
+   if (!wasMaximized)
+   {
+      m_view.ApplyDataDrivenMinSize();
+      m_view.Layout();
+      m_view.Fit();
+      m_view.Centre();
    }
-   else {
-      mView.Layout();
-      // Explicitly re-maximize to guard against platform quirks
-      mView.Maximize(true);
+   else
+   {
+      m_view.Layout();
+      m_view.Maximize(true);
    }
 }
 
 void SuperSpectrogramController::ExportMatrix(const std::string& path)
 {
-   mView.SetExportEnabled(false);
+   m_view.SetExportEnabled(false);
 
-   auto matrixCopy = mModel.GetMatrix();
+   auto matrixCopy = m_model.GetMatrix();
 
-   mExportTask = std::async(std::launch::async,
+   m_exportTask = std::async(std::launch::async,
       [this, matrixCopy = std::move(matrixCopy), path]()
       {
-         mExportService.ExportMatrixAsText(matrixCopy, path);
+         m_exportService.ExportMatrixAsText(matrixCopy, path);
 
-         mView.CallAfter([this]() {
-            mView.SetExportEnabled(true);
-         });
+         m_view.CallAfter([this]()
+            {
+               m_view.SetExportEnabled(true);
+            });
       }
    );
 }
@@ -186,34 +179,35 @@ void SuperSpectrogramController::ExportMatrix(const std::string& path)
 void SuperSpectrogramController::ExportCurrentView(const std::string& path)
 {
    // UI thread: disable button
-   mView.SetExportEnabled(false);
+   m_view.SetExportEnabled(false);
 
    // UI thread: capture bitmap
-   wxBitmap bmp = mView.RenderToBitmap();
+   wxBitmap bmp = m_view.RenderToBitmap();
 
    // Copy bitmap (safe for thread use)
    wxBitmap bmpCopy = bmp;
 
-   mExportTask = std::async(std::launch::async,
+   m_exportTask = std::async(std::launch::async,
       [this, bmpCopy, path]()
       {
-         mExportService.ExportViewAsPNG(bmpCopy, path);
+         m_exportService.ExportViewAsPNG(bmpCopy, path);
 
-         mView.CallAfter([this]() {
-            mView.SetExportEnabled(true);
-         });
+         m_view.CallAfter([this]()
+            {
+               m_view.SetExportEnabled(true);
+            });
       }
    );
 }
 
 void SuperSpectrogramController::BindView()
 {
-   mView.NotifyConfigChanged = [this](const SuperSpectrogramConfig& cfg)
+   m_view.NotifyConfigChanged = [this](const SuperSpectrogramConfig& cfg)
       {
          ApplyConfigChange(cfg);
       };
 
-   mView.NotifyExportRequested =
+   m_view.NotifyExportRequested =
       [this](int format, const std::string& path)
       {
          if (format == 0)
@@ -221,13 +215,4 @@ void SuperSpectrogramController::BindView()
          else
             ExportCurrentView(path);
       };
-}
-
-bool SuperSpectrogramController::RequiresRecompute(
-   const SuperSpectrogramConfig& oldCfg,
-   const SuperSpectrogramConfig& newCfg)
-{
-   return
-      oldCfg.noiseFloor != newCfg.noiseFloor ||
-      oldCfg.detailLevel != newCfg.detailLevel;
 }

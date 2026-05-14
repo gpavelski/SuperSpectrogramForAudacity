@@ -13,14 +13,14 @@
 
 struct SuperSpectrogramMouseEvent
 {
-   int x{0};
-   int y{0};
+   int x{ 0 };
+   int y{ 0 };
 
-   bool leftDown{false};
-   bool leftUp{false};
-   bool dragging{false};
+   bool leftDown{ false };
+   bool leftUp{ false };
+   bool dragging{ false };
 
-   int wheelRotation{0};
+   int wheelRotation{ 0 };
 };
 
 #endif
