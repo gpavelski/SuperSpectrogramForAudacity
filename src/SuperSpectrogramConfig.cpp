@@ -30,8 +30,7 @@ void SuperSpectrogramConfig::Load()
    if (cfg->Read("HighestNote", &value))
       detailLevel = static_cast<int>(value);
 
-   if (cfg->Read("Colormap", &value))
-      colormap = static_cast<SuperSpectrogramConfig::Colormap>(value);
+   cfg->Read("Colormap", &colormapId, "jet");
 
    if (cfg->Read("NoteNaming", &value))
       noteNaming = static_cast<SuperSpectrogramConfig::NoteNaming>(value);
@@ -66,7 +65,7 @@ void SuperSpectrogramConfig::Save() const
 
    cfg->Write("NoiseFloor", (long)noiseFloor);
    cfg->Write("HighestNote", (long)detailLevel);
-   cfg->Write("Colormap", (long)colormap);
+   cfg->Write("Colormap", colormapId);
    cfg->Write("NoteNaming", (long)noteNaming);
    cfg->Write("ShowNoteLines", showNoteLines);
    cfg->Write("TimeTickMode", (long)timeTickMode);

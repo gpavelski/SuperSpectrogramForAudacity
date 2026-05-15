@@ -194,9 +194,11 @@ set( SOURCES
       SuperSpectrogramAudioExtractor.h
       SuperSpectrogramConfig.cpp
       SuperSpectrogramConfig.h
+      SuperSpectrogramColormap.cpp
       SuperSpectrogramColormap.h
-      SuperSpectrogramColormapFactory.cpp
-      SuperSpectrogramColormapFactory.h
+      SuperSpectrogramColormapRegistration.h
+      SuperSpectrogramColormapRegistry.cpp
+      SuperSpectrogramColormapRegistry.h
       SuperSpectrogramColormapUtils.cpp
       SuperSpectrogramColormapUtils.h
       SuperSpectrogramConstants.h
@@ -232,6 +234,14 @@ set( SOURCES
       SuperSpectrogramViewModel.h
       SuperSpectrogramViewport.cpp
       SuperSpectrogramViewport.h
+      SuperSpectrogramJetColormap.cpp
+      SuperSpectrogramGrayColormap.cpp
+      SuperSpectrogramHotColormap.cpp
+      SuperSpectrogramViridisColormap.cpp
+      SuperSpectrogramInfernoColormap.cpp
+      SuperSpectrogramMagmaColormap.cpp
+      SuperSpectrogramCividisColormap.cpp
+      SuperSpectrogramParulaColormap.cpp
 #
       SseMathFuncs.cpp
       SseMathFuncs.h

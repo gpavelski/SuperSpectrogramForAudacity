@@ -131,7 +131,7 @@ SuperSpectrogramController::ComputeDiff(
       oldCfg.detailLevel != newCfg.detailLevel;
 
    d.needsViewUpdate =
-      oldCfg.colormap != newCfg.colormap ||
+      oldCfg.colormapId != newCfg.colormapId ||
       oldCfg.noteNaming != newCfg.noteNaming ||
       oldCfg.showNoteLines != newCfg.showNoteLines ||
       oldCfg.timeTickMode != newCfg.timeTickMode;

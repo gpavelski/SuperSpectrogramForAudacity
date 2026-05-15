@@ -16,6 +16,7 @@
 
 #include "SuperSpectrogramConfig.h"
 #include "SuperSpectrogramColormap.h"
+#include "SuperSpectrogramColormapRegistry.h"
 #include "SuperSpectrogramDataAdapter.h"
 #include "SuperSpectrogramFrame.h"
 #include "SuperSpectrogramInteractionController.h"
@@ -55,7 +56,8 @@ public:
    // =========================================================
    // Configuration
    // =========================================================
-   void SetColormap(SuperSpectrogramConfig::Colormap type);
+   void SetColormap(
+      const wxString& id);
 
    void SetNoteNamingStyle(SuperSpectrogramConfig::NoteNaming style);
    void SetShowNoteLines(bool show);

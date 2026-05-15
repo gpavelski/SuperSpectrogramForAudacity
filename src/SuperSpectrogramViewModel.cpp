@@ -10,7 +10,6 @@
 
 #include "SuperSpectrogramViewModel.h"
 
-#include "SuperSpectrogramColormapFactory.h"
 #include "SuperSpectrogramNotesLinesOverlay.h"
 #include "SuperSpectrogramTimeTicksOverlay.h"
 
@@ -19,8 +18,7 @@
  */
 SuperSpectrogramViewModel::SuperSpectrogramViewModel()
 {
-   m_colormap = SuperSpectrogramColormapFactory::Create(
-      SuperSpectrogramConfig::Colormap::Jet);
+   SetColormap("jet");
 
    auto notes = std::make_unique<SuperSpectrogramNotesLinesOverlay>(
       SuperSpectrogramConfig::NoteNaming::Mixed);
@@ -71,9 +69,26 @@ size_t SuperSpectrogramViewModel::GetColumnCount() const
 // Configuration
 // =========================================================
 
-void SuperSpectrogramViewModel::SetColormap(SuperSpectrogramConfig::Colormap type)
+void SuperSpectrogramViewModel::SetColormap(
+   const wxString& id)
 {
-   m_colormap = SuperSpectrogramColormapFactory::Create(type);
+   auto cmap =
+      SuperSpectrogramColormapRegistry
+      ::Instance()
+      .Create(id);
+
+   if (cmap)
+   {
+      m_colormap = std::move(cmap);
+   }
+   else
+   {
+      // Fallback for invalid config/plugin removal
+      m_colormap =
+         SuperSpectrogramColormapRegistry
+         ::Instance()
+         .Create("jet");
+   }
 }
 
 void SuperSpectrogramViewModel::SetNoteNamingStyle(

@@ -48,7 +48,7 @@ BEGIN_EVENT_TABLE(SuperSpectrogramView, wxDialogWrapper)
 END_EVENT_TABLE()
 
 //-----------------------------------------------------------------
-// Construction
+// Lifecycle
 //-----------------------------------------------------------------
 SuperSpectrogramView::SuperSpectrogramView(
    wxWindow* parent,
@@ -83,7 +83,7 @@ SuperSpectrogramView::SuperSpectrogramView(
 SuperSpectrogramView::~SuperSpectrogramView() = default;
 
 //-----------------------------------------------------------------
-// Data & configuration application (Controller -> View)
+// Rendering API
 //-----------------------------------------------------------------
 void SuperSpectrogramView::Render(const SuperSpectrogramFrame& frame)
 {
@@ -105,7 +105,7 @@ void SuperSpectrogramView::ApplyConfigToControls(
 {
    SetChoiceByValue(mNoiseFloorChoice, mNoiseFloorIndexMap, config.noiseFloor);
    SetChoiceByValue(mHighestNoteChoice, mHighestNoteIndexMap, config.detailLevel);
-   SetChoiceByValue(mColormapChoice, mColormapIndexMap, static_cast<int>(config.colormap));
+   SetChoiceByValue(mColormapChoice, mColormapIndexMap, config.colormapId);
    SetChoiceByValue(mNoteNamingChoice, mNoteNamingIndexMap, static_cast<int>(config.noteNaming));
    SetChoiceByValue(mTimeTickChoice, mTimeTickIndexMap, static_cast<int>(config.timeTickMode));
 
@@ -119,23 +119,10 @@ void SuperSpectrogramView::ApplyConfigToPanel(
    if (!mPanel)
       return;
 
-   mPanel->SetColormap(config.colormap);
+   mPanel->SetColormap(config.colormapId);
    mPanel->SetNoteNamingStyle(config.noteNaming);
    mPanel->SetShowNoteLines(config.showNoteLines);
    mPanel->SetTimeTickMode(config.timeTickMode);
-}
-
-void SuperSpectrogramView::SetChoiceByValue(
-   wxChoice* choice,
-   const std::unordered_map<int, int>& indexMap,
-   int value)
-{
-   if (!choice)
-      return;
-
-   auto it = indexMap.find(value);
-   if (it != indexMap.end())
-      choice->SetSelection(it->second);
 }
 
 wxBitmap SuperSpectrogramView::RenderToBitmap() const
@@ -199,8 +186,8 @@ void SuperSpectrogramView::CreateControls(wxSizer* parentSizer)
    mNoiseFloorChoice = CreateChoice(
       this,
       ID_NoiseFloorChoice,
-      SuperSpectrogramUIOptions::NoiseFloorOptions(),
-      SuperSpectrogramUIOptions::DefaultNoiseFloor(),
+      SuperSpectrogramUIOptions::NoiseFloorOptions<int>(),
+      SuperSpectrogramUIOptions::DefaultNoiseFloor<int>(),
       mNoiseFloorIndexMap,
       mNoiseFloorValueMap
    );
@@ -223,8 +210,8 @@ void SuperSpectrogramView::CreateControls(wxSizer* parentSizer)
    mHighestNoteChoice = CreateChoice(
       this,
       ID_HighestNoteChoice,
-      SuperSpectrogramUIOptions::DetailLevelOptions(),
-      SuperSpectrogramUIOptions::DefaultDetailLevel(),
+      SuperSpectrogramUIOptions::DetailLevelOptions<int>(),
+      SuperSpectrogramUIOptions::DefaultDetailLevel<int>(),
       mHighestNoteIndexMap,
       mHighestNoteValueMap
    );
@@ -247,8 +234,8 @@ void SuperSpectrogramView::CreateControls(wxSizer* parentSizer)
    mNoteNamingChoice = CreateChoice(
       this,
       ID_NoteNamingChoice,
-      SuperSpectrogramUIOptions::NoteNamingOptions(),
-      SuperSpectrogramUIOptions::DefaultNoteNaming(),
+      SuperSpectrogramUIOptions::NoteNamingOptions<int>(),
+      SuperSpectrogramUIOptions::DefaultNoteNaming<int>(),
       mNoteNamingIndexMap,
       mNoteNamingValueMap
    );
@@ -271,8 +258,8 @@ void SuperSpectrogramView::CreateControls(wxSizer* parentSizer)
    mColormapChoice = CreateChoice(
       this,
       ID_ColormapChoice,
-      SuperSpectrogramUIOptions::ColormapOptions(),
-      SuperSpectrogramUIOptions::DefaultColormap(),
+      SuperSpectrogramUIOptions::ColormapOptions<wxString>(),
+      SuperSpectrogramUIOptions::DefaultColormap<wxString>(),
       mColormapIndexMap,
       mColormapValueMap
    );
@@ -311,8 +298,8 @@ void SuperSpectrogramView::CreateControls(wxSizer* parentSizer)
    mTimeTickChoice = CreateChoice(
       this,
       ID_TimeTickChoice,
-      SuperSpectrogramUIOptions::TimeTickOptions(),
-      SuperSpectrogramUIOptions::DefaultTimeTick(),
+      SuperSpectrogramUIOptions::TimeTickOptions<int>(),
+      SuperSpectrogramUIOptions::DefaultTimeTick<int>(),
       mTimeTickIndexMap,
       mTimeTickValueMap
    );
@@ -343,54 +330,68 @@ void SuperSpectrogramView::CreateControls(wxSizer* parentSizer)
       5);
 }
 
+template<typename T>
 wxChoice* SuperSpectrogramView::CreateChoice(
    wxWindow* parent,
-   wxWindowID id,
-   const std::vector<SuperSpectrogramOption>& options,
-   int defaultValue,
-   std::unordered_map<int, int>& outIndexMap,
-   std::unordered_map<int, int>& outValueMap)
+   int id,
+   const std::vector<SuperSpectrogramOption<T>>& options,
+   const T& defaultValue,
+   std::unordered_map<T, int>& indexMap,
+   std::unordered_map<int, T>& valueMap)
 {
-   auto* choice = new wxChoice(parent, id);
-
-   int defaultIndex = wxNOT_FOUND;
+   wxArrayString labels;
+   labels.reserve(options.size());
 
    for (size_t i = 0; i < options.size(); ++i)
    {
-      const auto& option = options[i];
-
-      choice->Append(option.label);
-
-      outIndexMap[option.value] = static_cast<int>(i);
-      outValueMap[static_cast<int>(i)] = option.value;
-
-      if (option.value == defaultValue)
-         defaultIndex = static_cast<int>(i);
+      labels.push_back(options[i].label);
+      indexMap[options[i].value] = static_cast<int>(i);
+      valueMap[static_cast<int>(i)] = options[i].value;
    }
 
-   if (defaultIndex != wxNOT_FOUND)
-      choice->SetSelection(defaultIndex);
+   wxChoice* choice = new wxChoice(parent, id, wxDefaultPosition, wxDefaultSize, labels);
+
+   // select default value
+   auto it = indexMap.find(defaultValue);
+   if (it != indexMap.end())
+      choice->SetSelection(it->second);
 
    return choice;
 }
 
-int SuperSpectrogramView::GetValueFromChoice(
+template<typename T>
+T SuperSpectrogramView::GetValueFromChoice(
    wxChoice* choice,
-   const std::unordered_map<int, int>& valueMap
-) const
+   const std::unordered_map<int, T>& valueMap) const
 {
    if (!choice)
-      return 0;
+      return T{};
 
    int sel = choice->GetSelection();
+
    if (sel == wxNOT_FOUND)
-      return 0;
+      return T{};
 
    auto it = valueMap.find(sel);
+
    if (it != valueMap.end())
       return it->second;
 
-   return 0;
+   return T{};
+}
+
+template<typename T>
+void SuperSpectrogramView::SetChoiceByValue(
+   wxChoice* choice,
+   const std::unordered_map<T, int>& indexMap,
+   const T& value)
+{
+   if (!choice)
+      return;
+
+   auto it = indexMap.find(value);
+   if (it != indexMap.end())
+      choice->SetSelection(it->second);
 }
 
 SuperSpectrogramConfig SuperSpectrogramView::BuildConfigFromUI() const
@@ -400,8 +401,7 @@ SuperSpectrogramConfig SuperSpectrogramView::BuildConfigFromUI() const
    cfg.noiseFloor = GetValueFromChoice(mNoiseFloorChoice, mNoiseFloorValueMap);
    cfg.detailLevel = GetValueFromChoice(mHighestNoteChoice, mHighestNoteValueMap);
 
-   cfg.colormap = static_cast<SuperSpectrogramConfig::Colormap>(
-      GetValueFromChoice(mColormapChoice, mColormapValueMap));
+   cfg.colormapId = GetValueFromChoice(mColormapChoice, mColormapValueMap);
 
    cfg.noteNaming = static_cast<SuperSpectrogramConfig::NoteNaming>(
       GetValueFromChoice(mNoteNamingChoice, mNoteNamingValueMap));
@@ -441,9 +441,6 @@ void SuperSpectrogramView::SetExportEnabled(bool enabled)
       mExportButton->Enable(enabled);
 }
 
-//-----------------------------------------------------------------
-// Export
-//-----------------------------------------------------------------
 void SuperSpectrogramView::OnExport(wxCommandEvent&)
 {
    if (!NotifyExportRequested)

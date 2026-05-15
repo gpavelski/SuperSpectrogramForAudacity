@@ -39,16 +39,17 @@ SuperSpectrogramPanel::SuperSpectrogramPanel(wxWindow* parent)
 //------------------------------------------------------------
 // Data & Configuration API
 //------------------------------------------------------------
-void SuperSpectrogramPanel::SetData(const SuperSpectrogramFrame& frame)
+void SuperSpectrogramPanel::SetData(
+   const SuperSpectrogramFrame& frame)
 {
    m_vm.SetData(frame);
    Refresh();
 }
 
 void SuperSpectrogramPanel::SetColormap(
-   SuperSpectrogramConfig::Colormap type)
+   const wxString& colormapId)
 {
-   m_vm.SetColormap(type);
+   m_vm.SetColormap(colormapId);
    Refresh();
 }
 

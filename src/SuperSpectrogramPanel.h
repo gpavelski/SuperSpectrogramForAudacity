@@ -38,7 +38,7 @@ public:
    void Render(wxDC& dc, const wxSize& target) const;
 
    // View configuration
-   void SetColormap(SuperSpectrogramConfig::Colormap type);
+   void SetColormap(const wxString& colormapId);
 
    void SetNoteNamingStyle(SuperSpectrogramConfig::NoteNaming style);
 

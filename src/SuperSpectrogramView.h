@@ -110,24 +110,27 @@ private:
 
    void CreateControls(wxSizer* parentSizer);
 
+   template<typename T>
    wxChoice* CreateChoice(
       wxWindow* parent,
       wxWindowID id,
-      const std::vector<SuperSpectrogramOption>& options,
-      int defaultValue,
-      std::unordered_map<int, int>& outIndexMap,
-      std::unordered_map<int, int>& outValueMap
+      const std::vector<SuperSpectrogramOption<T>>& options,
+      const T& defaultValue,
+      std::unordered_map<T, int>& outIndexMap,
+      std::unordered_map<int, T>& outValueMap
    );
 
+   template<typename T>
    void SetChoiceByValue(
       wxChoice* choice,
-      const std::unordered_map<int, int>& indexMap,
-      int value
+      const std::unordered_map<T, int>& indexMap,
+      const T& value
    );
 
-   int GetValueFromChoice(
+   template<typename T>
+   T GetValueFromChoice(
       wxChoice* choice,
-      const std::unordered_map<int, int>& valueMap
+      const std::unordered_map<int, T>& valueMap
    ) const;
 
    // ---------------------------------------------------------
@@ -176,13 +179,13 @@ private:
 
    std::unordered_map<int, int> mNoiseFloorIndexMap;
    std::unordered_map<int, int> mHighestNoteIndexMap;
-   std::unordered_map<int, int> mColormapIndexMap;
+   std::unordered_map<wxString, int> mColormapIndexMap;
    std::unordered_map<int, int> mNoteNamingIndexMap;
    std::unordered_map<int, int> mTimeTickIndexMap;
 
    std::unordered_map<int, int> mNoiseFloorValueMap;
    std::unordered_map<int, int> mHighestNoteValueMap;
-   std::unordered_map<int, int> mColormapValueMap;
+   std::unordered_map<int, wxString> mColormapValueMap;
    std::unordered_map<int, int> mNoteNamingValueMap;
    std::unordered_map<int, int> mTimeTickValueMap;
 

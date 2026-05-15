@@ -8,145 +8,75 @@
 
 **********************************************************************/
 
+#include <vector>
 #include "SuperSpectrogramUIOptions.h"
 #include "SuperSpectrogramConfig.h"
+#include "SuperSpectrogramColormapRegistry.h"
 
 namespace
 {
    // ---------------------------------------------------------
    // Noise floor
    // ---------------------------------------------------------
-
-   const std::vector<SuperSpectrogramOption> kNoiseFloorOptions{
-      { "-120 dB", -120 },
-      { "-100 dB", -100 },
-      {  "-85 dB",  -85 },
-      {  "-70 dB",  -70 },
-      {  "-55 dB",  -55 }
+   static const std::vector<SuperSpectrogramOption<int>> kNoiseFloorOptions{
+       { "-120 dB", -120 },
+       { "-100 dB", -100 },
+       {  "-85 dB",  -85 },
+       {  "-70 dB",  -70 },
+       {  "-55 dB",  -55 }
    };
-
    constexpr int kDefaultNoiseFloor = -70;
 
    // ---------------------------------------------------------
    // Detail level / highest note
    // ---------------------------------------------------------
-
-   const std::vector<SuperSpectrogramOption> kDetailLevelOptions{
-      { "C4", 4 },
-      { "C5", 5 },
-      { "C6", 6 },
-      { "C7", 7 },
-      { "C8", 8 }
+   static const std::vector<SuperSpectrogramOption<int>> kDetailLevelOptions{
+       { "C4", 4 },
+       { "C5", 5 },
+       { "C6", 6 },
+       { "C7", 7 },
+       { "C8", 8 }
    };
-
    constexpr int kDefaultDetailLevel = 7;
-
-   // ---------------------------------------------------------
-   // Colormap
-   // ---------------------------------------------------------
-
-   const std::vector<SuperSpectrogramOption> kColormapOptions{
-      {
-         "Jet",
-         static_cast<int>(SuperSpectrogramConfig::Colormap::Jet)
-      },
-      {
-         "Gray",
-         static_cast<int>(SuperSpectrogramConfig::Colormap::Gray)
-      },
-      {
-         "Hot",
-         static_cast<int>(SuperSpectrogramConfig::Colormap::Hot)
-      },
-      {
-         "Viridis",
-         static_cast<int>(SuperSpectrogramConfig::Colormap::Viridis)
-      },
-      {
-         "Inferno",
-         static_cast<int>(SuperSpectrogramConfig::Colormap::Inferno)
-      },
-      {
-         "Magma",
-         static_cast<int>(SuperSpectrogramConfig::Colormap::Magma)
-      },
-      {
-         "Cividis",
-         static_cast<int>(SuperSpectrogramConfig::Colormap::Cividis)
-      },
-      {
-         "Parula",
-         static_cast<int>(SuperSpectrogramConfig::Colormap::Parula)
-      }
-   };
-
-   constexpr int kDefaultColormap =
-      static_cast<int>(SuperSpectrogramConfig::Colormap::Jet);
 
    // ---------------------------------------------------------
    // Note naming
    // ---------------------------------------------------------
-
-   const std::vector<SuperSpectrogramOption> kNoteNamingOptions{
-      {
-         "Sharps (C#)",
-         static_cast<int>(
-            SuperSpectrogramConfig::NoteNaming::Sharps)
-      },
-      {
-         "Flats (Db)",
-         static_cast<int>(
-            SuperSpectrogramConfig::NoteNaming::Flats)
-      },
-      {
-         "Mixed",
-         static_cast<int>(
-            SuperSpectrogramConfig::NoteNaming::Mixed)
-      }
+   static const std::vector<SuperSpectrogramOption<int>> kNoteNamingOptions{
+       { "Sharps (C#)", static_cast<int>(SuperSpectrogramConfig::NoteNaming::Sharps) },
+       { "Flats (Db)",  static_cast<int>(SuperSpectrogramConfig::NoteNaming::Flats) },
+       { "Mixed",       static_cast<int>(SuperSpectrogramConfig::NoteNaming::Mixed) }
    };
-
-   constexpr int kDefaultNoteNaming =
-      static_cast<int>(
-         SuperSpectrogramConfig::NoteNaming::Mixed);
+   constexpr int kDefaultNoteNaming = static_cast<int>(SuperSpectrogramConfig::NoteNaming::Mixed);
 
    // ---------------------------------------------------------
    // Time tick mode
    // ---------------------------------------------------------
-
-   const std::vector<SuperSpectrogramOption> kTimeTickOptions{
-      {
-         "Seconds",
-         static_cast<int>(
-            SuperSpectrogramConfig::TimeTickMode::Seconds)
-      },
-      {
-         "Samples",
-         static_cast<int>(
-            SuperSpectrogramConfig::TimeTickMode::Samples)
-      },
-      {
-         "None",
-         static_cast<int>(
-            SuperSpectrogramConfig::TimeTickMode::None)
-      }
+   static const std::vector<SuperSpectrogramOption<int>> kTimeTickOptions{
+       { "Seconds", static_cast<int>(SuperSpectrogramConfig::TimeTickMode::Seconds) },
+       { "Samples", static_cast<int>(SuperSpectrogramConfig::TimeTickMode::Samples) },
+       { "None",    static_cast<int>(SuperSpectrogramConfig::TimeTickMode::None) }
    };
+   constexpr int kDefaultTimeTick = static_cast<int>(SuperSpectrogramConfig::TimeTickMode::Seconds);
 
-   constexpr int kDefaultTimeTick =
-      static_cast<int>(
-         SuperSpectrogramConfig::TimeTickMode::Seconds);
+   // ---------------------------------------------------------
+   // Default colormap
+   // ---------------------------------------------------------
+   static const wxString kDefaultColormap = "jet";
 }
 
 // ------------------------------------------------------------
 // Noise floor
 // ------------------------------------------------------------
-
-const std::vector<SuperSpectrogramOption>&
-SuperSpectrogramUIOptions::NoiseFloorOptions()
+template<>
+const std::vector<SuperSpectrogramOption<int>>&
+SuperSpectrogramUIOptions::NoiseFloorOptions<int>()
 {
    return kNoiseFloorOptions;
 }
 
-int SuperSpectrogramUIOptions::DefaultNoiseFloor()
+template<>
+int SuperSpectrogramUIOptions::DefaultNoiseFloor<int>()
 {
    return kDefaultNoiseFloor;
 }
@@ -154,29 +84,41 @@ int SuperSpectrogramUIOptions::DefaultNoiseFloor()
 // ------------------------------------------------------------
 // Detail level
 // ------------------------------------------------------------
-
-const std::vector<SuperSpectrogramOption>&
-SuperSpectrogramUIOptions::DetailLevelOptions()
+template<>
+const std::vector<SuperSpectrogramOption<int>>&
+SuperSpectrogramUIOptions::DetailLevelOptions<int>()
 {
    return kDetailLevelOptions;
 }
 
-int SuperSpectrogramUIOptions::DefaultDetailLevel()
+template<>
+int SuperSpectrogramUIOptions::DefaultDetailLevel<int>()
 {
    return kDefaultDetailLevel;
 }
 
 // ------------------------------------------------------------
-// Colormap
+// Colormap (runtime from registry)
 // ------------------------------------------------------------
-
-const std::vector<SuperSpectrogramOption>&
-SuperSpectrogramUIOptions::ColormapOptions()
+template<>
+const std::vector<SuperSpectrogramOption<wxString>>&
+SuperSpectrogramUIOptions::ColormapOptions<wxString>()
 {
-   return kColormapOptions;
+   static std::vector<SuperSpectrogramOption<wxString>> options;
+
+   options.clear(); // rebuild in case registry changed
+   const auto& entries = SuperSpectrogramColormapRegistry::Instance().GetEntries();
+
+   for (const auto& e : entries)
+   {
+      options.push_back({ e.displayName, e.id });
+   }
+
+   return options;
 }
 
-int SuperSpectrogramUIOptions::DefaultColormap()
+template<>
+wxString SuperSpectrogramUIOptions::DefaultColormap<wxString>()
 {
    return kDefaultColormap;
 }
@@ -184,14 +126,15 @@ int SuperSpectrogramUIOptions::DefaultColormap()
 // ------------------------------------------------------------
 // Note naming
 // ------------------------------------------------------------
-
-const std::vector<SuperSpectrogramOption>&
-SuperSpectrogramUIOptions::NoteNamingOptions()
+template<>
+const std::vector<SuperSpectrogramOption<int>>&
+SuperSpectrogramUIOptions::NoteNamingOptions<int>()
 {
    return kNoteNamingOptions;
 }
 
-int SuperSpectrogramUIOptions::DefaultNoteNaming()
+template<>
+int SuperSpectrogramUIOptions::DefaultNoteNaming<int>()
 {
    return kDefaultNoteNaming;
 }
@@ -199,14 +142,15 @@ int SuperSpectrogramUIOptions::DefaultNoteNaming()
 // ------------------------------------------------------------
 // Time tick mode
 // ------------------------------------------------------------
-
-const std::vector<SuperSpectrogramOption>&
-SuperSpectrogramUIOptions::TimeTickOptions()
+template<>
+const std::vector<SuperSpectrogramOption<int>>&
+SuperSpectrogramUIOptions::TimeTickOptions<int>()
 {
    return kTimeTickOptions;
 }
 
-int SuperSpectrogramUIOptions::DefaultTimeTick()
+template<>
+int SuperSpectrogramUIOptions::DefaultTimeTick<int>()
 {
    return kDefaultTimeTick;
 }

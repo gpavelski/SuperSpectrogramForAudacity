@@ -20,18 +20,6 @@ public:
    // Domain configuration enums
    // =========================
 
-   enum class Colormap
-   {
-      Jet,
-      Gray,
-      Hot,
-      Viridis,
-      Inferno,
-      Magma,
-      Cividis,
-      Parula
-   };
-
    enum class NoteNaming
    {
       Sharps,
@@ -53,7 +41,7 @@ public:
    int noiseFloor = -70;
    int detailLevel = 7;
 
-   Colormap colormap = Colormap::Jet;
+   wxString colormapId = "jet";
    NoteNaming noteNaming = NoteNaming::Mixed;
    bool showNoteLines = true;
    TimeTickMode timeTickMode = TimeTickMode::Seconds;
