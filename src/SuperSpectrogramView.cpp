@@ -184,66 +184,92 @@ void SuperSpectrogramView::CreateControls(wxSizer* parentSizer)
    // Build toolbar containing all user-adjustable parameters
    auto* toolbarSizer = new wxBoxSizer(wxHORIZONTAL);
 
+   // ---------------------------------------------------------
+   // Noise floor
+   // ---------------------------------------------------------
    toolbarSizer->Add(
       new wxStaticText(this, wxID_ANY, _("Noise floor:")),
-      0, wxALIGN_CENTER_VERTICAL | wxLEFT | wxRIGHT, 5);
+      0,
+      wxALIGN_CENTER_VERTICAL | wxLEFT | wxRIGHT,
+      5);
 
    mNoiseFloorChoice = CreateChoice(
       this,
       ID_NoiseFloorChoice,
-      kNoiseFloorOptions,
-      kDefaultNoiseFloor,
+      SuperSpectrogramUIOptions::NoiseFloorOptions(),
+      SuperSpectrogramUIOptions::DefaultNoiseFloor(),
       mNoiseFloorIndexMap,
       mNoiseFloorValueMap
    );
 
    toolbarSizer->Add(
       mNoiseFloorChoice,
-      0, wxALIGN_CENTER_VERTICAL | wxRIGHT, 10);
+      0,
+      wxALIGN_CENTER_VERTICAL | wxRIGHT,
+      10);
 
+   // ---------------------------------------------------------
+   // Detail level
+   // ---------------------------------------------------------
    toolbarSizer->Add(
       new wxStaticText(this, wxID_ANY, _("Highest Note:")),
-      0, wxALIGN_CENTER_VERTICAL | wxLEFT | wxRIGHT, 5);
+      0,
+      wxALIGN_CENTER_VERTICAL | wxLEFT | wxRIGHT,
+      5);
 
    mHighestNoteChoice = CreateChoice(
       this,
       ID_HighestNoteChoice,
-      kHighestNoteOptions,
-      kDefaultHighestNote,
+      SuperSpectrogramUIOptions::DetailLevelOptions(),
+      SuperSpectrogramUIOptions::DefaultDetailLevel(),
       mHighestNoteIndexMap,
       mHighestNoteValueMap
    );
 
    toolbarSizer->Add(
       mHighestNoteChoice,
-      0, wxALIGN_CENTER_VERTICAL | wxLEFT | wxRIGHT, 15);
+      0,
+      wxALIGN_CENTER_VERTICAL | wxLEFT | wxRIGHT,
+      15);
 
+   // ---------------------------------------------------------
+   // Note naming
+   // ---------------------------------------------------------
    toolbarSizer->Add(
       new wxStaticText(this, wxID_ANY, _("Note naming:")),
-      0, wxALIGN_CENTER_VERTICAL | wxLEFT | wxRIGHT, 5);
+      0,
+      wxALIGN_CENTER_VERTICAL | wxLEFT | wxRIGHT,
+      5);
 
    mNoteNamingChoice = CreateChoice(
       this,
       ID_NoteNamingChoice,
-      kNoteNamingOptions,
-      kDefaultNoteNaming,
+      SuperSpectrogramUIOptions::NoteNamingOptions(),
+      SuperSpectrogramUIOptions::DefaultNoteNaming(),
       mNoteNamingIndexMap,
       mNoteNamingValueMap
    );
 
    toolbarSizer->Add(
       mNoteNamingChoice,
-      0, wxALIGN_CENTER_VERTICAL | wxLEFT | wxRIGHT, 10);
+      0,
+      wxALIGN_CENTER_VERTICAL | wxLEFT | wxRIGHT,
+      10);
 
+   // ---------------------------------------------------------
+   // Colormap
+   // ---------------------------------------------------------
    toolbarSizer->Add(
       new wxStaticText(this, wxID_ANY, _("Colormap:")),
-      0, wxALIGN_CENTER_VERTICAL | wxLEFT | wxRIGHT, 5);
+      0,
+      wxALIGN_CENTER_VERTICAL | wxLEFT | wxRIGHT,
+      5);
 
    mColormapChoice = CreateChoice(
       this,
       ID_ColormapChoice,
-      kColormapOptions,
-      kDefaultColormap,
+      SuperSpectrogramUIOptions::ColormapOptions(),
+      SuperSpectrogramUIOptions::DefaultColormap(),
       mColormapIndexMap,
       mColormapValueMap
    );
@@ -251,9 +277,12 @@ void SuperSpectrogramView::CreateControls(wxSizer* parentSizer)
    toolbarSizer->Add(
       mColormapChoice,
       0,
-      wxALIGN_CENTER_VERTICAL | wxLEFT |wxRIGHT,
+      wxALIGN_CENTER_VERTICAL | wxLEFT | wxRIGHT,
       10);
 
+   // ---------------------------------------------------------
+   // Note overlay toggle
+   // ---------------------------------------------------------
    mShowNoteLinesCheck = new wxCheckBox(
       this,
       ID_ShowNoteLinesCheck,
@@ -267,40 +296,54 @@ void SuperSpectrogramView::CreateControls(wxSizer* parentSizer)
       wxALIGN_CENTER_VERTICAL | wxLEFT | wxRIGHT,
       10);
 
+   // ---------------------------------------------------------
+   // Time scale
+   // ---------------------------------------------------------
    toolbarSizer->Add(
       new wxStaticText(this, wxID_ANY, _("Time scale:")),
-      0, wxALIGN_CENTER_VERTICAL | wxLEFT | wxRIGHT, 5);
+      0,
+      wxALIGN_CENTER_VERTICAL | wxLEFT | wxRIGHT,
+      5);
 
    mTimeTickChoice = CreateChoice(
       this,
       ID_TimeTickChoice,
-      kTimeTickOptions,
-      kDefaultTimeTick,
+      SuperSpectrogramUIOptions::TimeTickOptions(),
+      SuperSpectrogramUIOptions::DefaultTimeTick(),
       mTimeTickIndexMap,
       mTimeTickValueMap
    );
 
    toolbarSizer->Add(
       mTimeTickChoice,
-      0, wxALIGN_CENTER_VERTICAL | wxLEFT | wxRIGHT, 10);
+      0,
+      wxALIGN_CENTER_VERTICAL | wxLEFT | wxRIGHT,
+      10);
 
-   // Export button
+   // ---------------------------------------------------------
+   // Export
+   // ---------------------------------------------------------
    mExportButton = new wxButton(this, wxID_SAVE, _("Export…"));
+
    toolbarSizer->Add(
       mExportButton,
-      0, wxALIGN_CENTER_VERTICAL | wxLEFT | wxRIGHT, 5);
+      0,
+      wxALIGN_CENTER_VERTICAL | wxLEFT | wxRIGHT,
+      5);
 
    toolbarSizer->AddStretchSpacer();
 
    parentSizer->Add(
       toolbarSizer,
-      0, wxEXPAND | wxALL, 5);
+      0,
+      wxEXPAND | wxALL,
+      5);
 }
 
 wxChoice* SuperSpectrogramView::CreateChoice(
    wxWindow* parent,
    wxWindowID id,
-   const std::vector<ChoiceOption>& options,
+   const std::vector<SuperSpectrogramOption>& options,
    int defaultValue,
    std::unordered_map<int, int>& outIndexMap,
    std::unordered_map<int, int>& outValueMap)
@@ -311,12 +354,14 @@ wxChoice* SuperSpectrogramView::CreateChoice(
 
    for (size_t i = 0; i < options.size(); ++i)
    {
-      choice->Append(options[i].label);
+      const auto& option = options[i];
 
-      outIndexMap[options[i].value] = static_cast<int>(i);
-      outValueMap[static_cast<int>(i)] = options[i].value;
+      choice->Append(option.label);
 
-      if (options[i].value == defaultValue)
+      outIndexMap[option.value] = static_cast<int>(i);
+      outValueMap[static_cast<int>(i)] = option.value;
+
+      if (option.value == defaultValue)
          defaultIndex = static_cast<int>(i);
    }
 
