@@ -35,13 +35,16 @@ static const wxString SuperSpectrogramTitle = "Super Spectrogram";
 // Handlers forward user actions to the controller.
 //-----------------------------------------------------------------
 BEGIN_EVENT_TABLE(SuperSpectrogramView, wxDialogWrapper)
-   EVT_CHOICE(ID_NoiseFloorChoice, SuperSpectrogramView::OnNoiseFloorChanged)
-   EVT_CHOICE(ID_HighestNoteChoice, SuperSpectrogramView::OnHighestNoteChanged)
-   EVT_CHOICE(ID_ColormapChoice, SuperSpectrogramView::OnColormapChanged)
-   EVT_CHOICE(ID_NoteNamingChoice, SuperSpectrogramView::OnNoteNamingChanged)
-   EVT_CHECKBOX(ID_ShowNoteLinesCheck, SuperSpectrogramView::OnShowNoteLinesChanged)
-   EVT_CHOICE(ID_TimeTickChoice, SuperSpectrogramView::OnTimeTickChanged)
-   EVT_BUTTON(wxID_SAVE, SuperSpectrogramView::OnExport)
+  EVT_CHOICE(ID_NoiseFloorChoice, SuperSpectrogramView::OnConfigChanged)
+  EVT_CHOICE(ID_HighestNoteChoice, SuperSpectrogramView::OnConfigChanged)
+  EVT_CHOICE(ID_ColormapChoice, SuperSpectrogramView::OnConfigChanged)
+  EVT_CHOICE(ID_NoteNamingChoice, SuperSpectrogramView::OnConfigChanged)
+  EVT_CHOICE(ID_TimeTickChoice, SuperSpectrogramView::OnConfigChanged)
+
+  EVT_CHECKBOX(ID_ShowNoteLinesCheck,
+     SuperSpectrogramView::OnConfigChanged)
+
+  EVT_BUTTON(wxID_SAVE, SuperSpectrogramView::OnExport)
 END_EVENT_TABLE()
 
 //-----------------------------------------------------------------
@@ -416,37 +419,7 @@ SuperSpectrogramConfig SuperSpectrogramView::BuildConfigFromUI() const
 //-----------------------------------------------------------------
 // UI event handlers (View -> Controller)
 //-----------------------------------------------------------------
-void SuperSpectrogramView::OnNoiseFloorChanged(wxCommandEvent&)
-{
-   if (NotifyConfigChanged)
-      NotifyConfigChanged(BuildConfigFromUI());
-}
-
-void SuperSpectrogramView::OnHighestNoteChanged(wxCommandEvent&)
-{
-   if (NotifyConfigChanged)
-      NotifyConfigChanged(BuildConfigFromUI());
-}
-
-void SuperSpectrogramView::OnColormapChanged(wxCommandEvent&)
-{
-   if (NotifyConfigChanged)
-      NotifyConfigChanged(BuildConfigFromUI());
-}
-
-void SuperSpectrogramView::OnNoteNamingChanged(wxCommandEvent&)
-{
-   if (NotifyConfigChanged)
-      NotifyConfigChanged(BuildConfigFromUI());
-}
-
-void SuperSpectrogramView::OnShowNoteLinesChanged(wxCommandEvent&)
-{
-   if (NotifyConfigChanged)
-      NotifyConfigChanged(BuildConfigFromUI());
-}
-
-void SuperSpectrogramView::OnTimeTickChanged(wxCommandEvent&)
+void SuperSpectrogramView::OnConfigChanged(wxCommandEvent&)
 {
    if (NotifyConfigChanged)
       NotifyConfigChanged(BuildConfigFromUI());

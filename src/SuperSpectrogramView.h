@@ -42,6 +42,7 @@ class SuperSpectrogramPanel;
 //
 // The view owns no DSP or rendering business logic.
 //=================================================================
+
 class SuperSpectrogramView final :
    public wxDialogWrapper
 {
@@ -147,12 +148,7 @@ private:
    // UI event handlers
    // ---------------------------------------------------------
 
-   void OnNoiseFloorChanged(wxCommandEvent& event);
-   void OnHighestNoteChanged(wxCommandEvent& event);
-   void OnColormapChanged(wxCommandEvent& event);
-   void OnNoteNamingChanged(wxCommandEvent& event);
-   void OnShowNoteLinesChanged(wxCommandEvent& event);
-   void OnTimeTickChanged(wxCommandEvent& event);
+   void OnConfigChanged(wxCommandEvent& event);
 
    void OnExport(wxCommandEvent& event);
 
