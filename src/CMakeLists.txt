@@ -186,63 +186,10 @@ set( SOURCES
       ShuttleGetDefinition.h
       SoundActivatedRecord.cpp
       SoundActivatedRecord.h
+      SuperSpectrogramDialog.cpp
       SpectralDataDialog.cpp
       SpectralDataManager.h
       SpectralDataManager.cpp
-# Super Spectrogram sources
-      SuperSpectrogramAudioExtractor.cpp
-      SuperSpectrogramAudioExtractor.h
-      SuperSpectrogramConfig.cpp
-      SuperSpectrogramConfig.h
-      SuperSpectrogramColormap.cpp
-      SuperSpectrogramColormap.h
-      SuperSpectrogramColormapRegistration.h
-      SuperSpectrogramColormapRegistry.cpp
-      SuperSpectrogramColormapRegistry.h
-      SuperSpectrogramColormapUtils.cpp
-      SuperSpectrogramColormapUtils.h
-      SuperSpectrogramConstants.h
-      SuperSpectrogramController.cpp
-      SuperSpectrogramController.h
-      SuperSpectrogramDataAdapter.cpp
-      SuperSpectrogramDataAdapter.h
-      SuperSpectrogramExportService.cpp
-      SuperSpectrogramExportService.h
-      SuperSpectrogramFrame.h
-      SuperSpectrogramInteractionController.cpp
-      SuperSpectrogramInteractionController.h
-      SuperSpectrogramModel.cpp
-      SuperSpectrogramModel.h
-      SuperSpectrogramMouseEvent.h
-      SuperSpectrogramNotesLinesOverlay.cpp
-      SuperSpectrogramNotesLinesOverlay.h
-      SuperSpectrogramOverlay.h
-      SuperSpectrogramPanel.cpp
-      SuperSpectrogramPanel.h
-      SuperSpectrogramRenderer.cpp
-      SuperSpectrogramRenderer.h
-      SuperSpectrogramRenderContext.h
-      SuperSpectrogramSession.cpp
-      SuperSpectrogramSession.h
-      SuperSpectrogramTimeTicksOverlay.cpp
-      SuperSpectrogramTimeTicksOverlay.h
-      SuperSpectrogramUIOptions.cpp
-      SuperSpectrogramUIOptions.h
-      SuperSpectrogramView.cpp
-      SuperSpectrogramView.h
-      SuperSpectrogramViewModel.cpp
-      SuperSpectrogramViewModel.h
-      SuperSpectrogramViewport.cpp
-      SuperSpectrogramViewport.h
-      SuperSpectrogramJetColormap.cpp
-      SuperSpectrogramGrayColormap.cpp
-      SuperSpectrogramHotColormap.cpp
-      SuperSpectrogramViridisColormap.cpp
-      SuperSpectrogramInfernoColormap.cpp
-      SuperSpectrogramMagmaColormap.cpp
-      SuperSpectrogramCividisColormap.cpp
-      SuperSpectrogramParulaColormap.cpp
-#
       SseMathFuncs.cpp
       SseMathFuncs.h
       TagsEditor.cpp
@@ -1359,6 +1306,7 @@ set( AUDACITY_LIBRARIES
    lib-audacity-application-logic-interface
    lib-builtin-effects-interface
    lib-uuid-interface
+   lib-super-spectrogram-interface
 )
 
 if (USE_VST)

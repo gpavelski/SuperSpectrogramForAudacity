@@ -9,13 +9,8 @@ includes a different version of pffft.h
 find_package(FFTW3 REQUIRED)
 
 set( SOURCES
-   Decimator.cpp
-   Decimator.h
    FFT.cpp
    FFT.h
-   FFTData.h
-   FFTWContainer.cpp
-   FFTWContainer.h
    PowerSpectrumGetter.cpp
    PowerSpectrumGetter.h
    RealFFTf.cpp
@@ -26,8 +21,6 @@ set( SOURCES
    SpectrumAnalyst.h
    SpectrumTransformer.cpp
    SpectrumTransformer.h
-   STFTProcessor.cpp
-   STFTProcessor.h
 )
 
 set( LIBRARIES
@@ -35,7 +28,6 @@ set( LIBRARIES
    lib-math-interface
    lib-strings-interface
    lib-utility-interface
-   FFTW3::fftw3
 )
 audacity_library( lib-fft "${SOURCES}" "${LIBRARIES}"
    "" ""

@@ -77,6 +77,7 @@ set( LIBRARIES
    lib-builtin-effects
    lib-label-track
    lib-wave-track-fft
+   lib-super-spectrogram
 )
 
 if ( ${_OPT}use_lv2 )
