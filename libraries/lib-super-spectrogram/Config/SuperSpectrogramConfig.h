@@ -8,8 +8,7 @@
 
 **********************************************************************/
 
-#ifndef __SUPER_SPECTROGRAM_CONFIG__
-#define __SUPER_SPECTROGRAM_CONFIG__
+#pragma once
 
 #include <wx/config.h>
 
@@ -70,4 +69,3 @@ private:
    static const wxString kConfigPath;
 };
 
-#endif

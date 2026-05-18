@@ -8,8 +8,7 @@
 
 **********************************************************************/
 
-#ifndef DECIMATOR_H
-#define DECIMATOR_H
+#pragma once
 
 #include <vector>
 #include <memory>
@@ -93,5 +92,3 @@ private:
    double step = 1.0;
    double Wn = 0.8;
 };
-
-#endif // DECIMATOR_H

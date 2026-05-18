@@ -8,8 +8,7 @@
 
 **********************************************************************/
 
-#ifndef __SUPER_SPECTROGRAM_INTERACTION_CONTROLLER__
-#define __SUPER_SPECTROGRAM_INTERACTION_CONTROLLER__
+#pragma once
 
 #include <wx/gdicmn.h>
 
@@ -37,4 +36,3 @@ private:
    wxPoint m_lastMouse{ 0, 0 };
 };
 
-#endif

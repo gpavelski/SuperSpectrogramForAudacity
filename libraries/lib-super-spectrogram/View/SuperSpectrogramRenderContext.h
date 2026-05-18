@@ -8,8 +8,7 @@
 
 *******************************************************************/
 
-#ifndef __SUPER_SPECTROGRAM_RENDER_CONTEXT__
-#define __SUPER_SPECTROGRAM_RENDER_CONTEXT__
+#pragma once
 
 #include <vector>
 #include <cstddef>
@@ -27,4 +26,3 @@ struct SuperSpectrogramRenderContext
    const SuperSpectrogramViewport& viewport;
 };
 
-#endif

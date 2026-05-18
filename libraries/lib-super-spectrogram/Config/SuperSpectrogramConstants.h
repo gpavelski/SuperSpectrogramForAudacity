@@ -8,8 +8,7 @@
 
 **********************************************************************/
 
-#ifndef SUPER_SPECTROGRAM_CONSTANTS_H
-#define SUPER_SPECTROGRAM_CONSTANTS_H
+#pragma once
 
 #include <array>
 #include <vector>
@@ -95,5 +94,3 @@ struct SuperSpectrogramConstants
         inline static constexpr int kMinHeightFallback = 400;
     };
 };
-
-#endif // SUPER_SPECTROGRAM_CONSTANTS_H

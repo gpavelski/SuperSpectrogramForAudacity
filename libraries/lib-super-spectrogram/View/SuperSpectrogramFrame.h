@@ -8,8 +8,7 @@
 
 **********************************************************************/
 
-#ifndef __SUPER_SPECTROGRAM_FRAME__
-#define __SUPER_SPECTROGRAM_FRAME__
+#pragma once
 
 #include <vector>
 
@@ -25,4 +24,3 @@ struct SuperSpectrogramFrame
    size_t numSamples{ 0 };
 };
 
-#endif

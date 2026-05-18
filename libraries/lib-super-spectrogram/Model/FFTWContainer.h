@@ -1,5 +1,4 @@
-#ifndef FFTW_CONTAINER_H
-#define FFTW_CONTAINER_H
+#pragma once
 
 #include <vector>
 
@@ -23,4 +22,3 @@ private:
     std::vector<FFTData> container;
 };
 
-#endif // FFTW_CONTAINER_H

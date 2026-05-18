@@ -187,6 +187,7 @@ set( SOURCES
       SoundActivatedRecord.cpp
       SoundActivatedRecord.h
       SuperSpectrogramDialog.cpp
+      SuperSpectrogramDialog.h
       SpectralDataDialog.cpp
       SpectralDataManager.h
       SpectralDataManager.cpp
@@ -1304,9 +1305,9 @@ set( AUDACITY_LIBRARIES
    lib-music-information-retrieval-interface
    lib-preference-pages-interface
    lib-audacity-application-logic-interface
+   lib-super-spectrogram-interface
    lib-builtin-effects-interface
    lib-uuid-interface
-   lib-super-spectrogram-interface
 )
 
 if (USE_VST)

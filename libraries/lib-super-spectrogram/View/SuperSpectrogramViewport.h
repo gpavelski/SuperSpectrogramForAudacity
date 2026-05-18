@@ -8,8 +8,7 @@
 
 *******************************************************************/
 
-#ifndef __SUPER_SPECTROGRAM_VIEWPORT__
-#define __SUPER_SPECTROGRAM_VIEWPORT__
+#pragma once
 
 #include <algorithm>
 #include <wx/gdicmn.h>
@@ -49,5 +48,3 @@ private:
    double m_top{ 0.0 };
    double m_bottom{ 1.0 };
 };
-
-#endif

@@ -8,8 +8,7 @@
 
 *******************************************************************/
 
-#ifndef __SUPER_SPECTROGRAM_RENDERER__
-#define __SUPER_SPECTROGRAM_RENDERER__
+#pragma once
 
 #include <wx/bitmap.h>
 #include <wx/gdicmn.h>
@@ -28,5 +27,3 @@ public:
       const wxSize& targetSize
    ) const;
 };
-
-#endif

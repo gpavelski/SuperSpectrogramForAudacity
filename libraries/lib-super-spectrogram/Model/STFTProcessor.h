@@ -8,8 +8,7 @@
 
 **********************************************************************/
 
-#ifndef STFT_PROCESSOR_H
-#define STFT_PROCESSOR_H
+#pragma once
 
 #include <vector>
 #include <thread>
@@ -133,4 +132,3 @@ private:
         double value) const;
 
 };
-#endif // STFT_PROCESSOR_H

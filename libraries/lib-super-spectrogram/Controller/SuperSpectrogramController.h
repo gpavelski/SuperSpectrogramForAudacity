@@ -8,8 +8,7 @@
 
 **********************************************************************/
 
-#ifndef __SUPER_SPECTROGRAM_CONTROLLER__
-#define __SUPER_SPECTROGRAM_CONTROLLER__
+#pragma once
 
 #include <memory>
 #include <fstream>
@@ -81,4 +80,3 @@ private:
    std::future<void> m_exportTask;
 };
 
-#endif

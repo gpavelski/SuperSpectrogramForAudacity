@@ -8,8 +8,7 @@
 
 *******************************************************************/
 
-#ifndef __SUPER_SPECTROGRAM_COLORMAP_REGISTRY__
-#define __SUPER_SPECTROGRAM_COLORMAP_REGISTRY__
+#pragma once
 
 #include <memory>
 #include <functional>
@@ -50,4 +49,3 @@ private:
    std::vector<Entry> mEntries;
 };
 
-#endif

@@ -8,8 +8,7 @@
 
 **********************************************************************/
 
-#ifndef __SUPER_SPECTROGRAM_PANEL__
-#define __SUPER_SPECTROGRAM_PANEL__
+#pragma once
 
 #include <wx/dcbuffer.h>
 #include <wx/dcclient.h>
@@ -65,4 +64,4 @@ private:
    wxDECLARE_EVENT_TABLE();
 };
 
-#endif
+

@@ -8,8 +8,7 @@
 
 **********************************************************************/
 
-#ifndef __SUPER_SPECTROGRAM_SESSION__
-#define __SUPER_SPECTROGRAM_SESSION__
+#pragma once
 
 #include <memory>
 #include <optional>
@@ -31,7 +30,7 @@ class SuperSpectrogramExportService;
 class SuperSpectrogramConfig;
 class AudacityProject;
 
-class SuperSpectrogramSession
+class SUPER_SPECTROGRAM_API SuperSpectrogramSession
 {
 public:
    explicit SuperSpectrogramSession(
@@ -84,5 +83,3 @@ private:
    std::optional<AudioData> mAudio;
 
 };
-
-#endif // __SUPER_SPECTROGRAM_SESSION__

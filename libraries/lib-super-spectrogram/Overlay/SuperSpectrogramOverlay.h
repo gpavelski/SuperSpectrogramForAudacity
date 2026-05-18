@@ -8,8 +8,7 @@
 
 *******************************************************************/
 
-#ifndef __SUPER_SPECTROGRAM_OVERLAY__
-#define __SUPER_SPECTROGRAM_OVERLAY__
+#pragma once
 
 #include <wx/dc.h>
 #include <wx/gdicmn.h>
@@ -33,4 +32,3 @@ public:
    virtual bool IsEnabled() const = 0;
 };
 
-#endif

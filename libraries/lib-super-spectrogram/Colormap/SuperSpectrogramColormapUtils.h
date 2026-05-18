@@ -8,8 +8,7 @@
 
 *******************************************************************/
 
-#ifndef __SUPER_SPECTROGRAM_COLORMAP_UTILS__
-#define __SUPER_SPECTROGRAM_COLORMAP_UTILS__
+#pragma once
 
 #include <wx/colour.h>
 #include <vector>
@@ -33,5 +32,3 @@ namespace ColormapUtils
    std::vector<wxColour> MakeCividis();
    std::vector<wxColour> MakeParula();
 }
-
-#endif

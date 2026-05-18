@@ -112,14 +112,14 @@ set(SOURCES
 # ---------------------------------------------
 set(LIBRARIES
     FFTW3::fftw3
-    lib-basic-ui
-    lib-math
-    lib-menus
-    lib-preferences
-    lib-time-frequency-selection
-    lib-utility
-    lib-wave-track
-    lib-wx-wrappers
+    lib-basic-ui-interface
+    lib-math-interface
+    lib-menus-interface
+    lib-preferences-interface
+    lib-time-frequency-selection-interface
+    lib-utility-interface
+    lib-wave-track-interface
+    lib-wx-wrappers-interface
     wxwidgets::wxwidgets
 )
 

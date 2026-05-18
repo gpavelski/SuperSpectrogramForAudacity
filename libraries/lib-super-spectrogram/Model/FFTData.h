@@ -1,5 +1,14 @@
-#ifndef FFT_DATA_H
-#define FFT_DATA_H
+/**********************************************************************
+
+  Audacity: A Digital Audio Editor
+
+  FFTData.h
+
+  Guilherme Pavelski
+
+**********************************************************************/
+
+#pragma once
 
 #include <vector>
 
@@ -11,4 +20,3 @@ struct FFTData {
     fftw_plan plan;
 };
 
-#endif // FFT_DATA_H

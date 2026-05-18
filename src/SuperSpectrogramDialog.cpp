@@ -8,47 +8,52 @@
 
 **********************************************************************/
 
-#include "CommandContext.h"
-#include "CommandManager.h"
-#include "ProjectWindows.h"
-#include "CommonCommandFlags.h"
+#include "SuperSpectrogramDialog.h"
 
-#include "View/SuperSpectrogramSession.h"
+std::unique_ptr<SuperSpectrogramSession> SuperSpectrogramDialog::gSession;
 
+SuperSpectrogramDialog::SuperSpectrogramDialog(AudacityProject& project, wxWindow* parent)
+{
+    Initialize(project, parent);
+}
+
+void SuperSpectrogramDialog::Initialize(AudacityProject& project, wxWindow* parent)
+{
+    gSession = std::make_unique<SuperSpectrogramSession>(project, parent);
+}
+
+void SuperSpectrogramDialog::Show(bool show)
+{
+    if (gSession)
+        gSession->Show();
+}
+
+std::unique_ptr<SuperSpectrogramSession>& SuperSpectrogramDialog::Instance()
+{
+    return gSession;
+}
+
+// Optional: menu callback
 namespace
 {
-   std::unique_ptr<SuperSpectrogramSession> gSession;
+    void OnPlotSuperSpectrogram(const CommandContext& context)
+    {
+        auto* parent = &GetProjectFrame(context.project);
+        SuperSpectrogramDialog dialog(context.project, parent);
+        dialog.Show();
+    }
 
-   void OnPlotSuperSpectrogram(const CommandContext& context)
-   {
-      auto& project = context.project;
+    using namespace MenuRegistry;
 
-      CommandManager::Get(project)
-         .RegisterLastAnalyzer(context);
-
-      auto* parent =
-         &GetProjectFrame(project);
-
-      gSession =
-         std::make_unique<SuperSpectrogramSession>(
-            project,
-            parent
-         );
-
-      gSession->Show();
-   }
-
-   using namespace MenuRegistry;
-
-   AttachedItem sAttachment{
-      Command(
-         wxT("PlotSuperSpectrogram"),
-         XXO("Plot Super Spectrogram..."),
-         OnPlotSuperSpectrogram,
-         AudioIONotBusyFlag()
-            | WaveTracksSelectedFlag()
-            | TimeSelectedFlag()
-      ),
-      wxT("Analyze/Analyzers/Windows")
-   };
+    AttachedItem sAttachment{
+        Command(
+            wxT("PlotSuperSpectrogram"),
+            XXO("Plot Super Spectrogram..."),
+            OnPlotSuperSpectrogram,
+            AudioIONotBusyFlag()
+               | WaveTracksSelectedFlag()
+               | TimeSelectedFlag()
+        ),
+        wxT("Analyze/Analyzers/Windows")
+    };
 }

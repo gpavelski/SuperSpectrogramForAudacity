@@ -8,8 +8,7 @@
 
 *******************************************************************/
 
-#ifndef __SUPER_SPECTROGRAM_TIME_TICKS_OVERLAY__
-#define __SUPER_SPECTROGRAM_TIME_TICKS_OVERLAY__
+#pragma once
 
 #include <wx/dc.h>
 
@@ -58,4 +57,3 @@ private:
    bool m_enabled{ true };
 };
 
-#endif

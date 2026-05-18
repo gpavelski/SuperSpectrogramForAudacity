@@ -8,8 +8,7 @@
 
 **********************************************************************/
 
-#ifndef __AUDACITY_SUPER_SPECTROGRAM_EXPORT_SERVICE__
-#define __AUDACITY_SUPER_SPECTROGRAM_EXPORT_SERVICE__
+#pragma once
 
 #include <vector>
 #include <string>
@@ -29,5 +28,3 @@ public:
       const std::string& filePath
    );
 };
-
-#endif

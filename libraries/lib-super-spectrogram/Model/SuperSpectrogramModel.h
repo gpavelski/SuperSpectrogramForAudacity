@@ -8,8 +8,7 @@
 
 **********************************************************************/
 
-#ifndef __SUPER_SPECTROGRAM_MODEL__
-#define __SUPER_SPECTROGRAM_MODEL__
+#pragma once
 
 #include <memory>
 #include "Config/SuperSpectrogramConstants.h"
@@ -62,4 +61,3 @@ private:
    }
 };
 
-#endif

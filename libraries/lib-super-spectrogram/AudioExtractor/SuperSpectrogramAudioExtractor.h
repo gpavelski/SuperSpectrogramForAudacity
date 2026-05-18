@@ -10,8 +10,7 @@
 
 **********************************************************************/
 
-#ifndef __SUPER_SPECTROGRAM_AUDIO_EXTRACTOR__
-#define __SUPER_SPECTROGRAM_AUDIO_EXTRACTOR__
+#pragma once
 
 #include <memory>
 #include "MemoryX.h"
@@ -61,4 +60,3 @@ private:
    AudacityProject* mProject;
 };
 
-#endif

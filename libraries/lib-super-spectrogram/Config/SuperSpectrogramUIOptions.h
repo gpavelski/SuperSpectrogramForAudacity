@@ -8,8 +8,7 @@
 
 **********************************************************************/
 
-#ifndef __SUPER_SPECTROGRAM_UI_OPTIONS__
-#define __SUPER_SPECTROGRAM_UI_OPTIONS__
+#pragma once
 
 #include <vector>
 
@@ -66,4 +65,3 @@ public:
    static T DefaultTimeTick();
 };
 
-#endif

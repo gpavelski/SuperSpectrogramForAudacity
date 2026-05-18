@@ -8,8 +8,7 @@
 
 *******************************************************************/
 
-#ifndef __SUPER_SPECTROGRAM_MOUSE_EVENT__
-#define __SUPER_SPECTROGRAM_MOUSE_EVENT__
+#pragma once
 
 struct SuperSpectrogramMouseEvent
 {
@@ -23,4 +22,3 @@ struct SuperSpectrogramMouseEvent
    int wheelRotation{ 0 };
 };
 
-#endif

@@ -8,8 +8,7 @@
 
 *******************************************************************/
 
-#ifndef __SUPER_SPECTROGRAM_NOTES_LINES_OVERLAY__
-#define __SUPER_SPECTROGRAM_NOTES_LINES_OVERLAY__
+#pragma once
 
 #include <vector>
 #include <wx/brush.h>
@@ -65,4 +64,3 @@ private:
    bool m_enabled{ true };
 };
 
-#endif

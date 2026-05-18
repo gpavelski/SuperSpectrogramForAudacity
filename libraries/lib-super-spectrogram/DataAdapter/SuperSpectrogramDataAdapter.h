@@ -8,8 +8,7 @@
 
 **********************************************************************/
 
-#ifndef __SUPER_SPECTROGRAM_DATA_ADAPTER__
-#define __SUPER_SPECTROGRAM_DATA_ADAPTER__
+#pragma once
 
 #include <limits>
 #include <cmath>
@@ -51,4 +50,3 @@ private:
    size_t m_numSamples{ 0 };
 };
 
-#endif

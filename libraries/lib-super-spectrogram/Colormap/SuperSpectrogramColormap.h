@@ -8,8 +8,7 @@
 
 *******************************************************************/
 
-#ifndef __SUPER_SPECTROGRAM_COLORMAP__
-#define __SUPER_SPECTROGRAM_COLORMAP__
+#pragma once
 
 #include <algorithm>
 #include <string>
@@ -68,5 +67,3 @@ private:
 protected:
    std::vector<wxColour> mLut;
 };
-
-#endif

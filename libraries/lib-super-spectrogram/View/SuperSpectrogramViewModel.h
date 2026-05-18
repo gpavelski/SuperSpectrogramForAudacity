@@ -8,8 +8,7 @@
 
 **********************************************************************/
 
-#ifndef __SUPER_SPECTROGRAM_VIEW_MODEL__
-#define __SUPER_SPECTROGRAM_VIEW_MODEL__
+#pragma once
 
 #include <memory>
 #include <vector>
@@ -105,5 +104,3 @@ private:
    SuperSpectrogramNotesLinesOverlay* m_notesOverlay = nullptr;
    SuperSpectrogramTimeTicksOverlay* m_timeOverlay = nullptr;
 };
-
-#endif

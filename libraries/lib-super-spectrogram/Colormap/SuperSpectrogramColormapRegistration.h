@@ -8,8 +8,7 @@
 
 *******************************************************************/
 
-#ifndef __SUPER_SPECTROGRAM_COLORMAP_REGISTRATION__
-#define __SUPER_SPECTROGRAM_COLORMAP_REGISTRATION__
+#pragma once
 
 #include "Colormap/SuperSpectrogramColormapRegistry.h"
 
@@ -28,5 +27,3 @@ public:
       );
    }
 };
-
-#endif

@@ -8,8 +8,7 @@
 
 **********************************************************************/
 
-#ifndef __AUDACITY_SUPER_SPECTROGRAM_VIEW__
-#define __AUDACITY_SUPER_SPECTROGRAM_VIEW__
+#pragma once
 
 #include <functional>
 #include <memory>
@@ -203,5 +202,3 @@ private:
 
    wxDECLARE_EVENT_TABLE();
 };
-
-#endif // __AUDACITY_SUPER_SPECTROGRAM_VIEW__
