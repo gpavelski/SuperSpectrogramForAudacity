@@ -12,18 +12,19 @@
 
 #include "Colormap/SuperSpectrogramColormapRegistry.h"
 
+template<const wxChar* ID, const wxChar* NAME, auto ColorFunc>
 class ColormapRegistrar
 {
 public:
-   ColormapRegistrar(
-      const wxString& id,
-      const wxString& displayName,
-      SuperSpectrogramColormapRegistry::Factory factory)
+   ColormapRegistrar()
    {
       SuperSpectrogramColormapRegistry::Instance().Register(
-         id,
-         displayName,
-         std::move(factory)
+         ID,
+         NAME,
+         []() -> std::unique_ptr<IColormap>
+         {
+            return std::make_unique<LUTColormapGenerator<ID, NAME, ColorFunc>>();
+         }
       );
    }
 };

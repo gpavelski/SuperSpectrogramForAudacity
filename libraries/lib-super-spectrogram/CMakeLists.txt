@@ -76,11 +76,9 @@ set(VIEW_SOURCES
 )
 
 set(COLORMAP_SOURCES
-    Colormap/SuperSpectrogramColormap.cpp
     Colormap/SuperSpectrogramColormap.h
     Colormap/SuperSpectrogramColormapRegistry.cpp
     Colormap/SuperSpectrogramColormapRegistry.h
-    Colormap/SuperSpectrogramColormapUtils.cpp
     Colormap/SuperSpectrogramColormapUtils.h
     Colormap/SuperSpectrogramColormapRegistration.h
     Colormap/Colormaps/SuperSpectrogramCividisColormap.cpp

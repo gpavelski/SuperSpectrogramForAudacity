@@ -9,29 +9,24 @@
 *******************************************************************/
 
 #include "Colormap/SuperSpectrogramColormap.h"
-#include "Colormap/SuperSpectrogramColormapUtils.h"
 #include "Colormap/SuperSpectrogramColormapRegistration.h"
 
 namespace
 {
-   class GrayColormap final : public LUTColormap
-   {
-   public:
-      GrayColormap()
-         :
-         LUTColormap(
-            "gray",
-            "Gray",
-            ColormapUtils::MakeGray())
-      {
-      }
-   };
+   // ID and Name for the template
+   constexpr wxChar idGray[] = L"gray";
+   constexpr wxChar nameGray[] = L"Gray";
 
-   ColormapRegistrar sRegistrar(
-      "gray",
-      "Gray",
-      []()
-      {
-         return std::make_unique<GrayColormap>();
-      });
+   std::vector<wxColour> GrayColormap()
+   {
+      std::vector<wxColour> cmap(256);
+      for (int i = 0; i < 256; ++i)
+         cmap[i] = wxColour(i, i, i);
+      return cmap;
+   }
+
+   using Gray = LUTColormapGenerator<idGray, nameGray, GrayColormap>;
+
+   // Automatically register the colormap
+   ColormapRegistrar<idGray, nameGray, GrayColormap> sGrayRegistrar;
 }
