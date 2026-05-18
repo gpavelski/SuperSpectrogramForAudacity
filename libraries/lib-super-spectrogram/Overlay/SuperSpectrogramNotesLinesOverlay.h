@@ -22,7 +22,6 @@
 #include "Overlay/SuperSpectrogramOverlay.h"
 #include "DataAdapter/SuperSpectrogramDataAdapter.h"
 #include "View/SuperSpectrogramViewport.h"
-#include "Config/SuperSpectrogramConstants.h"
 
 class SuperSpectrogramDataAdapter;
 class SuperSpectrogramViewport;

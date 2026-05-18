@@ -56,10 +56,6 @@ public:
    ) const;
 
 private:
-   // Core workflows
-   void RunAudioExtraction();
-   void UpdateModelAndRender();
-
    // Export workflows
    void ExportMatrix(const std::string& path);
    void ExportCurrentView(const std::string& path);
