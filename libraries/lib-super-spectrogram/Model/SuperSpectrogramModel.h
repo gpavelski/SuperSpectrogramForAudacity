@@ -12,7 +12,7 @@
 
 #include <memory>
 #include "Config/SuperSpectrogramConstants.h"
-#include "View/SuperSpectrogramFrame.h"
+#include "DataAdapter/SuperSpectrogramFrame.h"
 #include "Model/STFTProcessor.h"
 
 class STFTProcessor;

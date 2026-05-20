@@ -17,7 +17,7 @@
 #include "Colormap/SuperSpectrogramColormap.h"
 #include "Colormap/SuperSpectrogramColormapRegistry.h"
 #include "DataAdapter/SuperSpectrogramDataAdapter.h"
-#include "View/SuperSpectrogramFrame.h"
+#include "DataAdapter/SuperSpectrogramFrame.h"
 #include "Controller/SuperSpectrogramInteractionController.h"
 #include "View/SuperSpectrogramMouseEvent.h"
 #include "View/SuperSpectrogramViewport.h"

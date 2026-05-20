@@ -21,9 +21,9 @@
 #include <wx/wx.h>
 
 #include "Config/SuperSpectrogramConfig.h"
-#include "View/SuperSpectrogramFrame.h"
-#include "View/SuperSpectrogramPanel.h"
 #include "Config/SuperSpectrogramUIOptions.h"
+#include "DataAdapter/SuperSpectrogramFrame.h"
+#include "View/SuperSpectrogramPanel.h"
 #include "wxPanelWrapper.h"
 
 class AudacityProject;

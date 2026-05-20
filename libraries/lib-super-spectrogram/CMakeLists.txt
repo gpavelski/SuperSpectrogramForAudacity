@@ -34,6 +34,7 @@ set(DATA_ADAPTER_SOURCES
     DataAdapter/SuperSpectrogramDataAdapter.h
     DataAdapter/SuperSpectrogramExportService.cpp
     DataAdapter/SuperSpectrogramExportService.h
+    DataAdapter/SuperSpectrogramFrame.h
 )
 
 set(MODEL_SOURCES
@@ -58,7 +59,6 @@ set(OVERLAY_SOURCES
 )
 
 set(VIEW_SOURCES
-    View/SuperSpectrogramFrame.h
     View/SuperSpectrogramPanel.cpp
     View/SuperSpectrogramPanel.h
     View/SuperSpectrogramRenderer.cpp

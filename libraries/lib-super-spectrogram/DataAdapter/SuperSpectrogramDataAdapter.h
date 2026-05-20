@@ -15,7 +15,7 @@
 #include <algorithm>
 #include <vector>
 
-#include "View/SuperSpectrogramFrame.h"
+#include "DataAdapter/SuperSpectrogramFrame.h"
 
 class SuperSpectrogramDataAdapter
 {
