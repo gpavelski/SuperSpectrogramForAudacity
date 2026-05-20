@@ -95,7 +95,7 @@ double SuperSpectrogramNotesLinesOverlay::FreqToWidgetY(
    const SuperSpectrogramViewport& viewport
 ) const
 {
-   const double fNyq = data.GetMaxFreq();
+   const double fNyq = data.GetAnalysisMaxFreq();
    const int rows = static_cast<int>(data.Rows());
 
    if (freq < 0.0 || freq > fNyq)

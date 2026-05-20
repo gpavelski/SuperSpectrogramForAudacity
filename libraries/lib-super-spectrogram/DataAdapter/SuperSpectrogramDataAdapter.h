@@ -32,8 +32,31 @@ public:
    size_t Rows() const { return m_rows; }
    size_t Cols() const { return m_cols; }
 
-   double GetMaxFreq() const { return m_maxFreq; }
-   size_t GetNumSamples() const { return m_numSamples; }
+   //
+   // Analysis-domain accessors
+   //
+   double GetAnalysisMaxFreq() const
+   {
+      return m_analysisMaxFreq;
+   }
+
+   size_t GetAnalysisNumSamples() const
+   {
+      return m_analysisNumSamples;
+   }
+
+   //
+   // Source-domain accessors
+   //
+   size_t GetOriginalNumSamples() const
+   {
+      return m_originalNumSamples;
+   }
+
+   double GetOriginalSampleRate() const
+   {
+      return m_originalSampleRate;
+   }
 
 private:
    void Normalize();
@@ -46,7 +69,12 @@ private:
    size_t m_rows{ 0 };
    size_t m_cols{ 0 };
 
-   double m_maxFreq{ 0.0 };
-   size_t m_numSamples{ 0 };
+   // Analysis-domain metadata
+   double m_analysisMaxFreq{ 0.0 };
+   size_t m_analysisNumSamples{ 0 };
+
+   // Source-domain metadata
+   size_t m_originalNumSamples{ 0 };
+   double m_originalSampleRate{ 0.0 };
 };
 

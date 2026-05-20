@@ -14,8 +14,27 @@ void SuperSpectrogramDataAdapter::SetFrame(
    const SuperSpectrogramFrame& frame)
 {
    m_matrix = frame.matrix;
-   m_maxFreq = frame.maxFreq;
-   m_numSamples = frame.numSamples;
+
+   m_rows = m_matrix.size();
+
+   m_cols =
+      m_rows > 0
+      ? m_matrix.front().size()
+      : 0;
+
+   // Analysis-domain
+   m_analysisMaxFreq =
+      frame.analysisMaxFreq;
+
+   m_analysisNumSamples =
+      frame.analysisNumSamples;
+
+   // Source-domain
+   m_originalNumSamples =
+      frame.originalNumSamples;
+
+   m_originalSampleRate =
+      frame.originalSampleRate;
 
    Normalize();
 }
@@ -72,6 +91,9 @@ void SuperSpectrogramDataAdapter::Clear()
    m_rows = 0;
    m_cols = 0;
 
-   m_maxFreq = 0.0;
-   m_numSamples = 0;
+   m_analysisMaxFreq = 0.0;
+   m_analysisNumSamples = 0;
+
+   m_originalNumSamples = 0;
+   m_originalSampleRate = 0.0;
 }

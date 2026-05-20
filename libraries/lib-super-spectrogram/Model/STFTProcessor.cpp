@@ -241,14 +241,15 @@ std::vector<std::vector<double>> STFTProcessor::processFullSTFTMatrix(
    removeEdgeEffects(flatSpectrogram, resizedSignal, numSegments, fftContainer.data());
 
    int rows = sigma * 8;
-   int cols = static_cast<int>(flatSpectrogram.size()) / rows;
+   // Number of valid STFT frames/columns:
+   int validCols = static_cast<int>(std::ceil(static_cast<double>(signal_length) / 8));
 
    std::vector<std::vector<double>> matrix(
       rows,
-      std::vector<double>(cols)
+      std::vector<double>(validCols)
    );
 
-   for (int col = 0; col < cols; ++col)
+   for (int col = 0; col < validCols; ++col)
    {
       for (int row = 0; row < rows; ++row)
       {

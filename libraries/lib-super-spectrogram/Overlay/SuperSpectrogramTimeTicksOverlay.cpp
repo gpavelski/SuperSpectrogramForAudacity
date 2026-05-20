@@ -47,7 +47,7 @@ void SuperSpectrogramTimeTicksOverlay::Render(
 ) const
 {
     if (m_mode == SuperSpectrogramConfig::TimeTickMode::None ||
-        data.GetNumSamples() == 0 ||
+        data.GetAnalysisNumSamples() == 0 ||
         data.GetNormalized().empty())
         return;
 
@@ -69,8 +69,8 @@ void SuperSpectrogramTimeTicksOverlay::Render(
     if (m_mode == SuperSpectrogramConfig::TimeTickMode::Seconds)
     {
         const double totalDuration =
-            static_cast<double>(data.GetNumSamples()) /
-            (2.0 * data.GetMaxFreq());
+            static_cast<double>(data.GetAnalysisNumSamples()) /
+            (2.0 * data.GetAnalysisMaxFreq());
 
         const double viewLeftTime =
             (viewLeftFrame / numFrames) * totalDuration;
@@ -129,7 +129,7 @@ void SuperSpectrogramTimeTicksOverlay::Render(
     else if (m_mode == SuperSpectrogramConfig::TimeTickMode::Samples)
     {
         const double samplesPerFrame =
-            static_cast<double>(data.GetNumSamples()) / numFrames;
+            static_cast<double>(data.GetOriginalNumSamples()) / numFrames;
 
         const double viewLeftSample =
             viewLeftFrame * samplesPerFrame;

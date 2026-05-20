@@ -31,12 +31,11 @@ public:
       const float* data,
       size_t len,
       double rate,
-      const Parameters& params
-   );
+      const Parameters& params);
 
    const std::vector<std::vector<double>>& GetMatrix() const;
-   double GetMaxFreq() const;
-   size_t GetNumSamples() const;
+   double GetAnalysisMaxFreq() const;
+   size_t GetAnalysisNumSamples() const;
 
 private:
 

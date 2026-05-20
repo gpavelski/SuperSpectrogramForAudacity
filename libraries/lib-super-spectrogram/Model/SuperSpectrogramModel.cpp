@@ -52,9 +52,16 @@ SuperSpectrogramFrame SuperSpectrogramModel::ComputeFrame(
    Compute(data, len, rate, params);
 
    SuperSpectrogramFrame frame;
+
    frame.matrix = GetMatrix();
-   frame.maxFreq = GetMaxFreq();
-   frame.numSamples = GetNumSamples();
+
+   // Analysis-domain
+   frame.analysisMaxFreq = GetAnalysisMaxFreq();
+   frame.analysisNumSamples = GetAnalysisNumSamples();
+
+   // Source-domain
+   frame.originalNumSamples = len;
+   frame.originalSampleRate = rate;
 
    return frame;
 }
@@ -68,12 +75,12 @@ SuperSpectrogramModel::GetMatrix() const
    return mMatrix;
 }
 
-double SuperSpectrogramModel::GetMaxFreq() const
+double SuperSpectrogramModel::GetAnalysisMaxFreq() const
 {
    return mMaxFreq;
 }
 
-size_t SuperSpectrogramModel::GetNumSamples() const
+size_t SuperSpectrogramModel::GetAnalysisNumSamples() const
 {
    return mNumSamples;
 }

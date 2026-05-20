@@ -14,13 +14,13 @@
 
 struct SuperSpectrogramFrame
 {
-   // Raw spectrogram matrix (time/frequency or similar domain)
    std::vector<std::vector<double>> matrix;
 
-   // Maximum frequency represented by the dataset
-   double maxFreq{ 0.0 };
+   // Analysis-domain metadata
+   double analysisMaxFreq;
+   size_t analysisNumSamples;
 
-   // Number of time samples in original signal
-   size_t numSamples{ 0 };
+   // Source-domain metadata
+   size_t originalNumSamples;
+   double originalSampleRate;
 };
-
