@@ -240,16 +240,32 @@ std::vector<std::vector<double>> STFTProcessor::processFullSTFTMatrix(
    processWindows(flatSpectrogram, resizedSignal, numSegments, fftContainer.data());
    removeEdgeEffects(flatSpectrogram, resizedSignal, numSegments, fftContainer.data());
 
-   // Convert to 2D matrix: 
    int rows = sigma * 8;
    int cols = static_cast<int>(flatSpectrogram.size()) / rows;
 
-   std::vector<std::vector<double>> matrix(rows, std::vector<double>(cols));
+   std::vector<std::vector<double>> matrix(
+      rows,
+      std::vector<double>(cols)
+   );
 
-   for (int col = 0; col < cols; ++col) {
-      for (int row = 0; row < rows; ++row) {
-         size_t idx = col * rows + row;
-         matrix[row][col] = flatSpectrogram[idx];
+   for (int col = 0; col < cols; ++col)
+   {
+      for (int row = 0; row < rows; ++row)
+      {
+         // Original STFT layout:
+         // low frequencies  -> smaller row indices
+         // high frequencies -> larger row indices
+         //
+         // We invert vertically so that:
+         // high frequencies appear at the top
+         // low frequencies appear at the bottom
+         const int visualRow = row;
+         const int stftRow = rows - 1 - visualRow;
+
+         const size_t flatIndex =
+            static_cast<size_t>(col) * rows + stftRow;
+
+         matrix[row][col] = flatSpectrogram[flatIndex];
       }
    }
 

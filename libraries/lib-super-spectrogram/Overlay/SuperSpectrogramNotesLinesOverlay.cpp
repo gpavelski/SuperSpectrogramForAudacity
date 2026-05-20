@@ -101,10 +101,17 @@ double SuperSpectrogramNotesLinesOverlay::FreqToWidgetY(
    if (freq < 0.0 || freq > fNyq)
       return -1;
 
-   const double binIndex = (freq / fNyq) * rows + 0.5;
+   // Matrix already inverted:
+   // high frequencies -> small row indices
+   // low frequencies  -> large row indices
+   const double binIndex =
+      ((fNyq - freq) / fNyq) * (rows - 1);
 
-   if (binIndex < viewport.Top() || binIndex > viewport.Bottom())
+   if (binIndex < viewport.Top() ||
+      binIndex > viewport.Bottom())
+   {
       return -1;
+   }
 
    const double rel =
       (binIndex - viewport.Top()) /
@@ -136,7 +143,9 @@ void SuperSpectrogramNotesLinesOverlay::Render(
 
    double lastLabelY = -1e9;
 
-   for (size_t i = 0; i < freqs.size(); ++i)
+   for (int i = static_cast<int>(freqs.size()) - 1;
+      i >= 0;
+      --i)
    {
       double y = FreqToWidgetY(freqs[i], size, data, viewport);
       if (y < 0)
